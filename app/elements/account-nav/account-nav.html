@@ -1,0 +1,159 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="account-fab.html">
+<link rel="import" href="account-tabs.html">
+
+
+
+<dom-module id="account-nav">
+  <template>
+    <style>
+
+      :host {
+        position: fixed;
+        bottom: 16px;
+        right: 16px;
+      }
+
+    </style>
+
+
+    <neon-animated-pages id="pages" 
+                         selected="[[selected]]"
+                         attr-for-selected="id">
+
+      <account-fab id="fab" route="[[route]]" client-valid="[[clientValid]]"></account-fab>
+      <account-tabs id="tabs" route="{{route}}"></account-tabs>  
+
+    </neon-animated-pages>
+
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'account-nav',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior,
+          Polymer.NeonAnimationRunnerBehavior
+        ],
+
+        properties: {
+
+          animationConfig: {
+            value() {
+              return {
+                'fabTransition': [{
+                  name: 'transform-animation',
+                  node: this,
+                  transformFrom: 'translate(0px, 0px)',
+                  // transformTo set imperitively at runtime in _hideFabShowTabs()
+                  timing: {duration: 300, easing: 'ease-out'}
+                 }, {
+                  name: 'transform-animation',
+                  node: this.$.pages,
+                  transformFrom: 'translate(0px, 0px)',
+                  // transformTo set imperitively at runtime in _hideFabShowTabs()
+                  timing: {duration: 300, easing: 'ease-in'}
+                }],
+                'close': [{
+                  name: 'slide-down-animation',
+                  node: this.$.pages,
+                  timing: {duration: 200, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this.$.pages,
+                  timing: {duration: 100, delay: 100, easing: 'ease-in'}
+                }]
+              };
+            }
+          },
+
+          selected: {
+            type: String,
+            value: 'fab'
+          },
+          // passed through to children
+          route: {
+            type: String,
+            notify: true
+          },
+          // passed through to children
+          clientValid: Boolean,
+        },
+
+
+        listeners: {
+          'neon-animation-finish':        '_navAnimationFinished',
+          // fired from account-fab
+          'account-fab-hide':             '_hideFab',
+          // fired from account-fab
+          'account-fab-show':             '_showFab',
+          // fired from account-fab
+          'account-fab-close':            '_closeAccountNav',
+          // fired from account-fab
+          'account-fab-scaleDown-finish': '_fabScaleDownFinished',
+          // fired from account-tabs close button
+          'account-tabs-close':           '_closeAccountNav'
+        },
+
+
+        _navAnimationFinished(_, animationType) {
+          if (animationType === 'fabTransition') {
+            // set the new styles for account-nav to be centered in viewport
+            this.style.bottom = 'calc(50% - 28px)';
+            this.style.right  = 'calc(50% - 28px)';
+            this.$.fab.runFabScaleDown();
+          }
+        },
+
+
+        _showFab() {
+          this.selected      = 'fab';
+          this.style.bottom  = '16px';
+          this.style.right   = '16px';
+          this.style.display = 'block';
+        },
+
+
+        _hideFab() {
+          // must find the center of the screen then set
+          // the fab to translate to that point
+          const x = (window.innerWidth / 2) - 44;
+          const y = (window.innerHeight / 2) - 44;
+
+          this.animationConfig.fabTransition[0].transformTo = `translate(-${x}px, 0px)`;
+          this.animationConfig.fabTransition[1].transformTo = `translate(0px, -${y}px)`;
+
+          this.cancelAnimation();
+          this.playAnimation('fabTransition', 'fabTransition');
+        },
+
+
+        _fabScaleDownFinished() {
+          // start hero
+          this.selected = 'tabs';
+        },
+
+
+        _closeAccountNav() {
+          // hide all once close animation in account-tabs is complete
+          this.style.display = 'none';
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

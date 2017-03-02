@@ -1,0 +1,157 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+
+<dom-module id="login-screen3">
+  <template>
+    <style>
+
+      :host {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        background-color: var(--dark-primary-color);
+        align-items: center;
+        justify-content: center;
+      }
+
+      paper-fab {
+        background-color: var(--default-primary-color);
+      }
+
+      #fab2 {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      paper-spinner-lite {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        -webkit-transition: opacity 0.3s ease-in-out;
+                transition: opacity 0.3s ease-in-out;
+        --paper-spinner-color: var(--accent-color);
+      }
+
+    </style>
+    
+    <paper-fab id="fab" hidden$="[[hidden]]" elevation="3"></paper-fab>
+
+    <paper-fab id="fab2" hidden$="[[!hidden]]" elevation="3"></paper-fab>
+    
+    <paper-spinner-lite id="spinner" active alt="Checking credentials"></paper-spinner-lite>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'login-screen3',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior
+        ],
+
+        properties: {
+          // sharedElements is created imperitively
+        	animationConfig: {
+            value() {
+              return {
+                'entry': {
+                	name: 'hero-animation',
+                	id: 'hero',
+                	toPage: this,
+                	timing: {easing: 'ease-in-out'}
+                },
+                'exit': [{
+                  name: 'hero-animation',
+                  id: 'hero',
+                  fromPage: this,
+                  timing: {delay: 150, easing: 'ease-in-out'}
+                }, {
+                  name: 'ripple-animation',
+                  id: 'ripple',
+                  fromPage: this,
+                  timing: {easing: 'ease-in-out'}
+                }]
+              };
+            }
+          },
+          // from neon-animated-pages in app-security.html
+          selected: {
+            type: Number,
+            observer: '_selectedChanged'
+          },
+          // login or signup error in app-securtity.html
+          error: {
+            type: Boolean,
+            observer: '_errorAnimation'
+          },
+          // for animation purposes
+          hidden: {
+            type: Boolean,
+            value: false
+          }
+        },
+
+        _selectedChanged(selected) {
+          if (selected === 3) {
+            // set fab as entry hero element
+            this.set('hidden', false);
+            this.sharedElements = {
+              hero: this.$.fab
+            };
+            // show spinner
+          	this.$.spinner.style.opacity = 1;
+            // wait for entry hero to finish then set outgoing animation propertires
+            this.async(() => {
+              this.set('hidden', true);
+              this.sharedElements = {
+                hero: this.$.fab2,
+                ripple: this.$.fab2
+              };
+            }, 600);
+          } else {
+            // hide that spinner
+            this.$.spinner.style.opacity = 0;
+          }
+        },
+        // reconfigure animations if there was an error signing up or loggin in
+        _errorAnimation(error) {
+          if (error) {
+            this.animationConfig.exit = {
+              name: 'fade-out-animation',
+              node: this.$.fab2,
+              timing: {easing: 'ease-in-out'}
+            };
+          } else {
+            this.animationConfig.exit = [{
+              name: 'hero-animation',
+              id: 'hero',
+              fromPage: this,
+              timing: {delay: 150, easing: 'ease-in-out'}
+            }, {
+              name: 'ripple-animation',
+              id: 'ripple',
+              fromPage: this,
+              timing: {easing: 'ease-in-out'}
+            }];
+          }
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

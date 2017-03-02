@@ -1,0 +1,64 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="utilities.html">
+
+<script>
+	(function() {
+		
+	  window.Redaap.Behaviors = window.Redaap.Behaviors || {}; // jshint ignore:line
+
+	  // helper behavior that bundles a call to requestAnimationFrame and a debounce
+	  // that acts immediately while ignoring subsequent taps for a preset time (this.debounceTime)
+	  const OnTapImp = {
+	    properties: {
+	    	// passed in function
+	    	onTap: Object,
+	    	// for debouncer
+				busy: Boolean,
+
+				debounceTime: {
+					type: Number,
+					value: 500
+				}
+	    },
+	    
+	    observers: [
+	    	'_runOnTapFunc(onTap)'
+	    ],
+
+	    _runOnTapFunc(onTapFunction) {
+	    	if (this.busy) { return; }
+	    	this.busy = true;
+	    	// do work on first button press and ignore
+	    	// all other button presses for 500ms
+	    	const debounce = () => {
+	    		this.debounce('onTapDebounce', () => {
+	    			this.busy = false;
+	    		}, this.debounceTime);
+	    	};
+	    	// run the passed in function
+	    	const onTap = () => {
+	    		onTapFunction();
+	    		debounce();
+	    	};
+	    	
+	    	this.schedule(onTap);
+	    }
+	  };
+
+	  window.Redaap.Behaviors.OnTapBehavior = [ 
+	  	window.Redaap.Behaviors.Utilities, 
+	  	OnTapImp
+	  ]; 
+		
+	})();
+
+</script>

@@ -1,0 +1,217 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="redaap-logo.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="logo-screen">
+  <template>
+    <style>
+
+      :host {
+        display: flex;
+        width: 100%;
+        height: 100vh;
+        background-color: var(--default-primary-color);
+        align-items: center;
+        justify-content: center;
+      }
+
+      #buttonContainer {
+        width: 80%;
+        max-width: 360px;
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        transform: translate(-50%, -50%);
+      }
+
+      paper-material {
+        display: inline-block;
+        border-radius: 3px;
+      }
+
+      paper-button {
+        margin: 0px;
+        background-color: var(--dark-primary-color);
+        color: white;
+      }
+
+      .floated {
+        float: right;
+      }
+
+      #linkDiv {
+        display: flex;
+        justify-content: center;
+      }
+
+      #teuWebsiteLink {
+        margin-top: 64px;
+        background-color: white;
+        color: var(--default-primary-color);
+      }
+
+    </style>
+
+    <redaap-logo></redaap-logo>
+
+    <div id="buttonContainer">
+      <paper-material id="loginButton" animated elevation="[[loginElevation]]">
+        <paper-button on-tap="_loginButtonTapped">Log In</paper-button>
+      </paper-material>
+
+      <paper-material id="signupButton" class="floated" animated elevation="[[signupElevation]]">
+        <paper-button on-tap="_signupButtonTapped">Create Account</paper-button>
+      </paper-material>
+
+      <div id="linkDiv">
+        <a href="http://teuservices.com/" tabindex="-1">
+          <paper-button id="teuWebsiteLink">Teu Main Site</paper-button>
+        </a>
+      </div>
+
+    </div>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'logo-screen',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior, 
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.OnTapBehavior
+        ],
+
+        properties: {
+
+        	animationConfig: {
+            value() {
+              return {
+                'entry': [{
+                  name: 'fade-in-animation',
+                  node: this.$.loginButton,
+                  timing: {delay: 900, easing: 'ease-out'}
+                }, {
+                  name: 'slide-from-bottom-animation',
+                  node: this.$.loginButton,
+                  timing: {delay: 550, duration: 900, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this.$.signupButton,
+                  timing: {delay: 1100, easing: 'ease-out'}
+                }, {
+                  name: 'slide-from-bottom-animation',
+                  node: this.$.signupButton,
+                  timing: {delay: 750, duration: 900, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this.$.teuWebsiteLink,
+                  timing: {delay: 1300, easing: 'ease-out'}
+                }, {
+                  name: 'slide-from-bottom-animation',
+                  node: this.$.teuWebsiteLink,
+                  timing: {delay: 950, duration: 900, easing: 'ease-out'}
+                }],
+                'exit': {
+                  name: 'ripple-animation',
+
+                  // TODO:
+                  //      make gesture work correctly instead of id
+                  //      gesture: {x: this.x, y: this.y},
+                  id: 'ripple',
+                  fromPage: this,
+                  timing: {easing: 'ease-in-out'}
+                }
+              };
+            }
+          },
+
+          sharedElements: {
+            value() {
+              return {
+                'ripple': this.$.loginButton
+              };
+            }
+          },
+
+          loginElevation: {
+            type: Number,
+            value: 0
+          },
+
+          signupElevation: {
+            type: Number,
+            value: 0
+          },
+
+          x: {
+            type: Number,
+            notify: true
+          },
+
+          y: {
+            type: Number,
+            notify: true
+          }
+
+        },
+
+        attached() {
+          this.async(() => {
+            this.playAnimation('entry');
+            // delay login and signup button elevation animations
+            this.async(() => {
+              this.set('loginElevation', 2);
+            }, 2050);
+            this.async(() => {
+              this.set('signupElevation', 2);
+            }, 2100);
+          });
+        },
+        // get the x and y pos of the tap origin for the animation starting point
+        _setTapPosition(event) {
+          const source = event.detail.sourceEvent;
+          this.set('x', source.x || source.pageX);
+          this.set('y', source.y || source.pageY);
+        },
+        // called by #loginButton
+        _loginButtonTapped(event) {
+
+          const showLogin = () => {
+            this._setTapPosition(event);
+            this.sharedElements.ripple = this.$.loginButton;
+            this.fire('showLogin');
+          };
+
+          this.onTap = showLogin;
+        },
+        // called by #signupButton after ripple animation
+        _signupButtonTapped(event) {
+
+          const showSignup = () => {
+            this._setTapPosition(event);
+            this.sharedElements.ripple = this.$.signupButton;
+            this.fire('showSignup');
+          };
+
+          this.onTap = showSignup;
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

@@ -1,0 +1,172 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="selector-thumbnail">
+  <template>
+    <style>
+
+      :host {
+      	display: inline-flex;
+        justify-content: center;
+        align-items: center;
+      	width: calc(50vw - 16px);
+      	height: calc(50vw - 16px);
+      	position: relative;
+      	margin: 8px;
+      }
+
+      .img {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        background-color: var(--divider-color);
+        border-radius: 3px;
+      }
+
+      .orientation3 {
+        transform: rotate(180deg);
+      }
+
+      .orientation6 {
+        transform: rotate(90deg);
+      }
+
+      .orientation8 {
+        transform: rotate(-90deg);
+      }
+
+      .icon {
+        width: 48px;
+        height: 48px;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+      }
+
+      .showIcon {
+        opacity: 1;
+      }
+
+    </style>
+
+
+    <iron-ajax auto
+               url="[[photo.src]]"
+               on-error="_imgLoadError">
+    </iron-ajax>
+
+
+    <iron-image id="img"
+                class$="img [[_computeOrientation(photo.orient)]]"
+                src="[[photo.src]]"
+                sizing="cover"
+                preload 
+                fade
+                loaded="{{imageLoaded}}">
+    </iron-image>
+
+    <iron-icon id="icon" class="icon" icon="custom-icons:cloud-off"></iron-icon>
+    
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'selector-thumbnail',
+
+        behaviors: [
+          window.Redaap.Behaviors.Utilities,                  
+          window.Redaap.Behaviors.OnTapBehavior
+        ],
+
+        properties: {
+
+          photo: Object,
+
+          imageLoaded: {
+            type: Boolean,
+            observer: '_imageLoaded'
+          },
+          // only try to correct 404 once per instance
+          errorRetry: {
+            type: Boolean,
+            value: true
+          }
+        },
+
+
+        _computeOrientation(orient) {
+          switch (orient) {
+            case 3:
+              return 'orientation3';
+            case 6:
+              return 'orientation6';
+            case 8:
+              return 'orientation8';
+            default:
+              return '';
+          }
+        },
+
+
+        _imageLoaded(bool) {
+          if(!bool) { return; }
+          this.photo.unreachable = false;
+          window.URL.revokeObjectURL(this.photo.src);
+        },
+
+
+        _showErrorIcon() {
+          // check online status and display an offline icon over each photo
+          // that is still in the keys list
+          // set a boolean indicating an unreachable photo file on the this.photo obj
+          // so photo-selector can ignore on-tap events from unreachable thumbnails
+          this.photo.unreachable = true;
+          Polymer.dom(this.$.icon).classList.add('showIcon');
+        },
+
+ 
+        _imgLoadError(event) {
+          const status = event.detail.request.status;
+          if (!this.errorRetry) { return; }
+
+          this.errorRetry = false;
+          // Not Found
+          // ObjectUrl invalid so issue a new one
+          if (status === 404) {
+            const setSrc = url => {
+              if (url) {
+                this.photo.placeholder = url;
+                this.set('photo.src', url);
+              }  else {
+                // photo blob not in localForage
+                this._showErrorIcon();
+              }
+            };
+
+            window.Redaap.webWorker.
+              getUrl(this.photo.key).
+              then(setSrc).
+              catch(error => console.log(error));
+
+          } else if (status === 0) {
+            this._showErrorIcon();
+          }
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

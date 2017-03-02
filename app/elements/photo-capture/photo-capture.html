@@ -1,0 +1,636 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+
+
+ photo-caputre example usage
+
+    events 
+      'photo-capture-placeholder'
+      'photo-capture-external-src'
+
+
+
+    from solution-view
+    <photo-capture id="capture" 
+                   filename="[[existingFixture.label]]"
+                   placeholder="{{existingFixture.placeholder}}"
+                   key="{{existingFixture.key}}"
+                   keys="{{existingFixture.keys}}"
+                   saved-url="{{existingFixture.savedUrl}}"
+                   orientation="{{existingFixture.orientation}}"
+                   disable-thumbnail>
+    </photo-capture>
+    
+    from area-edit-card
+    <photo-capture filename="[[item.label]]"
+                   key="{{item.key}}"
+                   keys="{{item.keys}}"
+                   saved-url="{{item.savedUrl}}"
+                   orientation="{{item.orientation}}" 
+                   defer-load 
+                   defer-trigger="{{deferPhoto}}">
+    </photo-capture> 
+
+  
+    from photo-selector
+    <photo-capture id="capture" 
+                   filename="[[label]]"
+                   disable-thumbnail
+                   disable-viewer>
+    </photo-capture> -->
+
+
+
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="photo-capture">
+  <template>
+    <style>
+
+      :host {
+        display: inline-block;
+        width: 48px;
+        height: 48px;
+        position: relative;
+        top: 1px;
+        background-color: inherit;
+      }
+
+      iron-label {
+        position: absolute;
+        top: 0px;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
+      }
+
+      .cameraInput {
+        width: 0px;
+        height: 0px;
+        position: absolute;
+        opacity: 0;
+        overflow: hidden;
+        z-index: -1;
+      }
+
+      .cameraIcon {
+        margin-top: 12px;
+        margin-left: 12px;
+      }
+
+      .centeredAboveFileInput {
+        position: absolute;
+        top: 0px;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
+        border-radius: 50%;
+        background-color: var(--photo-capture-background-color, dodgerblue);
+        z-index: -1;
+        opacity: 0;
+        -webkit-transition: opacity 0.2s ease-in;
+                transition: opacity 0.2s ease-in;
+      }
+
+      .showImageTag {
+        opacity: 1;
+        z-index: 0;
+      }
+
+      .orientation3 {
+        transform: rotate(180deg);
+      }
+
+      .orientation6 {
+        transform: rotate(90deg);
+      }
+
+      .orientation8 {
+        transform: rotate(-90deg);
+      }
+
+    </style>    
+
+    <!-- used only for error handling -->
+    <iron-ajax auto
+               url="[[pic]]"
+               on-error="_picError">
+    </iron-ajax>
+    <!-- used only for error handling -->
+    <iron-ajax auto
+               url="[[placeholder]]"
+               on-error="_placeholderError">
+    </iron-ajax>
+
+    
+    <iron-icon class="cameraIcon" icon="[[buttonIcon]]"></iron-icon>
+
+
+    <iron-label id="camera" for="input">
+      <input id="input" 
+             class="cameraInput"
+             iron-label-target
+             type="file" 
+             accept="image/*"
+             on-change="_userSelectedPictureFile"/>   
+
+      <paper-ripple id="ripple" class="circle" recenters></paper-ripple>
+      
+    </iron-label>
+
+
+    <iron-image id="imageTag"
+                class$="centeredAboveFileInput [[_computeOrientation(orientation)]]"
+                hidden$="[[disableThumbnail]]"
+                on-tap="_photoTapped"
+                src="[[pic]]"
+                placeholder="[[placeholder]]"
+                sizing="cover"
+                preload 
+                fade
+                loaded="{{loaded}}">
+    </iron-image>
+
+
+
+    <div id="externalSrcIconButton" 
+         class="centeredAboveFileInput"
+         hidden$="[[!disableThumbnail]]" 
+         on-tap="_photoTapped">
+      <paper-ripple id="ripple" class="circle" recenters></paper-ripple>
+      <iron-icon class="cameraIcon" icon="custom-icons:camera-alt"></iron-icon>
+    </div>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+
+        is: 'photo-capture',
+
+        behaviors: [
+          window.Redaap.Behaviors.OnTapBehavior 
+        ],
+
+        properties: {
+          // saved file url sent back from db after save
+        	pic: String,
+          // image objectURL
+          placeholder: {
+            type: String,
+            notify: true,
+            observer: '_placeholderChanged'
+          },
+          // passed to worker to create the photo file name prefix
+          filename: String,
+          // localforage key to lookup the file in order to generate new objectUrls
+          key: {
+            type: String,
+            notify: true,
+            observer: '_keyChanged'
+          },
+          // holds all keys and saved url data
+          keys: {
+            type: Object,
+            notify: true
+          },
+          // returned from web-worker enqueue method once promise is fulfilled
+          // Parse.file database url to replace the image src with since the saved
+          // file has been deleted
+          savedUrl: {
+            type: String,
+            notify: true
+          },
+          // used to release the ObjectURL from window
+          loaded: {
+            type: Boolean,
+            observer: '_imageLoaded'
+          },
+          // only attempt to correct a 404 on the placeholder once per instance
+          placeholderErrorRetry: {
+            type: Boolean,
+            value: true
+          },
+
+          cameraIcon: {
+            type: String,
+            value: 'custom-icons:camera-alt'
+          },
+
+          disconnectedIcon: {
+            type: String,
+            value: 'custom-icons:cloud-off'
+          }, 
+
+          buttonIcon: {
+            type: String,
+            value: 'custom-icons:camera-alt'
+          },
+          // when set true will ignore local iron-image and
+          // instead send all image urls out to parent through externalSrc events
+          disableThumbnail: Boolean,
+          // disable the viewer if this capture element is inside the viewer itself
+          disableViewer: Boolean,
+          // camera orientation data from image file
+          orientation: {
+            type: Number,
+            value: 0,
+            notify: true
+          },
+          // set on host if the image should load after an animation sequence
+          deferLoad: Boolean,
+          // if deferLoad is truthy then listen for the trigger to be set true
+          // before loading the image file into the image element
+          deferTrigger: {
+            type: Boolean,
+            observer: '_deferLoadImage',
+            notify: true
+          }
+        },
+
+
+        detached() {
+          // allow gc
+          this.pic = undefined;
+          this.fire('photo-capture-placeholder', this._makeEventPayload());
+        },
+        // called by photo-viewer if user updates the data pertaining to this
+        // capture instance
+        updateThumbnail({key, orient, placeholder, url}) {
+          // the order of operations is very important here
+          this.set('orientation', orient);
+          if (placeholder && !url) {
+            this.set('placeholder', placeholder);
+          } else {
+            this.set('placeholder', '#');
+          }
+          this.set('savedUrl', url);
+          // photo-capture listens for changes on its key prop
+          this.set('key',      key);
+          this.fire('photo-capture-placeholder', this._makeEventPayload());
+          this._showImageTag();
+        },
+
+        // called by photo-viewer when user adds a new photo
+        updateKeys(key, obj) {
+          // new data to reflect the new photo taken in photo-selector
+          if (this.keys) {
+            // add to exitsing keys
+            this.set(`keys.${key}`, obj[key]);
+          } else {
+            // no existing keys so create a new keys object
+            this.set('keys', obj);
+          }
+        },
+
+        // called by photo-viewer once a new photo has saved from db
+        updateSavedUrl(url) {
+          this.set('savedUrl', url);
+        }, 
+        // reset for another photo capture 
+        // called by solution-view before it animates open
+        resetCaptureButton() {
+          this._revokeUrl();
+          this.placeholder = '#';
+          this.placeholderErrorRetry = true;
+          this.fire('photo-capture-placeholder', this._makeEventPayload());
+          this.fire('photo-capture-external-src', this._makeEventPayload());
+          this._hideImageTag();
+        },
+        
+        // called by photo-viewer when user deletes last photo from the list
+        resetCapture() {
+          this.set('orientation', undefined);
+          this.set('placeholder', undefined);
+          this.set('savedUrl',    undefined);
+          this.set('keys',        undefined);
+          // _keyChanged should trigger a reset since it and savedUrl are undefined
+          this.set('key',         undefined);
+        },
+
+        // this.$.imageTag dynamic class to correct photo rotation
+        _computeOrientation(orient) {
+          switch (orient) {
+            case 3:
+              return 'orientation3';
+            case 6:
+              return 'orientation6';
+            case 8:
+              return 'orientation8';
+            default:
+              return '';
+          }
+        },
+
+        // helper func
+        _makeEventPayload(externalSrc) {
+          return {
+            externalSrc,
+            key:         this.key,
+            keys:        this.keys,
+            orientation: this.orientation,
+            placeholder: this.placeholder
+          };
+        },
+
+
+        _showErrorIcon() {
+          this.buttonIcon = this.disconnectedIcon;
+          this._hideImageTag();
+        },
+
+        // raise the iron-image tag or externalSrcIconButton up above iron-label w/z-index
+        _showImageTag() {
+          // disableViewer true then treat this element as an input only
+          // no need to hide the input label element
+          if (this.disableViewer) { return; }
+
+          if (this.disableThumbnail) { 
+            Polymer.dom(this.$.externalSrcIconButton).classList.add('showImageTag');
+            return; 
+          }
+          Polymer.dom(this.$.imageTag).classList.add('showImageTag');
+        },
+
+
+        _hideImageTag() {
+          // disableViewer true then treat this element as an input only
+          // no need to hide the input label element
+          if (this.disableViewer) { return; }
+
+          if (this.disableThumbnail) { 
+            Polymer.dom(this.$.externalSrcIconButton).classList.remove('showImageTag');
+            return; 
+          }
+          // raise the iron image tag up w/z-index
+          Polymer.dom(this.$.imageTag).classList.remove('showImageTag');
+        },
+
+
+        _revokeUrl() {
+          if (this.placeholder && this.placeholder !== '#') {
+            window.URL.revokeObjectURL(this.placeholder);
+          }
+        },
+
+        // need to reset the trigger before it will be used again by parent
+        _resetTrigger() {
+          // must wait to avoid infinite loop
+          this.async(() => {
+            this.set('deferTrigger', false);
+          }, 1);
+        },
+        
+
+        _imageLoaded(bool) {
+          if (!bool) { return; }
+          // fire the external src only after the file has been loaded into the browser
+          // using iron-image for load timing wether it is hidden or not
+          this.fire('photo-capture-external-src', this._makeEventPayload(this.pic));
+          // then wait for the background-image css to take so there is not a flicker
+          // between switching from placeholder to main background div in parent
+          this.async(() => {
+            this._revokeUrl();
+            this.placeholder = '#';
+            this.fire('photo-capture-placeholder', this._makeEventPayload());
+            this._resetTrigger();
+          }, 500);
+        },
+
+
+        _placeholderError(event) {
+          const status = event.detail.request.status;
+          // Not Found
+          // if user has refreshed the browser, the current 
+          // temp url will no longer work so issue a new one
+          if (status === 404) {
+            if (this.key && this.placeholderErrorRetry) {
+              this.placeholderErrorRetry = false;
+              this._lookupTempUrlByKey(this.key);
+            }
+          }
+        },
+
+
+        _picError(event) {
+          const status = event.detail.request.status;
+          // ERR_INTERNET_DISCONNECTED
+          if (status === 0) {
+            // reset iron-image src so it will display placeholder again
+            this.pic = '#';
+            this._showErrorIcon();
+          }
+        },
+
+        // allow an instant preview based directly off the file
+        // until it has had a chance to be saved to db
+        _lookupTempUrlByKey(key) {
+          // key is set and placeholder is not already a valid url
+          if (typeof key !== 'string') { return; }
+
+          const setPlaceholder = url => {
+            if (url) {
+              this.pic = '#';
+              this.set('placeholder', url);
+              // locally saved photos no longer have orientation data
+              // and are processed in Jimp with the correct orientation
+              // so no longer necessary to correct it
+              this.set('orientation', 0);
+              // vary important to reset orient for keys data for this photo as well
+              if (this.keys) {
+                this.set(`keys.${key}.orient`, 0); 
+                this.set(`keys.${key}.placeholder`, url);
+              }
+              this.fire('photo-capture-placeholder', this._makeEventPayload());
+              this._showImageTag();
+            } else if (!window.navigator.onLine) {
+              this._showErrorIcon();
+            } else {
+              this.resetCaptureButton();
+            }
+          };
+
+          window.Redaap.webWorker.
+            getUrl(key).
+            then(setPlaceholder).
+            catch(error => console.log(error));
+        },
+        // photo successfully saved to db so now use the url string as the image src
+        // to save memory and cache in localstorage
+        _loadImgFromSavedUrl(url) {
+          this.pic = url;
+          this._showImageTag();
+        },
+
+
+        _loadImgFromTempUrl() {
+          if (this.pic) {
+            this.pic = '#';
+          }
+          this._showImageTag();
+        },
+
+
+        _load() {
+          if (this.savedUrl) {
+            this._loadImgFromSavedUrl(this.savedUrl);
+          } else if (this.placeholder && this.placeholder !== '#') {
+            this._loadImgFromTempUrl();
+          } else {
+            this.resetCaptureButton();
+          }
+        },
+
+        // listen for defer-trigger changes
+        _deferLoadImage(bool) {
+          if (!bool) { return; }
+
+          if(this.deferLoad) {
+            // allow instant updates to placeholder and pic
+            // now that parent entry animations are complete
+            this.deferLoad = false;
+            this._load();
+            // in case the file is still empty so reset the trigger since
+            // a picture was not loaded in
+            this._resetTrigger();
+          }
+        },
+
+
+        _placeholderChanged() {
+          this.async(() => {
+            this._revokeUrl();
+          }, 500);
+        },
+
+
+        _keyChanged() {
+          if (this.deferLoad) { return; } 
+          this._load();
+        },
+
+
+        _getFile() {
+          const files = this.$.input.files;
+          if (!files || !files.length) { return; }
+          
+          const file = files[0];
+          if (!file) { return {file: null, extension: null}; }
+
+          const [type, extension] = file.type.split('/');
+          // silent error if user is trying to upload anything other than an image
+          if (type !== 'image') { return {file: null, extension: null}; }
+          
+          return {file, extension};
+        },
+
+
+        _setTempImgData({key, orient, url}) {
+          // accumulate all keys that are associated with this area and fixture
+          const newObj = {key, orient, placeholder: url};
+
+          if (this.keys) {
+            this.set(`keys.${key}`, newObj);
+          } else {
+            const obj = {};
+            obj[key]  = newObj;
+            this.set('keys', obj);
+          }
+          // clear savedUrl incase we are offline and user chooses to take another
+          // photo to replace the offline icon
+          // otherwise this._load will try to load the last savedUrl
+          this.set('savedUrl', undefined);
+          this.set('placeholder', url);
+          this.set('orientation', orient);
+          this.set('key',         key);
+          this.fire('photo-capture-placeholder', this._makeEventPayload());
+          this._showImageTag();
+        },
+        
+
+        _setSavedImgData(key, url) {
+
+
+          // HACK: !!!!!
+
+
+
+          // wait > 1sec for db to sync before loading the newly created url
+          // to avoid a 502 Bad Gateway error
+          this.async(() => {
+            // check if the saved data still matches current state
+            if (this.key === key) {
+
+              if (this.keys) {
+                this.set(`keys.${key}.savedUrl`, url);
+              }
+              this.set('savedUrl', url);
+              this.schedule(this._load.bind(this));
+            }
+          }, 3000);
+        },
+
+
+        _userSelectedPictureFile() {
+          const getFile         = this._getFile.bind(this);
+          const filename        = this.filename;
+          const setTempImgData  = this._setTempImgData.bind(this);
+          const setSavedImgData = this._setSavedImgData.bind(this);
+
+          async function loadImage() { // jshint ignore:line
+            let {file, extension} = getFile();
+            if (!file) { return; }
+
+            const iterator    = window.Redaap.webWorker.savePhoto(file, extension, filename);
+            const nextPromise = () => iterator.next().value;
+
+            try {
+              // returned key, orient, url from worker
+              let imgData = await nextPromise(); // jshint ignore:line
+              setTempImgData(imgData);
+              // allow file to be gargabe collected while waiting to save to cloud
+              file        = undefined;
+              extension   = undefined;
+              imgData     = undefined;
+              // run 'savePhoto' func in web-worker/worker
+              const saved = await nextPromise(); // jshint ignore:line
+              // web-worker will attempt to save the data to db again if 
+              // user is offline while taking photos so ignore an undefined return value
+              if (saved) {
+                const {key: savedKey, savedUrl} = saved;
+                setSavedImgData(savedKey, savedUrl);
+              } 
+            } 
+            catch(error) { console.log('save photo error in photo-capture: ', error); }
+          }
+        
+          window.requestAnimationFrame(loadImage);
+        },
+
+        // called if user taps on an pic that is already loaded in
+        _photoTapped() {
+          if (this.disableViewer) { return; }
+          // show a fullscreen view of the photo with option to delete
+          const showFullScreenPhoto = () => {
+            // send references to photo-viewer in case user decides to delete the photo
+            // call the function with refernces to the elements needed in order to delete the 
+            // image and its data plus reset styles if user chooses to delete the pic
+            window.Redaap.photoViewer.openPhotoViewer(this);
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = showFullScreenPhoto();
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

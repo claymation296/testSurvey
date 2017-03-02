@@ -1,0 +1,184 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="quote-fab">
+  <template>
+    <style>
+
+      :host {
+        display: none;
+        position: fixed;
+        bottom: 16px;
+        right: 16px;
+        z-index: 1;
+      }
+
+      paper-fab {
+        position: absolute;
+        bottom: 0px;
+        right: 0px;
+        color: var(--primary-text-color);
+        --paper-fab-background: transparent;
+        --paper-fab-keyboard-focus-background: transparent;
+        z-index: 1;
+      }
+
+      #iconMask {
+        position: absolute;
+        width: 56px;
+        height: 56px;
+        bottom: 0px;
+        right: 0px;
+        border-radius: 100%;
+        overflow: hidden;
+        background-color: var(--accent-color);
+      }
+
+      #rotate {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        width: 24px;
+        height: 24px;
+      }
+
+      #icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        -webkit-transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%);
+      }
+
+    </style>
+
+    <!-- need to creat two layers for animation
+
+    top layer is the paper-fab so it can handle the drop shadow, ripple effect, 
+    receive user tap events and make the on-transitionend function call 
+  
+    bottom layer handles the icon mask and rotation and base color -->
+
+    <paper-fab id="fab" on-tap="_fabTapped"></paper-fab>
+    
+    <div id="iconMask">
+      <div id="rotate">
+        <iron-icon id="icon" icon="custom-icons:arrow-forward"></iron-icon>
+      </div>
+    </div>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'quote-fab',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior,
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.OnTapBehavior 
+        ],
+
+        properties: {
+
+        	animationConfig: {
+        		value() {
+        			return {
+        				'fabEntry': [{
+                  name: 'transform-animation',
+                  node: this.$.fab,
+                  transformFrom: 'scale(0, 0)',
+                  transformTo: 'scale(1, 1)',
+                  timing: {duration: 300, easing: 'ease-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.iconMask,
+                  transformFrom: 'scale(0, 0)',
+                  transformTo: 'scale(1, 1)',
+                  timing: {duration: 300, easing: 'ease-out'}
+                }, {
+        					name: 'transform-animation',
+        					node: this.$.rotate,
+        					transformOrigin: '50% 50% -50px',
+                  transformFrom: 'rotateY(270deg)',
+        					transformTo: 'rotateY(360deg)',
+                  timing: {duration: 300, easing: 'ease-out'}
+        				}],
+                'fabExit': [{
+                  name: 'transform-animation',
+                  node: this.$.rotate,
+                  transformOrigin: '50% 50% -50px',
+                  transformTo: 'rotateY(90deg)',
+                  timing: {duration: 200, easing: 'ease-in'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.fab,
+                  transformFrom: 'scale(1, 1)',
+                  transformTo: 'scale(0, 0)',
+                  timing: {duration: 300, delay: 150, easing: 'ease-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.iconMask,
+                  transformFrom: 'scale(1, 1)',
+                  transformTo: 'scale(0, 0)',
+                  timing: {duration: 300, delay: 150, easing: 'ease-out'}
+                }]
+        			};
+        		}
+        	}
+        },
+
+
+        listeners: {
+          'neon-animation-finish': '_animationFinished'
+        },
+
+        // called by parent quote-view
+        runFabEntryAnimation() {
+          this.style.display = 'block';
+          this.cancelAnimation();
+          this.playAnimation('fabEntry');
+        },
+
+        // called by parent quote-view
+        hide() {
+          this.style.display = 'none';
+        },
+
+        // called from paper-fab
+        _fabTapped() {
+          const runAnimation = () => {
+            this.cancelAnimation();
+            this.playAnimation('fabExit', 'fabExit');
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = runAnimation;
+        },
+        
+        // after user cancels the picker wait to close until after 'preCancel' animation finishes
+        _animationFinished(_, animationType) {
+          if (animationType === 'fabExit') {
+            this.hide();
+            window.Redaap.emailOptions.init();
+            this.async(() => {
+              this.style.display = 'block';
+            }, 800);
+          }
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

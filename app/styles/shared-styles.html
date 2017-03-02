@@ -1,0 +1,225 @@
+<!-- shared styles for all elements and index.html -->
+<dom-module id="shared-styles">
+  <template>
+    <style>
+
+      :host {
+        /*custom mixin*/
+        --fullscreen-elements: {
+          display: none;
+          position: fixed;
+          top: 0px;
+          left: 0px;
+          width: 100%;
+          height: 100vh;
+          overflow: hidden;
+          z-index: 50;
+        };
+      };
+
+      neon-animated-pages {
+        height: 100%;
+      }
+
+      paper-scroll-header-panel {
+        height: 100%;
+      }
+
+      paper-toolbar {
+        --paper-toolbar: {
+          box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.14),
+                      0px 1px 5px 0px rgba(0, 0, 0, 0.12),
+                      0px 3px 1px -2px rgba(0, 0, 0, 0.2);
+        };
+        --paper-toolbar-title: {
+          line-height: normal;
+        };
+        z-index: 1;
+      }
+
+      /*paper-material {
+        border-radius: 3px;
+        padding: 16px 0 16px 0;
+        width: calc(98.66% - 16px);
+        margin: 16px auto;
+        background-color: white;
+      }*/
+
+      paper-card {
+        width: 100%;
+        margin-bottom: 16px;
+        --paper-card-header-text: {
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+          user-select: none;
+        };
+      }
+
+      paper-input {
+        --paper-input-container-focus-color: var(--default-primary-color);
+      }
+
+      gold-phone-input {
+        --paper-input-container-focus-color: var(--default-primary-color);
+      }
+
+      gold-zip-input {
+        --paper-input-container-focus-color: var(--default-primary-color);
+      }
+
+      paper-item {
+        --paper-item-disabled-color: var(--primary-text-color);
+      }
+
+      paper-dialog {
+        border-radius: 3px;
+      }
+
+      paper-toast {
+        text-align: center;
+      }
+
+      paper-spinner-lite {
+        --paper-spinner-color: var(--default-primary-color);
+      }
+
+      /*hack that fixes case where only the first modal has a translucent backdrop*/
+      iron-overlay-backdrop {
+        opacity: 0.6;
+      }
+
+      paper-tabs {
+        width: 100%;
+        max-width: 460px;
+        margin: 0px auto;
+        --paper-tabs-selection-bar-color: white;
+      }
+
+      /*the tabLabel is hidden when selected via selected-class="selectedTab" attribute*/
+      .tabLabel {
+        position: absolute;
+        bottom: 0px;
+        /*ios fix*/
+        left: 50%;
+        /*ios fix*/
+        transform: translate(-50%, 0px);
+        font-size: 12px;
+        transition: opacity 0.2s ease-in;
+      }
+
+      /*the tabLabel is hidden when selected via selected-class="selectedTab" attribute*/
+      .selectedTab .tabLabel {
+        opacity: 0;
+      }
+
+      /*tab badges*/
+      .badge {
+        --paper-badge-text-color: var(--primary-text-color);
+        --paper-badge: {
+          width: 16px;
+          height: 16px;
+          font-size: 10px;
+          position: relative;
+          left: 4px;
+          bottom: 2px;
+          -webkit-transform: scale(1);
+                  transform: scale(1);
+          -webkit-transition: transform 0.3s ease-out;
+                  transition: transform 0.3s ease-out;
+        };
+      }
+
+      /*tab badges*/
+      .hideBadge {
+        --paper-badge: {
+          -webkit-transform: scale(0);
+                  transform: scale(0);
+          /* Polymer styles shim hack 
+             transition needed in both .badge class and here
+             in order to transition when applying and removing
+             the .hideBadge class 9/20/2016 */
+          -webkit-transition: transform 0.3s ease-out;
+                  transition: transform 0.3s ease-out;
+        };
+      }
+
+      /*card titles*/
+      .dialogTitle {
+        font-size: 20px;
+        font-weight: 400;
+      }
+
+      .buttons {
+        color: var(--default-primary-color);
+      }
+
+      /*defeat selection of static text because it is unnecessary and annoying*/
+      .noSelect {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+
+      /*quote-viewer, account-form and preview-page*/
+
+      .bottomMargin {
+        margin-bottom: 16px;
+      }
+
+      .bottomMargin32 {
+        margin-bottom: 32px;
+      }
+
+      .bottomPadding8 {
+        padding-bottom: 8px;
+      }
+
+      .bottomPadding96 {
+        padding-bottom: 96px;
+      }
+
+      .bottomPadding128 {
+        padding-bottom: 128px;
+      }
+
+      .centerText {
+        text-align: center;
+      }
+
+      .inline {
+        display: inline-block;
+      }
+
+      .page-title {
+        font-size: 24px!important;
+      }
+
+      .container {
+        padding: 16px;
+        margin-bottom: 64px;
+      }
+
+      /* Tablet+ */
+      @media (min-width: 601px) {
+
+        .page-title {
+          @apply(--paper-font-display2);
+        }
+
+        .container {
+          padding-top: 32px;
+          padding-bottom: 32px;
+          padding-left: 10%;
+          padding-right: 10%;
+        }
+
+      }
+
+    </style>
+  </template>
+</dom-module>

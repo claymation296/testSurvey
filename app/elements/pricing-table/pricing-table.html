@@ -1,0 +1,324 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+
+<dom-module id="pricing-table">
+  <template>
+    <style>
+
+      :host {
+      	display: block;
+      }
+
+      .content {
+        position: relative;
+        margin-bottom: 64px;
+      }
+
+      .date {
+        float: right;
+        padding-left: 16px;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 24px;
+        color: var(--secondary-text-color);
+      }
+
+      .inline {
+        display: inline-block;
+      }
+
+      .rightAlign {
+        text-align: right;
+      }
+
+      .info {
+        max-width: 300px;
+        margin-bottom: 32px;
+      }
+
+      .layout {
+        display: block;
+      }
+
+      .dialogTitle {
+        font-size: 20px;
+        font-weight: 400;
+      }
+
+      .bottomMargin16 {
+        margin-bottom: 16px;
+      }
+
+      .bold {
+        font-weight: bold;
+      }
+
+      #project {
+        position: static;
+      }
+
+      .tableLabels {
+        display: flex;
+        align-items: flex-end;
+        height: 100%;
+        margin-bottom: 32px;
+        font-size: 14px;
+        font-weight: bold;
+        color: var(--primary-text-color);
+        background-color: white;
+      }
+
+      #exsisting {
+        width: 42%;
+        text-align: left;
+      }
+
+      #upgrade {
+        width: 38%;
+        text-align: center;
+      }
+
+      #quantity {
+        width: 20%;
+        text-align: center;
+      }
+
+      .areaName {
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--divider-color);
+        font-size: 20px;
+        font-weight: 400;
+      }
+
+      .secondary {
+      	margin-bottom: 32px;
+      }
+
+      #rows {
+      	display: inline-flex;
+      	width: 100%;
+        height: 44px; /*quick iphone hack 3/31/2016*/
+        font-size: 12px;
+        padding: 8px 0px;
+      }
+
+      #fixture {
+        width: 42%;
+      }
+
+      #description {
+        width: 38%;
+        text-align: center;
+      }
+
+      #count {
+        width: 20%;
+        text-align: center;
+      }
+
+      /* Tablet+ */
+      @media (min-width: 601px) {
+
+        .info {
+          margin-top: 64px;
+        }
+
+        .layout {
+          display: inline-block;
+        }
+
+        #project {
+          position: absolute;
+          right: 10%;
+        }
+
+        .tableLabels {
+          font-size: 16px;
+        }
+
+	      #rows {
+	        padding: 16px 0px;
+	      }        
+      }
+
+    </style>
+
+
+    <div class="content">
+      <div class="date inline">[[date]]
+        <div class="rightAlign" hidden$="[[hideVersion]]">v[[version]]</div>
+      </div>
+
+      <div class="info layout">
+        <div class="dialogTitle bottomMargin16 bold">Prepared For</div>
+        <div>[[client.companyName]]</div>
+        <div hidden$="[[!client.address]]">[[client.address]]</div>
+        <div hidden$="[[!client.address]]">[[client.city]], [[client.state]] [[client.zip]]</div>
+        <div>[[client.clientName]]</div>
+        <div>[[client.phone]]</div>
+        <div>[[client.email]]</div>
+      </div>
+
+      <div id="project" class="info layout">
+        <div class="dialogTitle bottomMargin16 bold" 
+             hidden$="[[!showProjectTitle]]">
+             Project Location
+        </div>
+        <div hidden$="[[!client.projectName]]">[[client.projectName]]</div>
+        <div hidden$="[[!client.projectDescription]]">[[client.projectDescription]]</div>
+        <div hidden$="[[!client.projectAddress]]">[[client.projectAddress]]</div>
+        <div hidden$="[[!client.projectAddress]]">
+             [[client.projectCity]], [[client.projectState]] [[client.projectZip]]
+        </div>
+        <div hidden$="[[!client.projectContact]]">[[client.projectContact]]</div>
+      </div>
+    </div>
+
+
+
+    <div class="tableLabels">
+      <div id="exsisting" class="inline">Existing Fixture</div>
+      <div id="upgrade" class="inline">LED Upgrade</div>
+      <div id="quantity" class="inline">Count</div>
+    </div>
+
+    
+    <template is="dom-repeat" 
+    					items="[[templateArray]]" 
+    					as="area"
+            	initial-count="5" 
+            	target-framerate="60" 
+            	strip-whitespace> 
+
+      <div class="areaName">[[area.area]]</div> 
+
+      <div class="secondary">
+        <template is="dom-repeat" items="[[area.rows]]">
+          <div id="rows">
+            <div id="fixture">
+              <span hidden$="[[item.custom]]">[[item.fixture]]</span>
+              <span hidden$="[[!item.custom]]">Custom Product $[[item.customProduct]]</span>
+            </div>
+            <div id="description">
+              <span hidden$="[[item.custom]]">[[item.replacement]]</span>
+              <span hidden$="[[!item.custom]]">Custom Install $[[item.customInstall]]</span>
+            </div>
+            <div id="count">[[item.count]]</div>
+          </div>
+        </template>
+      </div>
+
+    </template>
+
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'pricing-table',
+
+        properties: {
+          // from parent
+          client: Object,
+          // from parent
+          date: Date, 
+          // from parent
+          version: Number,
+        	// from parent
+        	pricing: Object,
+          // control state of 'Project Information' line
+          showProjectTitle: {
+            type: Boolean,
+            computed: '_computeShowProjectTitle(client)'
+          },
+          // control state of version number
+          hideVersion: {
+            type: Boolean,
+            computed: '_computeHideVersion(version)'
+          },
+        	// templateArray is decoupled from selectedPricing
+          // in order to correctly update the template repeater
+          templateArray: {
+            type: Array,
+            computed: '_computeTemplateArray(pricing)'
+          }
+        },
+
+        // show/hide state of 'Project Information' title
+        _computeShowProjectTitle(obj) {
+          if (obj === undefined || obj === null) { return false; }
+
+          const array = [
+            'projectName',
+            'projectAddress',
+            'projectCity',
+            'projectState',
+            'projectZip',
+            'projectContact',
+            'projectDescription'
+          ];
+
+          return array.some(key => obj[key]);
+        },
+
+
+        _computeHideVersion: version => version > 0 ? false : true,
+        // holds area name which is checked during the reduce method
+        // to group all like areas together to display in the quote table
+        _computeTemplateArray: pricing => {
+          if (!pricing) { return; }
+          const {collection} = pricing;
+
+          let currentArea;
+
+          const areas = collection.reduce((prev, curr) => {
+            const {
+              area, 
+              fixture, 
+              replacement, 
+              count, 
+              custom, 
+              customInstall, 
+              customProduct
+            } = curr;
+
+            if (currentArea === undefined || currentArea !== area) {
+              currentArea = area;
+              prev.push({
+                area,
+                rows: [{fixture, replacement, count, custom, customInstall, customProduct}]
+              });
+            } else if (currentArea === area) {
+              const lastElement = prev.length - 1;
+              prev[lastElement].rows.push({
+                fixture, 
+                replacement, 
+                count, 
+                custom, 
+                customInstall, 
+                customProduct
+              });
+            }
+
+            return prev;
+          }, []);
+
+          return areas;
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

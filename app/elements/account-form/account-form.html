@@ -1,0 +1,504 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/tab-page-animation-behavior.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="account-form">
+  <template>
+  	<style include="shared-styles"></style>
+    <style>
+
+      :host {
+        display: flex;
+        justify-content: center;
+      }
+
+      #content {
+        width: 100%;
+        max-width: 460px;
+      }
+
+      gold-phone-input {
+        width: 100%;
+      }
+
+      gold-zip-input {
+        width: 100%;
+      }
+
+      .bottomPadding {
+        padding-bottom: 16px;
+      }
+
+    </style>
+
+    <iron-localstorage id="localstorage" 
+                       name="redaap-client"
+                       value="{{client}}"
+                       auto-save-disabled
+                       on-iron-localstorage-load="_loadClientFromLocalstorage"
+                       on-iron-localstorage-load-empty="_initializeClientLocalstorage"
+                       error-message="{{localStorageError}}">
+    </iron-localstorage>
+
+
+    <div id="content">
+
+
+      <div id="clientCards" class="clientCards">
+        <paper-card heading="Client Information" class="title">
+        	<div class="card-content">
+        		<paper-input label="Primary Contact Name *"
+                         autocapitalize 
+                         autocomplete 
+                         autocorrect 
+                         required 
+                         maxLength="30" 
+                         char-counter
+                         allowed-pattern="[a-zA-Z\s]"
+                         prevent-invalid-input 
+                         value="{{info.clientName}}">
+            </paper-input>
+            <gold-phone-input id="phone"
+                              label="Phone Number *"
+                              auto-validate 
+                              required
+                              value="{{info.phone}}">
+            </gold-phone-input>
+            <!-- dont allow spaces, newline, carriage returns, etc. 
+                 allow any alphanumeric combo before one '@' followed by 
+                 any alphanumeric combo followed by one '.' followed by any alphanumeric combo -->
+            <paper-input id="email"
+                         label="Email *"
+                         type="email"
+                         allowed-pattern="[^\s\f\n\r\t\v]"
+                         prevent-invalid-input 
+                         pattern=".+@{1}.+\.{1}.+"
+                         auto-validate 
+                         required 
+                         error-message="Please enter a valid email format"
+                         value="{{info.email}}">
+            </paper-input>
+            <paper-input label="Company *"
+                         autocapitalize 
+                         autocomplete 
+                         autocorrect
+                         required 
+                         maxLength="30" 
+                         char-counter
+                         allowed-pattern="[0-9a-zA-Z\s]"
+                         prevent-invalid-input 
+                         value="{{info.companyName}}">
+            </paper-input>
+            <paper-input label="Address"
+                         autocapitalize 
+                         autocomplete 
+                         autocorrect
+                         maxLength="30" 
+                         char-counter
+                         allowed-pattern="[.#0-9a-zA-Z\s]"
+                         prevent-invalid-input 
+                         value="{{info.address}}">
+            </paper-input>
+            <paper-input label="City"
+                         autocapitalize 
+                         autocomplete 
+                         autocorrect 
+                         auto-validate
+                         maxLength="30" 
+                         char-counter 
+                         allowed-pattern="[a-zA-Z\s]"
+                         prevent-invalid-input
+                         value="{{info.city}}">
+            </paper-input>
+            <paper-input id="state"
+                         label="State Abbreviation"
+                         auto-validate
+                         char-counter
+                         autocapitalize
+                         allowed-pattern="[a-zA-Z]"
+                         prevent-invalid-input
+                         minLength="2" 
+                         maxLength="2"
+                         error-message="Please use two letter state code only"
+                         value="{{info.state}}">
+            </paper-input>
+            <gold-zip-input id="zip"
+                            auto-validate
+                            value="{{info.zip}}">
+            </gold-zip-input>
+          </div>
+          <paper-item class="noSelect">* required fields</paper-item>
+        </paper-card>
+
+        <paper-card heading="Project Information" class="title bottomPadding">
+          <div class="card-content">
+            <paper-button class="buttons" 
+                          on-tap="_sameAsClientButtonTapped" 
+                          raised>same as client
+            </paper-button>
+            <paper-input label="Project Name"
+                         autocapitalize autocomplete autocorrect
+                         maxLength="30" char-counter
+                         allowed-pattern="[#0-9a-zA-Z\s]"
+                         prevent-invalid-input 
+                         value="{{info.projectName}}">
+            </paper-input>
+            <paper-input label="Project Address"
+                         autocapitalize 
+                         autocomplete 
+                         autocorrect
+                         maxLength="30" 
+                         char-counter
+                         allowed-pattern="[.#0-9a-zA-Z\s]"
+                         prevent-invalid-input
+                         value="{{info.projectAddress}}">
+            </paper-input>
+            <paper-input label="Project City"
+                         autocapitalize 
+                         autocomplete 
+                         autocorrect
+                         auto-validate
+                         maxLength="30" 
+                         char-counter 
+                         allowed-pattern="[a-zA-Z\s]"
+                         prevent-invalid-input
+                         value="{{info.projectCity}}">
+            </paper-input>
+            <paper-input id="projectState"
+                         label="Project State Abbreviation"
+                         auto-validate
+                         char-counter
+                         autocapitalize
+                         allowed-pattern="[a-zA-Z]"
+                         prevent-invalid-input
+                         minLength="2" 
+                         maxLength="2"
+                         error-message="Please use two letter state code only"
+                         value="{{info.projectState}}">
+            </paper-input>
+            <gold-zip-input id="projectZip"
+                            auto-validate
+                            value="{{info.projectZip}}">
+            </gold-zip-input>
+            <paper-input label="Project Site Contact"
+                         autocapitalize 
+                         autocomplete 
+                         autocorrect  
+                         maxLength="30" 
+                         char-counter
+                         allowed-pattern="[a-zA-Z\s]"
+                         prevent-invalid-input
+                         value="{{info.projectContact}}">
+            </paper-input>
+            <paper-input label="Project Job Description"
+                         autocapitalize 
+                         autocomplete 
+                         autocorrect
+                         maxLength="30" 
+                         char-counter
+                         value="{{info.projectDescription}}">
+            </paper-input>
+          </div>    
+        </paper-card>
+      </div>
+
+      <div class="bottomPadding96"></div>
+    </div>
+	  	
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'account-form',
+
+        behaviors: [
+          window.Redaap.Behaviors.Utilities,                
+          window.Redaap.Behaviors.TabPageAnimationBehavior, 
+          window.Redaap.Behaviors.OnTapBehavior             
+        ],
+
+        properties: {
+          // shares data with main-page and localstorage
+          client: {
+          	type: Object,
+          	notify: true
+          },
+          // used to clear input
+          clearInput: {
+            type: Object,
+            value: {
+              clientName: '',
+              phone: '',
+              email: '',
+              companyName: '',
+              address: '',
+              city: '',
+              state: '',
+              zip: '',
+              projectName: '',
+              projectAddress: '',
+              projectCity: '',
+              projectState: '',
+              projectZip: '',
+              projectContact: '',
+              projectDescription: '',
+              surveyVersion: undefined
+            }
+          },
+          // holds client info from input fields
+          info: {
+            type: Object,
+            value: {
+              clientName: '',
+              phone: '',
+              email: '',
+              companyName: '',
+              address: '',
+              city: '',
+              state: '',
+              zip: '',
+              projectName: '',
+              projectAddress: '',
+              projectCity: '',
+              projectState: '',
+              projectZip: '',
+              projectContact: '',
+              projectDescription: '',
+              surveyVersion: undefined
+            }
+          },
+          // displayed in app main toolbar middle
+          displayedClientCompanyName: {
+            type: String,
+            notify: true,
+            computed: '_computeDisplayedClientCompanyName(info.companyName)'
+          },
+          // a list of element id's that will be checked for proper format validity
+          idArray: {
+            type: Array,
+            value: [
+              '#phone',
+              '#email',
+              '#state',
+              '#zip',
+              '#projectState',
+              '#projectZip'
+            ]
+          },
+          // survey version if not original copy
+          version: {
+          	type: Number,
+          	observer: '_newVersion'
+          },
+          // state of all inputs
+          // paper-fab tap calls _load function which checks input validity
+          clientValid: {
+          	type: Boolean,
+          	value: false,
+          	notify: true,
+            observer: '_clientValidChanged'
+          },
+          // allow user to easily nav to signage or lighting menu once client info is complete
+          route: {
+            type: String,
+            notify: true
+          },
+          
+          localStorageError: {
+            type: String,
+            observer: '_localStorageError'
+          }
+        },
+
+
+        observers: [
+        	'_populateClientObj(info.*)'
+        ],
+
+
+
+
+
+
+        // !!!!!!!!!!@@@@@@####### temporary solution until a 'home' page is created $$$$$$$$%%%%
+        attached() {
+          if (this.route === 'home') {
+            this.set('route', 'client');
+          }
+        },
+
+
+
+
+
+
+        
+
+        // decouple this.info from any notifying properties and truncate string
+        _computeDisplayedClientCompanyName: str => (str.length > 25) ? `${str.slice(0, 22)}...` : str,
+
+        
+        _clientValidChanged(bool, oldBool) {
+          if (oldBool === undefined) { return; }
+
+          window.Redaap.accountBadge.hidden = !bool;
+          // scroll to top of account-form to display nav buttons
+          if (this.route === 'client' && bool) {
+            const scrollUp = () => {
+              window.Redaap.mainScroll.scrollToTop(true);
+            };
+
+            this.schedule(scrollUp);
+          }
+        },
+
+        // called by account-fab
+        checkForm() {
+          const load = () => {
+            // cb for filter function
+            const requiredFields = key => {
+              const required = (
+                key === 'clientName' ||
+                key === 'phone'      ||
+                key === 'email'      ||
+                key === 'companyName'
+              );
+              return required;
+            };
+            // searches a shallow object for a given value and returns a boolean
+            const searchObject = (obj, value) => {
+              for (const key in obj) {
+                if (requiredFields(key)) {
+                  if (obj[key].trim() === value) {
+                    return true;
+                  }
+                }
+              }
+
+              return false;
+            };
+            // create a function that returns a boolean based on the client obj values
+            // true if any inputs are left blank and false if they have all been filled in
+            const emptyInput = searchObject(this.info, '');
+            // loop through this.idArray to find any elements with false values
+            // meaning an input field value has an invalid format
+            // if the element has a value, run the validate method, otherwise return true
+            const validInput = this.idArray.every(el => this.$$(el).value ? this.$$(el).validate() : true);
+            // check form for a signature and all completed fields
+            if (emptyInput) {
+              this.set('clientValid', false);
+              this.warn('Please complete all required fields');
+            } else if (!validInput) {
+              this.set('clientValid', false);
+              this.warn('Please check the format of all required fields');
+            } else {
+              this.set('clientValid', true);
+              // listened for in lighting-main
+              this.fire('account-form-validated');
+            }
+          };
+
+          this.schedule(load);
+        },
+
+        // called from paper-button
+        _sameAsClientButtonTapped() {
+          const setInputs = () => {
+            // allow user to copy entries to matching project inputs if
+            // they are the same place 
+            const {companyName, address, city, state, zip} = this.info;
+
+            this.set('info.projectName', companyName);
+            this.set('info.projectAddress', address);
+            this.set('info.projectCity', city);
+            this.set('info.projectState', state);
+            this.set('info.projectZip', zip);
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = setInputs;
+        },
+
+        // this.client follows this.info
+        _populateClientObj(info) {
+        	if (info.base) {
+            this.debounce('localstorageDebounce', () => {
+              const save = () => {
+                // reset valid if user makes any changes
+                this.set('clientValid', false);
+                // force localstorage to save the entire object
+                // at once instead of iterating over individual keys
+                // because localstorage autosave listens for value.*
+                this.client = undefined;
+                this.set('client', info.base);
+                this.$.localstorage.save();
+              };
+
+              this.schedule(save);
+            }, 500);
+        	}
+        },
+
+        // called by survey-search.html anytime the user loads in an old survey
+        reloadClientFromSavedSurvey(obj) {
+          this.info = obj;
+          this.set('client', obj);
+          this.$.localstorage.save();
+        },
+
+
+        _resetInput() {
+          this.info = Object.assign({}, this.clearInput);
+        },
+        // clearClient is called by main-page
+        // when user chooses to clear the survey
+        // reset input as well as client/localstorage
+        clearClient() {
+          const clear = () => {
+            this._resetInput();
+            this.set('client', this.info);
+            this.$.localstorage.save();
+          };
+
+          this.schedule(clear);
+        },
+
+        // passed in from main-page
+        _newVersion(v) {
+        	this.set('client.surveyVersion', v);
+          this.$.localstorage.save();
+        },
+
+        // populate paper-inputs with cached data
+        _loadClientFromLocalstorage() {
+          this.info = this.client;
+        },
+
+        // invoked if localstorage cache is empty
+        _initializeClientLocalstorage() {
+          this.set('client', this.info);
+          this.$.localstorage.save();
+        },
+        
+
+        _localStorageError(error) {
+          console.log('client localstorage error: ', error);
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

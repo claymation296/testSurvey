@@ -1,0 +1,188 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<script>
+	(function() {
+		
+	  window.Redaap.Behaviors = window.Redaap.Behaviors || {}; // jshint ignore:line
+
+	  
+    // this behavior is based off of Paul Lewis's FLIP animation technique to expand or collapse
+    // an element using transforms only in order to achieve 60fps
+    // it takes three arguments: beginning, intermediate, and final elements
+    // it measures the beginning and final elements and applys a transform on the intermediate
+    // element so that it transitions from the inital element's size to the final one's
+    // the intermediate element will fade in quickly before the transform and fades out after
+    // the transform completes to hide/reveal both beginning and final state elements
+    // the second and last args are optional. If not present, the intermediate will be a solid white
+    // mask. If the last is omitted, then the animation will default to fullscreen
+	  const SlideLeftToDeleteImp = {
+	    properties: {
+	    	_slElement: Object,
+
+	    	_slTransitionClass: String,
+
+	    	_slOpenClass: String,
+
+	    	_slIsAlreadyOpen: Boolean,
+
+	    	_slFinalState: String
+	    },
+
+	    _slUpdateXPos(x, element) {
+	    	this.transform(`translate(${x}px, 0px)`, element);
+	    },
+
+	    _slCleanUp() {
+	    	if (this._slFinalState === 'close') {
+	    		Polymer.dom(this._slElement).classList.remove(this._slOpenClass);
+	    	} else if (this._slFinalState === 'open') {
+	    		Polymer.dom(this._slElement).classList.add(this._slOpenClass);
+	    	}
+	    	Polymer.dom(this._slElement).classList.remove(this._slTransitionClass);
+	    	this._slElement.style.transform = '';
+	    	this.unlisten(this._slElement, 'transitionend', '_slCleanUp');
+	    	
+	    	this._slIsAlreadyOpen = undefined;
+	    	this._slElement       = undefined;
+	    },
+
+	    _slSetSLElement(element) {
+	    	// elementTrack takes the event and the element to animate
+        // in this case animate the paper-card no matter which child
+        // fires the track event
+        // setting _slElement inside this function since Polymer operations are async
+        this._slElement = element;
+        Polymer.dom(this._slElement).classList.remove(this._slTransitionClass);
+        // check to see if the element is already in its open state
+  			this._slIsAlreadyOpen = Polymer.dom(this._slElement).classList.contains(this._slOpenClass);
+	    },
+
+
+	    _slStart(event) {
+	    	// moved from _slCleanUp in order to early return in the delete button
+      	// func based on 'open' state
+      	this._slFinalState = undefined;
+        const target = Polymer.dom(event).rootTarget;
+
+        if (target.id && target.id === 'slider') {
+        	this._slSetSLElement(target);
+        } else {
+        	// walk up the dom tree until '#slider' is found
+          // since it is the element to animate
+          const findSlider = el => {
+            // el.host in case parent is the shadowRoot boundry
+            const elParent = Polymer.dom(el).parentNode || el.host;
+
+            if (elParent.tagName === 'SLIDE-DELETE') {
+            	const slider = elParent.$.slider;
+            	this._slSetSLElement(slider);
+            	return;
+            } else if (elParent.id && elParent.id === 'slider') {
+            	this._slSetSLElement(elParent);
+            	return;
+            }
+            findSlider(elParent);
+          };
+          // start recursive func
+          findSlider(target);
+        }
+	    },
+
+	    _slTrack(event, slideTravel) {
+	    	// checking _slElement since Polymer dom operations are async
+      	if (this._slElement) {
+
+      		const dx = event.detail.dx;
+
+      		if (this._slIsAlreadyOpen) {
+      			// create a threshold to be considered 'far enough'
+      			// if user slides the element past the threshold then finish closing the element
+      			// for them if they end their gesture
+      			if (dx > slideTravel * 0.25) {
+        			// user has slid the element closed a bit
+        			this._slFinalState = 'close';
+        		}
+        		// only animate between open and closed limits
+      			if (dx > 0 && dx < slideTravel) {
+        			// user is sliding element within fully open threshold
+        			this._slUpdateXPos(dx, this._slElement);
+        		}
+      		} else {
+      			// create a threshold to be considered 'far enough'
+      			// if user slides the element past the threshold then finish opening the element
+      			// for them if they end their gesture
+      			if (dx <= -(slideTravel * 0.75)) {
+        			// user has fully slid the element open
+        			this._slFinalState = 'open';
+        		} else {
+        			// reset back to original position
+        			this._slFinalState = undefined;
+        		}
+        		// only animate between open and closed limits
+        		if (dx >= -slideTravel && dx < 1) {
+        			// user is sliding element within fully open threshold
+        			this._slUpdateXPos(dx, this._slElement);	
+        		}
+      		}
+      	}
+	    },
+
+	    _slEnd(slideTravel) {
+	    	if (this._slElement) {
+      		Polymer.dom(this._slElement).classList.add(this._slTransitionClass);
+          this.listen(this._slElement, 'transitionend', '_slCleanUp');
+
+          if (this._slFinalState === 'open') {
+          	// move to full slide travel
+          	this.transform(`translate(-${slideTravel}px, 0px)`, this._slElement);
+          } else if (this._slFinalState === 'close') {
+          	// set to closed position
+          	this.transform(`translate(${slideTravel}px, 0px)`, this._slElement);
+          } else {
+          	// reset back to original position
+          	this._slElement.style.transform = '';
+          }
+      	}
+	    },
+
+	    // this method takes the track event, transition class, open state class
+      // and the slide travel which is the max distance in pixels that the slider 
+      // can travel in the x direction
+	    slElementTrack(event, transitionClass, openClass, slideTravel) {
+	    	this._slTransitionClass = transitionClass;
+	    	this._slOpenClass = openClass;
+	    	const state = event.detail.state;
+
+        switch(state) {
+          case 'start':
+            window.requestAnimationFrame.bind(this, this._slStart(event));
+            break;
+          case 'track':
+          	window.requestAnimationFrame.bind(this, this._slTrack(event, slideTravel));
+            break;
+          case 'end':
+          	this._slEnd(slideTravel);
+            break;
+
+          default:
+						break;
+        }
+      }
+	  };
+
+	  window.Redaap.Behaviors.SlideLeftToDeleteBehavior = [ 
+	  	SlideLeftToDeleteImp
+  	];
+		
+	})();
+
+</script>
+

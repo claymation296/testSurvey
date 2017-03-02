@@ -1,0 +1,277 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+
+<link rel="import" href="../card-inputs/inputs-repeater.html">
+<link rel="import" href="../slide-delete/slide-delete.html">
+
+
+
+<dom-module id="replacements-repeater">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      .noSelect {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      .label {
+      	border-top: 1px solid #e8e8e8;
+        background-color: white;
+      }
+
+      .labelContainer {
+        background-color: white;
+        height: 40px;
+        padding: 32px 16px;
+        line-height: 40px;
+      }
+ 
+      .labelIcon {
+        top: -8px;
+        --iron-icon-width: 40px;
+        --iron-icon-height: 40px;
+        --iron-icon-stroke-color: var(--primary-text-color);
+      }
+
+      paper-item {
+        display: inline-block;
+        top: -16px;
+        --paper-item-disabled-color: var(--primary-text-color);
+      }
+
+      paper-input {
+        --paper-input-container-focus-color: var(--dark-primary-color);
+        --paper-input-container-underline-focus: {
+          background-color: var(--dark-primary-color);
+        };
+      }
+
+      .custom {
+        display: flex;
+        padding: 0px 16px;
+      }
+
+      .customInput {
+        display: inline-block;
+        width: 33.32%;
+      }
+
+      #centerCustomInput {
+        padding: 0px 16px;
+      }
+
+      .inputsContainer {
+        position: relative;
+      }
+
+      .total {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 56px;
+        height: 56px;
+        position: absolute;
+        top: 24px;
+        right: 16px;
+        color: var(--primary-text-color);
+        background-color: var(--light-primary-color);
+        border-radius: 50%;
+        overflow: hidden;
+        opacity: 0;
+        -webkit-transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out;
+                transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out;
+      }
+
+      .openQty {
+        opacity: 1;
+      }
+
+      .hightlightedTransitions {
+        -webkit-transition: color 0.3s ease-in-out 0.3s, background-color 0.3s ease-in-out 0.3s;
+        transition: color 0.3s ease-in-out 0.3s, background-color 0.3s ease-in-out 0.3s;
+      }
+
+      .highlighted {
+        --iron-icon-stroke-color: var(--primary-text-color);
+        color: var(--primary-text-color);
+        background-color: var(--warning-yellow);
+      }
+
+    </style>
+
+  	<template id="replacementsRepeater" is="dom-repeat" 
+      items="{{replacements}}" strip-whitespace
+      initial-count="5" target-framerate="60">
+      
+        <div class="label">
+
+          <slide-delete class="slide"
+                        template-id="replacementsRepeater"
+                        template-item-class-name="label"
+                        index="[[index]]"
+                        disable-last-element-delete>
+
+            <div class$="labelContainer noSelect hightlightedTransitions [[item.highlighted]]">
+              <iron-icon class="labelIcon" 
+                icon="custom-icons:[[item.icon]]" 
+                hidden$="[[!item.icon]]">
+              </iron-icon>
+              <paper-item disabled>
+                <paper-item-body two-line>
+                  <div>{{_computeFirstLabelLine(item.label)}}</div>
+                  <div secondary>{{_computeSecondLabelLine(item.label)}}</div>
+                </paper-item-body>
+              </paper-item>
+              <div class$="total [[item.openQty]]">[[item.count]]</div>
+            </div>
+          </slide-delete>
+
+
+
+          <template is="dom-if" if="[[item.custom]]">
+            <div class="custom">
+              <paper-input class="customInput"
+                           type="tel"
+                           label="Product"
+                           maxLength="6"
+                           min="0"
+                           allowed-pattern="[0-9]"
+                           prevent-invalid-input 
+                           value="{{item.customProduct}}">
+                <div prefix>$</div>
+              </paper-input>
+              <paper-input id="centerCustomInput"
+                           class="customInput"
+                           type="tel"
+                           label="Install"
+                           maxLength="6"
+                           min="0"
+                           allowed-pattern="[0-9]"
+                           prevent-invalid-input 
+                           value="{{item.customInstall}}">
+                <div prefix>$</div>
+              </paper-input>
+              <paper-input class="customInput" 
+                           type="tel"
+                           label="Quantity"
+                           maxLength="6"
+                           min="0"
+                           allowed-pattern="[0-9]"
+                           prevent-invalid-input 
+                           value="{{item.count}}">
+              </paper-input>
+            </div>
+          </template>
+
+          <div class="inputsContainer">
+            <inputs-repeater class="inputs" 
+                             array="{{item.tallies}}" 
+                             hidden$="[[item.custom]]">
+            </inputs-repeater>
+          </div>
+
+        </div> 
+      
+    </template>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'replacements-repeater',
+        properties: {
+        	replacements: Array,
+        },
+
+        listeners: {
+          // fired from inputs-repeater
+          'inputs-repeater-tally-totalled': '_tallyTotalled',
+          // fired by inputs-repeater
+          'inputs-repeater-last-input-deleted': '_lastInputDeleted',
+          // fired from slide-delete
+          // must intercept the event and refire it from 
+          // this element's context so that the event will reflect the same context
+          // the event is used in area-edit to determing the correct index from the template repeater
+          'slide-delete-last-element-deleted': '_lastElementDeleted'
+        },
+        // label ie. 'A19 6W (50W In)'.  Output ie. 'A19 6W'
+        // string -> string
+        _computeFirstLabelLine(label) {
+          return label.split('(')[0].trim();
+        },
+        // label ie. 'A19 6W (50W In)'.  Output ie. '50W In'
+        // string -> string
+        _computeSecondLabelLine(label) {
+          const subLabel = label.split('(');
+          if (subLabel.length === 2) {
+            return subLabel[1].trim().slice(0, -1);
+          }
+          return;
+        },
+        // event from inputs-repeater
+        // trigger the slide-delete in this context to delete the whole fixture 
+        // when user deletes last row of inputs
+        _lastInputDeleted(event) {
+          // the slide-delete element in this local dom 
+          // (one level up from the el that fired original event)
+          const slideDelete = Polymer.dom(event).rootTarget.parentElement.parentElement.firstChild;
+
+          slideDelete.deleteElement();
+        },
+        // slide-delete event
+        // intercept and block the 'slide-delete-last-element-deleted' event from bubbling
+        _lastElementDeleted(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          // ignore event if there are still other replacements left in the same card
+          if (this.replacements.length > 1) { return; }
+          // fire a new event that will have the proper context for the listening parent
+          // inform parent there are no more remaining elements to delete
+          this.fire('replacements-repeater-last-replacement-deleted', event.detail);
+        },
+        // fired from inputs-repeater child element each time user adds tally data
+        // add count to solutionsArray
+        _tallyTotalled(event) {
+          // get model data from event
+          const model = this.$.replacementsRepeater.modelForElement(Polymer.dom(event).rootTarget);
+          // define a total variable from the event payload
+          const total = event.detail.total;
+          model.set('item.count', total);
+          // fade the fixture qty div in and out with a css transition
+          // by setting its 'openQty' class
+          if (total) {
+            model.set('item.openQty', 'openQty');
+            model.set('item.highlighted', '');
+            this.fire('replacements-repeater-zero-quantity', {zeroQuantity: false, model});
+          } else {
+            model.set('item.openQty', '');
+            model.set('item.highlighted', 'highlighted');
+            // prohibit user from navigating out of edit with a replacement left without
+            // a meaningful quantity
+            this.fire('replacements-repeater-zero-quantity', {zeroQuantity: true, model});
+          }
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

@@ -1,0 +1,536 @@
+ <!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="replacement-array.html">
+<link rel="import" href="solution-content.html">
+<link rel="import" href="../photo-capture/photo-capture.html">
+<link rel="import" href="../notes-page/notes-button.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="solution-view">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        display: block;
+		    background-color: transparent;
+        /*used to define the new height for a card each time another tally row is added*/
+        --add-tally-height: 0px;
+      }
+
+      #ripple {
+        width: 100%;
+        height: 100%;
+        background-color: white;
+      }
+      /*setup for proper background image crossfade*/
+      paper-scroll-header-panel {
+        --paper-scroll-header-panel-full-header: {
+          background-color: transparent;
+        };
+        --paper-scroll-header-panel-condensed-header: {
+          background-color: var(--dark-primary-color);
+        };
+        --paper-scroll-header-panel-header-container: {
+          background-color: var(--dark-primary-color);
+        };
+        --paper-scroll-header-panel-container: {
+          display: flex;
+          justify-content: center;
+          background-color: var(--primary-background-color);
+        };
+      }
+
+      paper-toolbar {
+        --paper-toolbar-background: transparent;
+        --paper-toolbar-title: {
+          line-height: normal;
+        };
+      }
+
+      #titleIcon {
+        --iron-icon-width: 48px;
+        --iron-icon-height: 48px;
+        --iron-icon-stroke-color: white;
+      }
+
+      photo-capture {
+        --photo-capture-background-color: transparent;
+      }
+
+    </style>
+
+    <replacement-array replacements="{{allReplacementsArray}}"></replacement-array>
+
+    <div id="ripple" hidden$="[[hideFake]]"></div>
+
+
+
+    <paper-scroll-header-panel id="panel" 
+                               condenses 
+                               condensed-header-height="112">                               
+
+    	<paper-toolbar id="toolbar" class="tall" hidden$="[[hideToolbar]]">
+
+
+        <paper-icon-button id="backButton" 
+                           on-tap="_backButtonTapped" 
+                           icon="custom-icons:arrow-back">
+        </paper-icon-button>
+
+        <span id="title" class="title">[[areaName]]</span>
+
+        <photo-capture id="capture" 
+                       filename="[[existingFixture.label]]"
+                       placeholder="{{existingFixture.placeholder}}"
+                       key="{{existingFixture.key}}"
+                       keys="{{existingFixture.keys}}"
+                       saved-url="{{existingFixture.savedUrl}}"
+                       orientation="{{existingFixture.orientation}}"
+                       disable-thumbnail>
+        </photo-capture>
+
+
+        <notes-button id="notesButton" 
+                      existing-fixture="{{existingFixture}}">
+        </notes-button>
+
+        <paper-icon-button id="closeButton" 
+                           on-tap="_closeButtonTapped" 
+                           icon="custom-icons:close">
+        </paper-icon-button>
+
+    		<span id="subTitle" class="bottom title" style="margin-left: 0px;">
+          <iron-icon id="titleIcon" 
+                     icon="custom-icons:[[existingFixture.icon]]" 
+                     hidden$="[[!existingFixture.icon]]">
+          </iron-icon>
+          [[existingFixture.label]]
+        </span>
+
+
+    	</paper-toolbar>
+
+
+      <solution-content id="solutionContent" 
+                        solutions="[[solutions]]"
+                        can-play-items-animation="{{canPlayItemsAnimation}}">
+      </solution-content>
+
+
+  	</paper-scroll-header-panel>
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'solution-view',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior,
+          Polymer.NeonAnimationRunnerBehavior,
+          Polymer.NeonSharedElementAnimationBehavior,
+          window.window.Redaap.Behaviors.OnTapBehavior 
+        ],
+
+        properties: {
+          
+          animationConfig: {
+            value() {
+              return {
+                'entry': {
+                  name: 'ripple-animation',
+                  id: 'ripple',
+                  toPage: this,
+                  timing: {duration: 400, easing: 'ease-out'}
+                },
+                'toolbar': [{
+                  name: 'slide-from-top-animation',
+                  // node set imperitively to headerContainer
+                  timing: {duration: 200, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'slide-from-top-animation',
+                  nodes:  [
+                    this.$.backButton, 
+                    this.$.title, 
+                    this.$.subTitle, 
+                    this.$.capture, 
+                    this.$.notesButton,
+                    this.$.closeButton
+                  ],
+                  timing: {duration: 200, delay: 50, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'fade-in-animation',
+                  nodes:  [
+                    this.$.backButton, 
+                    this.$.title, 
+                    this.$.subTitle, 
+                    this.$.capture, 
+                    this.$.notesButton,
+                    this.$.closeButton
+                  ],
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
+                }], 
+                'preCancel': [{
+                  name: 'slide-up-animation',
+                  // node set imperitively to headerContainer
+                  timing: {duration: 300, easing: 'ease-out'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this.$.solutionContent,
+                  timing: {duration: 200, delay: 100, easing: 'ease-out'}
+                }]
+                // exit animation generated dynamically
+              };
+            }
+          },
+
+          sharedElements: {
+            value() {
+              return {
+                'ripple': this.$.ripple
+              };
+            }
+          },
+          // only fire data out to main-page if user closed this element with a save
+          // rather than closing button
+          readyToFireData: Boolean,
+          // bound to ripple-origin via solution-page
+          prepareSharedElementAnimation: {
+            type: Boolean,
+            value: true,
+            notify: true
+          },
+          // from parent light-list.html to maintain proper indexes over both 
+          // fixture and solution arrays and so element focus can be reset
+          // when the user cancels the save dialog
+        	selectionIndex: Number,
+          // from area-tab via light-selector
+          areaName: String,
+          // displayed in header and used to keep track of data in the uSA
+          existingFixture: Object,
+          // show only the appropriate set of replacement fixtures for a given 
+          // existing fixture selection
+        	solutions: Array,
+          // block the item animation being run every time user adds a new area to a card
+          // which adds elements to the dom thereby firing the _repeaterDomChanged() method
+          canPlayItemsAnimation: {
+            type: Boolean,
+            value: true
+          },
+          // for calling area-tab updateUSA() method
+          areaPageCustomElement: Object,
+          // data payload to be passed to area-tab via its updateUSA() method
+          savedData: Object,
+        },
+        
+        
+        listeners: {
+          'neon-animation-finish':      '_animationFinished',
+          // fired by photo-capture once a temporary url has been passed back from worker
+          'photo-capture-placeholder':  '_placeHolderSrcFromPhotoCapture',
+          // fired by photo-capture once a url has been passed back from db
+          'photo-capture-external-src': '_externalSrcFromPhotoCapture'
+        },
+
+
+        observers: [
+          '_orientationChanged(existingFixture.orientation)'
+        ],
+        // animation config setup since headerContainer is dynamically
+        // created by paper-scroll-header-panel
+        ready() {
+          // for animation config setup
+          const header   = Polymer.dom(this.$.panel).node.$.headerContainer;
+          // must create two divs inside the header backgound div in order
+          // to correct the image orientation
+          // one for placeholder ObjectURL and the other is for the saved url from db
+          const headerBg = Polymer.dom(this.$.panel).node.$.headerBg;
+          this.backgroundImagePlaceholder = document.createElement('div');
+          this.backgroundImage            = document.createElement('div');
+          // initial styles for both divs with no orientation correction
+          this._setupBackgroundImageDiv(this.backgroundImagePlaceholder);
+          this._setupBackgroundImageDiv(this.backgroundImage);
+          // add them to header background
+          Polymer.dom(headerBg).appendChild(this.backgroundImagePlaceholder);
+          Polymer.dom(headerBg).appendChild(this.backgroundImage);
+          // must animate entire header not just paper-toolbar
+          this.animationConfig.toolbar[0].node   = header;
+          this.animationConfig.preCancel[0].node = header;
+        },
+        // get reference to light-tally custom element that is inside main-page
+        // in order to call light-tally's updateUSA() method
+        attached() {
+          this.async(() => {
+            const lightingMainDom     = Polymer.dom(window.Redaap.lightingMain);
+            this.areaPageCustomElement = lightingMainDom.node.$.areaPage;
+          });
+        },
+
+        // initial styles for both background divs that are appended to header panel background
+        _setupBackgroundImageDiv(element) {
+          element.style.height             = '100%';
+          element.style.position           = 'absolute';
+          element.style.top                = '0px';
+          element.style.bottom             = '0px';
+          element.style.left               = '0px';
+          element.style.right              = '0px';
+          element.style.backgroundRepeat   = 'no-repeat';
+          element.style.backgroundSize     = 'cover';
+          element.style.backgroundPosition = 'center center';
+          element.style.transform          = 'rotate(0deg)';
+          element.style.opacity            = '0';
+        },
+
+        // lower the number of elements / layers in dom
+        _hideAreaEditForPerf(bool) {
+          const areaEditIsOpen = window.Redaap.areaEdit.showCards;
+          if (areaEditIsOpen) {
+            window.Redaap.areaEdit.style.display = bool ? 'none' : 'block';
+          }
+        },
+
+
+        _runToolbarAnimation() {
+          // for better photo capture device memory performance
+          this._hideAreaEditForPerf(true);
+          this.hideToolbar = false;
+          this.playAnimation('toolbar', 'toolbar');
+        },
+        // called by solution-page to kick off toolbar and items animations
+        // once the main ripple animation is completed
+        animateItems() {
+          //paper-scroll-header-panel bug fix
+          this.$.panel.measureHeaderHeight();
+          // show the toolbar but hide all the items until after the toolbar
+          // animation completes
+          this.hideFake    = true;
+          this.hideToolbar = true;
+          this.$.capture.resetCaptureButton();
+
+          window.requestAnimationFrame(this._runToolbarAnimation.bind(this));
+        },
+
+        // after user cancels the picker wait to close until after 'preCancel' animation finishes
+        _animationFinished(_, animationType) {
+          switch(animationType) {
+            case 'preCancel':
+              this.hideFake = false;
+              this._close();
+              break;
+            case 'toolbar':
+              // postpone initializing the template repeater til after opening animations
+              // for better user input timing while selecting a light in light-selector
+              // (ie. ~350ms before vs ~3ms after)
+              this.canPlayItemsAnimation = true;
+              // get a clone
+              this.solutions = Array.of(...this.allReplacementsArray[this.selectionIndex]);
+              break;
+            default:
+              return;
+          }
+        },
+
+
+        _correctOrientation(elements, num = 1) {
+          const config = {
+            1: {height: '100%',  pos: 'center center', rotate: '0'},
+            3: {height: '100%',  pos: 'center center', rotate: '180'},
+            6: {height: '100vw', pos: 'center right',  rotate: '90'},
+            8: {height: '100vw', pos: 'center left',   rotate: '-90'}
+          };
+          const {height, pos, rotate} = config[num];
+
+          elements.forEach(element => {
+            element.style.height             = height;
+            element.style.backgroundPosition = pos;
+            element.style.transform          = `rotate(${rotate}deg)`;
+          });
+        },
+
+        // photo-capture image orientation correction for both background divs
+        _orientationChanged(orientation) {
+          const elements = [this.backgroundImage, this.backgroundImagePlaceholder];
+
+          switch (orientation) {
+            case 3:
+              this._correctOrientation(elements, 3);
+              break;
+            case 6:
+              this._correctOrientation(elements, 6);
+              break;
+            case 8:
+              this._correctOrientation(elements, 8);
+              break;
+            default:
+              this._correctOrientation(elements);
+              break;
+          }
+        },
+        // photo-capture placeholder event
+        // controls header background img placeholder
+        // placeholder is set first before the img file has had time to be saved to db
+        // it is removed 500ms after main background div src has been set to avoid flicker
+        _placeHolderSrcFromPhotoCapture(event) {
+          const url = event.detail.placeholder;
+
+          if (url && url !== '#') {
+            this.backgroundImagePlaceholder.style.backgroundImage = `url(${url})`;
+            this.backgroundImagePlaceholder.style.transition      = 'opacity 0.3s ease-out';
+            this.backgroundImagePlaceholder.style.opacity         = '1';
+          } else {
+            this.backgroundImagePlaceholder.style.backgroundImage = 'none';
+            this.backgroundImagePlaceholder.style.transition      = '';
+            this.backgroundImagePlaceholder.style.opacity         = '0';
+          }
+        },
+        // photo-capture external-src event
+        // controls header background img
+        // is set once the img file has been saved to db and then reloaded into browser
+        _externalSrcFromPhotoCapture(event) {
+          const url = event.detail.externalSrc;
+
+          if (url) {
+            this.backgroundImage.style.backgroundImage = `url(${url})`;
+            this.backgroundImage.style.opacity         = '1';
+          } else {
+            this.backgroundImage.style.backgroundImage = 'none';
+            this.backgroundImage.style.opacity         = '0';
+          }
+        },
+
+        // clear all data and close all dropdowns
+        _clearSolutions() {
+          // reset 'cache' arrays
+          if (typeof this.selectionIndex === 'number') {
+            this.$.solutionContent.clearSolutions();
+          }
+          // clear array
+          this.solutions   = undefined;
+          this.savedData   = undefined;
+
+
+
+          // // reset photo-capture placeholder
+          // this.placeholder = undefined;
+
+
+
+
+
+
+          // deselect user selection element focus that is in light-selector
+          window.Redaap.lightSelector.resetSelectionIndex();
+          this.areaPageCustomElement.clearAreaName();
+        },
+
+        // common closing code
+        _close() {
+          // for better photo capture device memory performance
+          this._hideAreaEditForPerf(false);
+          // fire up to solution-page
+          // so it can control further calculations 
+          // based off of animation timing so they arent janked
+          window.requestAnimationFrame(this.fire.bind(this, 'close'));
+        },
+
+        // change exit animation base on user selecting save or tapping the close icon button
+        _setupSaveAnimation() {
+          this.cancelAnimation();
+          // clean up a console warning from Polymer about it not finding the 
+          // 'fromPage' when neon-animated-pages switches back to the ripple-origin page
+          this.prepareSharedElementAnimation = false;
+          this.animationConfig.exit = {
+            name:   'slide-up-animation',
+            node:   this,
+            timing: {easing: 'ease-in'}
+          };
+          this._close();
+        },
+        // called by solution-page in order to wait for the closing animations to complete
+        // before doing further calculations
+        sendDataAndClear() {
+          if (this.readyToFireData) {
+            this.areaPageCustomElement.updateUSA(this.savedData);
+            this.readyToFireData = false;
+          }
+          // reset for ripple effect again
+          this.hideFake = false;
+          // clear and hide all dropdowns
+          this._clearSolutions();
+        },
+        // called by solution-solutionContent
+        // add new data to uSA either making new cards for unique data, or
+        // adding data to an existing card of the same fixture and solution type
+        saveData(solution) {
+          // shallow copy of object with Object.assign 
+          const replacement    = Object.assign({}, solution);
+          const fixture        = Object.assign({}, this.existingFixture);
+          // savedData is sent to area-tab after closing animation completes
+          this.savedData       = {name: this.areaName, fixture, replacement};
+          // only fire data to main-page after a save, not when user closes this element
+          this.readyToFireData = true;
+          this._setupSaveAnimation();
+        },
+
+        // called from close icon button on-tap in top toolbar of this element
+        _backButtonTapped() {
+          // set the animationConfig.exit to cancel animation
+          const setupCancelAnimation = () => {
+            this.cancelAnimation();
+            this.prepareSharedElementAnimation = true;
+            // must run an internal 'preCancel' animation first before calling _close()
+            this.animationConfig.exit = {
+              name:     'reverse-ripple-animation',
+              id:       'ripple',
+              fromPage: this,
+              timing:   {duration: 300, easing: 'ease-out'}
+            };
+            this.playAnimation('preCancel', 'preCancel');
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = setupCancelAnimation;
+        },
+
+        // close this, solution-page and light-selector elements
+        _closeButtonTapped() {
+          // for better photo capture device memory performance
+          this._hideAreaEditForPerf(false);
+          // set the animationConfig.exit to cancel animation
+          const closeAll = () => {
+            this.cancelAnimation();
+            this.prepareSharedElementAnimation = false;
+            // must run an internal 'preCancel' animation first before calling _close()
+            this.animationConfig.exit = [{
+              name:   'slide-down-animation',
+              node:   this,
+              timing: {duration: 300, easing: 'ease-out'}
+            }, {
+              name:   'fade-out-animation',
+              node:   this,
+              timing: {duration: 300, easing: 'ease-out'}
+            }];
+            this.fire('closeAll');
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = closeAll;
+        }
+
+
+      });
+    })();
+  </script>
+
+</dom-module>

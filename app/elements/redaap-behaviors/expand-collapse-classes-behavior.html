@@ -1,0 +1,150 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="utilities.html">
+
+<script>
+	(function() {
+		
+	  window.Redaap.Behaviors = window.Redaap.Behaviors || {}; // jshint ignore:line
+
+	  
+    // this behavior is based off of Paul Lewis's FLIP animation technique to expand or collapse
+    // an element using transforms only in order to achieve 60fps
+	  const ExpandCollapseClassesImp = {
+	    // setup for an element to be used to initialize more than one element
+	    // so they can all be played simultaneously
+	    ecClassesInit(element, lastClass, reverse) {
+        // measure initial position
+        const first = element.getBoundingClientRect();
+        // set last position class
+        const {x, y, sx, sy} = (function() {
+          if (reverse) {
+            Polymer.dom(element).classList.remove(lastClass);
+            // measure final position
+            const last = element.getBoundingClientRect();
+            // setup inverted translate and scale
+            return {
+              // x: last.left - first.left,
+              // y: last.top - first.top,
+              x: Math.abs(first.left - last.left),
+              y: Math.abs(first.top - last.top),
+              sx: last.width > 0 ? first.width / last.width : first.width,
+              sy: last.height > 0 ? first.height / last.height : first.height
+            };
+            
+          } else {
+            Polymer.dom(element).classList.add(lastClass);
+            // measure final position
+            const last = element.getBoundingClientRect();
+            // setup inverted translate and scale
+            return {
+              x: first.left - last.left,
+              y: first.top - last.top,
+              sx: last.width > 0 ? first.width / last.width : first.width,
+              sy: last.height > 0 ? first.height / last.height : first.height
+            };
+          }
+        }());
+        // apply a transform that resets the element back to its orginal
+        // position so that when the transform is removed, the element 
+        // transitions into its final state
+        element.style.transformOrigin = '0 0';
+        element.style.transform = `translate(${x}px, ${y}px) scale(${sx}, ${sy})`;
+      },
+
+
+      // play an already initialized element
+      ecClassesPlay(element, transitionClass, cb) {
+        let removeListener;
+				// remove listeners and run callbacks                                                  
+        const cleanUp = event => {
+        	if (Polymer.dom(event.target).node === element && event.propertyName === 'transform') {
+            removeListener();
+            Polymer.dom(element).classList.remove(transitionClass);
+						if (cb && typeof cb === 'function') {
+							cb();
+						}
+        	} 
+				}; 
+
+        removeListener = () => {
+          element.removeEventListener('transitionend', cleanUp, false);
+        };
+      
+        const play = () => {
+          // listen for transitionend
+          element.addEventListener('transitionend',  cleanUp, false);
+          Polymer.dom(element).classList.add(transitionClass);
+          element.style.transform = '';
+        };
+
+        this.schedule(play);
+      },
+
+      // full animation sequence for running a single element
+      ecClassesAnimation(element, lastClass, transitionClass, reverse, cb) {
+        this.ecClassesInit(element, lastClass, reverse);
+        this.ecClassesPlay(element, transitionClass, cb);
+      },
+    
+
+      ecClassesSlideRemainingCards(remainingCards, newY, transitionClass, cb) {
+
+        const addTransition = () => {
+          remainingCards.forEach(card => {
+            let removeListener;
+
+            const cleanUp = event => {
+              if (event.propertyName === 'transform') {
+                removeListener();
+                Polymer.dom(card).classList.remove(transitionClass);
+                // run cb after last card has finished animating
+                if (cb && typeof cb === 'function') {
+                  const lastCard = (card === remainingCards[remainingCards.length - 1]);
+                  if (lastCard) {
+                    cb();
+                  }
+                }
+              }  
+            };            
+            // cannot move function definitions outside of forEach because it breaks
+            // the removeEventListener method 1/24/2017
+            removeListener = () => {
+              card.removeEventListener('transitionend', cleanUp, false);
+            };
+
+            card.addEventListener('transitionend', cleanUp, false);
+            Polymer.dom(card).classList.add(transitionClass);
+            card.style.transform = '';
+          });
+        };
+        
+        remainingCards.forEach(card => {
+          card.style.transition = '';
+          card.style.transform = `translateY(${newY}px)`;
+        });
+
+        this.schedule(addTransition);
+      }
+	  };
+
+
+
+	  window.Redaap.Behaviors.ExpandCollapseClassesBehavior = [ 
+	  	window.Redaap.Behaviors.Utilities, 
+      ExpandCollapseClassesImp   
+  	];
+		
+	})();
+
+</script>
+

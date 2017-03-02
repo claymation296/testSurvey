@@ -1,0 +1,411 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../card-inputs/inputs-repeater.html">
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+<link rel="import" href="../redaap-behaviors/expand-collapse-classes-behavior.html">
+
+
+<dom-module id="solution-card">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        display: block;
+        /*used to define the new height for a card each time another tally row is added*/
+        --add-tally-height: 0px;
+      }
+
+      .expanding {
+        width: 100%;
+        height: 48px;
+        position: relative;
+        margin: 0px;
+        padding: 0px;
+        border-radius: 3px;
+        overflow: hidden;
+        opacity: 0;
+        transition: opacity 0.2s ease-in;
+      }
+
+      .expandCard {
+        margin: 8px 0px;
+        height: 188px;
+        opacity: 1;
+      }
+
+      .expandCardTransitions {
+        -webkit-transition: transform 0.3s ease-out;
+                transition: transform 0.3s ease-out;
+      }
+
+      .cardTitles {
+        margin-left: 16px;
+      }
+
+      .expandedHeader {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        height: 48px;
+        position: absolute;
+        top: 0px;
+        padding: 0px;
+        color: white;
+        background-color: var(--dark-primary-color);
+        border-radius: 3px 3px 0px 0px;
+        opacity: 0;
+        transition: opacity 0.2s ease-in;
+        box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.14),
+                    0px 1px 5px 0px rgba(0, 0, 0, 0.12),
+                    0px 3px 1px -2px rgba(0, 0, 0, 0.2);
+      }
+
+      .itemIcons {
+      	--iron-icon: {
+      		margin-left: 16px;
+      	};
+        --iron-icon-width: 32px;
+        --iron-icon-height: 32px;
+        --iron-icon-stroke-color: white;
+      }
+
+      .cardContent {
+        opacity: 0;
+        -webkit-transition: opacity 0.2s ease-in 0.2s;
+                transition: opacity 0.2s ease-in 0.2s;
+      }
+
+      .opacity1 {
+        opacity: 1;
+      }
+
+      .custom {
+        display: flex;
+        justify-content: center;
+        max-height: 80px;
+        position: absolute;
+        top: 48px;
+        left: 0px;
+        right: 0px;
+        padding: 0px 16px;
+      }
+
+      .customInput {
+        display: inline-block;
+        width: 33.32%;
+      }
+
+      #centerCustomInput {
+        padding: 0px 16px;
+      }
+
+      .inputs {
+        position: absolute;
+        top: 56px;
+      }
+
+      .cardButtons {
+        width: calc(100% - 16px);
+        position: absolute;
+        bottom: 8px;
+        padding-top: 8px;
+        padding-left: 16px;
+        border-top: 1px solid #e8e8e8;
+      }
+
+      .total {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 56px;
+        height: 56px;
+        position: absolute;
+        top: 20px;
+        right: 12px;
+        color: white;
+        background-color: var(--default-primary-color);
+        border-radius: 50%;
+        overflow: hidden;
+        opacity: 0;
+        -webkit-transition: opacity 0.2s ease-in, 
+                            color 0.2s ease-in-out, 
+                            background-color 0.2s ease-in-out;
+                transition: opacity 0.2s ease-in, 
+                            color 0.2s ease-in-out, 
+                            background-color 0.2s ease-in-out;
+      }
+
+      .unselectedTotal {
+        color: var(--primary-text-color);
+        background-color: var(--secondary-text-color);
+      }
+
+      .openQty {
+        opacity: 1;
+      }
+
+      /*used to define the new height for a card each time another tally row is added*/
+      .addedRowCardHeight {
+        /*changed in _addTallyRow method*/
+        height: var(--add-tally-height);
+      }
+
+      .pushButtons {
+        transform: translate(0px, -60px);
+      }
+
+    </style>
+
+    <paper-material id="expanding"
+                    class="expanding" 
+                    elevation="2">
+    </paper-material>
+
+
+    <div id="expandedHeader" class="expandedHeader">
+      <iron-icon class="itemIcons" 
+        icon="custom-icons:[[solution.icon]]" 
+        hidden$="[[!solution.icon]]">
+      </iron-icon>
+      <div class="cardTitles noSelect">[[solution.label]]</div>
+    </div>
+
+
+	  <div id="cardContent" class="cardContent">
+	    <div class="custom" hidden$="[[!solution.custom]]">
+	      <paper-input class="customInput"
+	                   type="tel"
+	                   label="Product"
+	                   maxLength="6"
+	                   min="0"
+	                   allowed-pattern="[0-9]"
+	                   prevent-invalid-input 
+	                   value="{{solution.customProduct}}">
+	        <div prefix>$</div>
+	      </paper-input>
+	      <paper-input id="centerCustomInput"
+	                   class="customInput"
+	                   type="tel"
+	                   label="Install"
+	                   maxLength="6"
+	                   min="0"
+	                   allowed-pattern="[0-9]"
+	                   prevent-invalid-input 
+	                   value="{{solution.customInstall}}">
+	        <div prefix>$</div>
+	      </paper-input>
+	      <paper-input class="customInput"
+	                   type="tel" 
+	                   label="Quantity"
+	                   maxLength="6"
+	                   min="0"
+	                   allowed-pattern="[0-9]"
+	                   prevent-invalid-input 
+	                   value="{{solution.count}}">
+	      </paper-input>
+	    </div>
+
+	    <inputs-repeater class="inputs" 
+	                     array="[[solution.tallies]]" 
+	                     hidden$="[[solution.custom]]">
+	    </inputs-repeater>
+
+	    <div id="cardButtons" class="cardButtons">
+	      <paper-icon-button 
+	        class="buttons" 
+	        hidden$="[[solution.custom]]"
+	        on-tap="_addTallyButtonTapped"
+	        icon="custom-icons:add">
+	      </paper-icon-button>
+	      <paper-button class="buttons" on-tap="_saveButtonTapped">save</paper-button>
+	    </div> 
+
+	    <div id="total" class$="total [[solution.openQty]]">[[solution.count]]</div>
+
+	  </div>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'solution-card',
+
+        behaviors: [
+          window.Redaap.Behaviors.Utilities,                    
+          window.Redaap.Behaviors.OnTapBehavior,                
+          window.Redaap.Behaviors.ExpandCollapseClassesBehavior 
+        ],
+
+        properties: {
+          // parent custom element
+          solutionContentCustomElement: Object,
+          // data bound from parent
+          solution: Object,
+          // template repeat index
+          index: Number,
+          // for css selected classes
+          selectedIndex: {
+            type: Number,
+            observer: '_selectedIndexChanged'
+          },
+          // cached value of added tally rows height
+          // height not including margin of <inputs-repeater> 
+          oneContentAreaHeight: {
+            type: Number,
+            value: 60
+          }
+        },
+
+        
+        listeners: {
+          // fired from inputs-repeater
+          'inputs-repeater-tally-totalled': '_tallyTotalled',
+        },
+        // get reference to light-tally custom element that is inside main-page
+        // in order to call light-tally's updateUSA() method
+        attached() {
+          this.async(() => {
+            this.solutionContentCustomElement = Polymer.dom(this.root).node.host.domHost;
+          });
+        },
+
+        // header and qty colors should follow selected
+        _selectedIndexChanged(selectedIndex) {
+          // this.index is undefined after this element is initially stamped
+          // which means it is selected
+          if (this.index === undefined || selectedIndex === this.index) {
+            const focusThisCard = () => {
+              Polymer.dom(this.$.expandedHeader).classList.add('opacity1');
+              Polymer.dom(this.$.total).         classList.remove('unselectedTotal');
+            };
+            
+            this.schedule(focusThisCard);
+            
+          } else {
+            const unfocusThisCard = () => {
+              Polymer.dom(this.$.expandedHeader).classList.remove('opacity1');
+              Polymer.dom(this.$.total).         classList.add('unselectedTotal');
+            };
+
+            this.schedule(unfocusThisCard);
+          }
+        },
+        // fired from inputs-repeater child element each time user adds tally data
+        // add count to solutions
+        _tallyTotalled(event) {
+          // define a total variable from the event payload
+          const total = event.detail.total;
+          this.set('solution.count', total);
+          // fade the fixture qty div in and out with a css transition
+          // by setting its 'openQty' class
+          if (total) {
+            this.set('solution.openQty', 'openQty');
+          } else {
+            this.set('solution.openQty', '');
+          }
+        },
+
+
+        _setNewTemporaryCardHeight(newHeight) {
+          // update the css variable in the 'addedRowCardHeight class
+          this.customStyle['--add-tally-height'] = `${newHeight}px`;
+          this.updateStyles();
+        },
+
+
+        _resetCardAndButtonClasses() {
+          Polymer.dom(this.$.cardButtons).classList.remove('expandCardTransitions');
+          Polymer.dom(this.$.expanding).  classList.remove('expandCardTransitions');
+        },
+
+        // animation end callback
+        _addArray(newHeight) {
+          // use Polymer's array api for proper path notification
+          this.push('solution.tallies', {
+            tally0: undefined, 
+            tally1: undefined,
+            tally2: undefined,
+            tally3: undefined
+          });
+
+          Polymer.dom(this.$.expanding).classList.remove('addedRowCardHeight');
+          // using min-height in js so height can still be manipulated by css classes
+          this.$.expanding.style.minHeight = `${newHeight}px`;
+        },
+
+
+        _pushButtonsDown() {
+          Polymer.dom(this.$.cardButtons).classList.add('expandCardTransitions');
+          Polymer.dom(this.$.cardButtons).classList.remove('pushButtons');
+        },
+
+        // called by add button
+        _addTallyRow() {
+          // use css transition to expand the paper-material to make room
+          // for pushing another tallyArray to the card
+          const measuredCardHeight = this.$.expanding.getBoundingClientRect().height;
+          const newHeight          = measuredCardHeight + this.oneContentAreaHeight;
+          this._setNewTemporaryCardHeight(newHeight);
+          this._resetCardAndButtonClasses();
+          // must move all lower cards down at the same time the current one is expanding
+          // setup any cards below the current card to slide down
+          const remainingCards = this.solutionContentCustomElement.getRemainingCards(this.index);
+          const newY           = -this.oneContentAreaHeight;
+          const pushButtons    = this._pushButtonsDown.bind(this);
+          // animation end callback
+          const addTallyArray  = this._addArray.bind(this, newHeight);
+          // expand-collapse-classes-behavior methods
+          this.ecClassesInit(this.$.expanding, 'addedRowCardHeight');
+          this.ecClassesSlideRemainingCards(remainingCards, newY, 'expandCardTransitions');
+          Polymer.dom(this.$.cardButtons).classList.add('pushButtons');
+          this.schedule(pushButtons);
+          this.ecClassesPlay(this.$.expanding, 'expandCardTransitions', addTallyArray);
+        },
+
+        // check if tapped button is visible to user
+        _buttonIsVisible() {
+        	return Polymer.dom(this.$.cardContent).classList.contains('opacity1');
+        },
+
+        
+        _addTallyButtonTapped(event) {
+          if (!this._buttonIsVisible()) { return; }
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = this._addTallyRow.bind(this, event);
+        },
+
+        // called by 'save' button
+        _saveButtonTapped() {
+          const save = () => {
+						if (!this._buttonIsVisible()) { return; }
+
+            if (!this.solution.count) {
+              // warning toast in index.html
+              this.warn('Please include a fixture quantity');
+              return;
+            }
+
+            this.solutionContentCustomElement.saveSolution(this.index);
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = save;
+        }
+
+
+      });
+    })();
+  </script>
+
+</dom-module>

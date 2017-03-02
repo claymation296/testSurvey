@@ -1,0 +1,141 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="card-input.html">
+<link rel="import" href="../slide-delete/slide-delete.html">
+
+<dom-module id="inputs-repeater">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+    </style>
+
+  	<template id="inputRepeater" 
+              is="dom-repeat" 
+              items="{{array}}" 
+              as="rows" 
+              initial-count="5" 
+              target-framerate="60" 
+              strip-whitespace>
+
+      <slide-delete class="slide"
+                    template-id="inputRepeater"
+                    template-item-class-name="slide"
+                    index="[[index]]"
+                    disable-last-element-delete>
+
+        <card-input rows="[[rows]]"></card-input>
+
+      </slide-delete>
+      
+    </template>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'inputs-repeater',
+        properties: {
+        	// databound parent to child array for template repeater
+        	array: Array,
+        	// container for working with dynamic tally inputs
+          sumHolderArray: {
+            type: Array,
+            computed: '_computeSumHolderArray(array)'
+          }
+        },
+
+        observers: [
+          // must observe splices on rows coming back out from slide-delete
+          '_arrayChanged(array.splices)'
+        ],
+        // custom event fired from card-input
+        listeners: {
+          'card-input-tally-summed': '_tallySummed',
+          // fired from slide-delete
+          // must intercept the event and refire it from 
+          // this element's context so that the event will reflect the same context
+          // the event is used in replacements-repeater to determing the correct 
+          // index from the template repeater
+          'slide-delete-last-element-deleted': '_lastElementDeleted'
+        },
+
+        // intercept and block the 'slide-delete-last-element-deleted' event from bubbling
+        _lastElementDeleted(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          // fire a new event that will have the proper context for the listening parent
+          // inform parent there are no more remaining elements to delete
+          this.fire('inputs-repeater-last-input-deleted', event.detail);
+        },
+
+        // takes an array of sums
+        _fireTotal(sums) {
+          // reduce the holder array to sum its elements
+          const total = sums.reduce((previous, current) => previous + current, 0);
+          // fire custom event up to parent with total as payload
+          this.fire('inputs-repeater-tally-totalled', {total});
+        },
+        
+        // apply the delete made by slide-delete to the sumHolderArray and fire the new total
+        _arrayChanged(splices) {
+          // splice made by slide-delete custom element
+          if (splices && splices.indexSplices && splices.indexSplices.length === 1) {
+            const addedCount = splices.indexSplices[0].addedCount;
+            // delete was made w nothing added back in
+            if (addedCount === 0) {
+              const deletedIndex = splices.indexSplices[0].index;
+              // update the sumHolderArray too
+              this.sumHolderArray.splice(deletedIndex, 1);
+
+              this._fireTotal(this.sumHolderArray);
+            }
+          }
+        },
+        // must populate sumHolder anytime an old survey is loaded in
+        // then each index of the array can be replaced by the new sum
+        // for a given area line that is calculated in tally-inputs
+        _computeSumHolderArray(array) {
+          // iterate over the array and reduce each index to a sum
+          // of all 4 tally inputs
+          const valuesArray = array.map(obj => {
+            // make an array from each object in the collection
+            return Object.keys(obj).
+              // get the values instead of keys
+              map(key => obj[key]).
+              // add values of all 4 inputs
+              reduce((prev, curr = 0) => prev + Number(curr), 0);
+          });
+          return valuesArray;
+        },
+        // fired from card-input
+        _tallySummed(event) {
+        	// define the correct index of tally data based off the event target index
+          const index = this.$.inputRepeater.indexForElement(Polymer.dom(event).rootTarget);
+          // store the event data as the sum constant
+          const sum = event.detail.sum;
+          // add or replace the sum into the correct index of the sumHolderArray
+          // so tallies from different areas dont collide
+          this.sumHolderArray[index] = sum;
+          // send out an event with the new total
+          this._fireTotal(this.sumHolderArray);
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

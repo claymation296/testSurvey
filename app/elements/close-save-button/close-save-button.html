@@ -1,0 +1,142 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="close-save-button">
+  <template>
+    <style>
+
+      :host {
+      	display: inline-flex;
+        align-items: center;
+        padding: 8px;
+      }
+
+		  #button {
+		    --paper-icon-button: {
+		      min-width: 24px;
+		      width: 40px;
+		      height: 40px;
+		      position: absolute;
+		      top: 8px;
+		      right: 16px;
+		      margin: 0px;
+		      padding: 8px;
+		      z-index: 1;
+		    };
+		  }
+
+		  .icon {
+		    width: 24px;
+		    height: 24px;
+		    fill: var(--primary-text-color);
+		    overflow: visible;
+		    transform-origin: 50% 50%;
+		    transform: rotate(-90deg);
+        transition: transform 0.3s ease-out;
+		  }
+
+		  .iconCheck {
+		  	transform: rotate(0deg);
+		  }
+
+		  .long {
+			  transform-origin: 50% 50%;
+			  transform: rotate(-45deg);
+        transition: transform 0.3s ease-out;
+			}
+
+			.longCheck {
+			  transform: rotate(45deg) translate(1.85px, -1.4px) scale(1, 0.94);
+			}
+
+			.short {
+			  transform-origin: 50% 50%;
+			  transform: rotate(45deg);
+        transition: transform 0.3s ease-out;
+			}
+
+			.shortCheck {
+			  transform: rotate(135deg) translate(6.1px, 1.1px) scale(1, 0.44);
+			}
+
+    </style>
+
+
+    <!-- button transitionend event listened for by main-page -->
+    <paper-icon-button id="button" on-tap="_buttonTapped"></paper-icon-button>
+
+    <svg id="icon"
+         class="icon" 
+         version="1.1" 
+         xmlns="http://www.w3.org/2000/svg" 
+         xmlns:xlink="http://www.w3.org/1999/xlink" 
+         x="0px" 
+         y="0px" 
+         viewBox="0 0 24 24" 
+         enable-background="new 0 0 24 24" 
+         xml:space="preserve">
+
+      <rect id="long" 
+      			class="long" 
+      			x="11" 
+      			y="3" 
+      			width="2" 
+      			height="18"/>
+  
+  		<rect id="short" 
+  					class="short" 
+  					x="11" 
+  					y="3" 
+  					width="2" 
+  					height="18"/>
+    </svg>
+
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'close-save-button',
+
+        behaviors: [ window.Redaap.Behaviors.OnTapBehavior ],
+
+        properties: {
+
+        },
+
+        makeCheck() {
+        	this.$.icon.classList.add('iconCheck');
+        	this.$.long.classList.add('longCheck');
+        	this.$.short.classList.add('shortCheck');
+        },
+
+        makeX() {
+        	this.$.icon.classList.remove('iconCheck');
+        	this.$.long.classList.remove('longCheck');
+        	this.$.short.classList.remove('shortCheck');
+        },
+
+        _buttonTapped() {
+        	const fire = () => this.fire('close-save-button-tapped');
+
+        	this.onTap = fire;
+        }
+
+
+      });
+    })();
+  </script>
+
+</dom-module>

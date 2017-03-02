@@ -1,0 +1,340 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="search-page.html">
+<link rel="import" href="preview-page.html">
+
+
+<dom-module id="survey-search">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        @apply(--fullscreen-elements);
+		    background-color: var(--dark-primary-color);
+      }
+
+    </style>
+
+    <template is="dom-if" if="[[showThisElement]]" restamp>
+
+      <neon-animated-pages selected="[[selected]]"
+                           on-neon-animation-finish="_pageAnimationComplete">
+
+        <search-page id="searchPage"
+                     selected="[[selected]]"
+                     response="{{response}}" 
+                     user-surveys="{{userSurveys}}" 
+                     selected-item="{{selectedItem}}"
+                     string="{{string}}"
+                     computed-search-tab="{{computedSearchTab}}">
+        </search-page>
+
+        <preview-page id="previewPage"
+                      selected="[[selected]]" 
+                      survey="[[survey]]">
+        </preview-page>
+
+      </neon-animated-pages>
+
+    </template>
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'survey-search',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior,
+          Polymer.NeonAnimationRunnerBehavior
+        ],
+
+        properties: {
+
+          animationConfig: {
+            value() {
+              return {
+                'entry': {
+                  name: 'slide-from-right-animation',
+                  node: this,
+                  timing: {easing: 'ease-out'}
+                },
+                'exit': [{
+                  name: 'slide-right-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this,
+                  timing: {duration: 300, delay: 50, easing: 'ease-in'}
+                }]
+              };
+            }
+          },
+          // control state of this element's content via conditional template
+          showThisElement: {
+            type: Boolean,
+            value: false
+          },
+          // control lighting-tabs in index.html
+          // set to 'area-tab' tab after loading a survey
+          lightingTab: {
+            type: String,
+            notify: true
+          },
+          // control neon-animated-pages
+          selected: {
+            type: Number,
+            value: 0
+          },
+          // preview data fired from search-page when user selects a preview
+          survey: Object,
+          // injected back into app for review and editing
+          // controls light-tally template repeat cards and light-selector dropdowns
+          userSelectedArray: {
+            type: Array,
+            notify: true
+          },
+          // databound from search-page
+          // needed to track state of search
+          // only want to call search once upon first opening of the page
+          // all other page opens load the last response
+          response: Object,
+          // cached state value for search-page reopens
+          userSurveys: {
+            type: Boolean,
+            value: true
+          },
+          // cached state value for search-page reopens
+          selectedItem: Object,
+          // cached state value for search-page reopens
+          string: {
+            type: String,
+            value: ''
+          },
+          // cached state value for search-page reopens
+          computedSearchTab: String,
+          // cached scroll position for reopen
+          searchScrollerCache: Number,
+          // cached scroll position for reopen
+          previewScrollerCache: Number,
+          // child el
+          searchPageCustomElement: Object,
+          // child el
+          previewPageCustomElement: Object
+        },
+
+
+        listeners: {
+          // fired from search-page and preview-page close button
+          'close': '_animateClosed',
+          // fired from preview-page back button
+          'back': '_back',
+          // fired from preview-page load button
+          'loadSurvey': '_load',
+          // fired from search-page card preview button
+          'surveyPreview': '_surveyPreview',
+          // fired from search-page card select button
+          'surveySelected': '_surveySelected',
+          // for animations that should occur after dom-if has fully stamped
+          'dom-change': '_domChanged',
+          // wait for animations
+          'neon-animation-finish': '_localAnimationFinished'
+        },
+
+
+        attached() {
+          this.async(() => {
+            // bug fix: force the backdrop to close
+            window.Redaap.loadDialog.addEventListener('iron-overlay-closed', event => {
+              window.Redaap.loadDialog.backdropElement.complete();
+              // wait for dialog to be fully closed before running further animations
+              this._dialogFullyClosed(event);
+            }, false);
+          });
+        },
+
+
+        detached() {
+          window.Redaap.loadDialog.removeEventListener('iron-overlay-closed', event => {
+            window.Redaap.loadDialog.backdropElement.complete();
+            this._dialogFullyClosed(event);
+          }, false);
+        },
+
+        // wait for the repeater to fully stamp its dom before starting the entry animation
+        _domChanged() {
+          // restrict entry animation to run once only after dom-if is finished stamping
+          if (this.showThisElement && this.style.display !== 'block') {
+            // event is fired for each dom element that is stamped
+            // so debounce until they are all ready
+            this.debounce('domIfTemplateDebounce', () => {
+              // raise this element above the rest of the app
+              this.style.zIndex = 50;
+              this.style.display = 'block';
+              this.style.opacity = '0';
+              // must force preview page to measure its header before entry
+              this.searchPageCustomElement  = this.$$('#searchPage');
+              this.previewPageCustomElement = this.$$('#previewPage');
+              // paper-scroll-header-panel inside neon-animated-pages bug fix
+              this.searchPageCustomElement.headerPanelBugFix();
+              this.previewPageCustomElement.headerPanelBugFix();
+              // reopen to preview page
+              if (this.selected === 1) {
+                this.previewPageCustomElement.collapseFakeToolbar();
+              }
+              
+              this.async(() => {
+                this.style.opacity = '1';
+                this.playAnimation('entry', 'entry');
+              }, 1);
+            }, 50);
+          } 
+        },
+
+        // called after entry and exit animations run
+        _localAnimationFinished(_, animationType) {
+          if (animationType.name && animationType.name === 'exit') {
+            if (animationType.setLightingTab === true) {
+              this.set('lightingTab', 'areaPage');
+            }
+            this._close();
+          } else if (animationType === 'entry') {
+            // pass in cached scroll pos and tab
+            const fetch = type => {
+              this.searchPageCustomElement.fetchSurveys(
+                type, 
+                this.searchScrollerCache, 
+                this.computedSearchTab
+              );
+            };
+            // kick off a basic default search when user opens Survey Search
+            if (!this.response) {
+              fetch('search');
+            } else {
+              fetch('load');
+            }
+            // set preview scroll pos
+            this.previewPageCustomElement.setCachedScrollPos(this.previewScrollerCache);
+          }
+        },
+
+        // setup to play exit animation
+        _animateClosed(setLightingTab) {
+          // cache scroller positions for search and preview
+          this.searchScrollerCache  = this.searchPageCustomElement.getScrollerPos();
+          this.previewScrollerCache = this.previewPageCustomElement.getScrollerPos();
+
+          const animationPayload = {
+            name: 'exit',
+            setLightingTab
+          };
+          this.cancelAnimation();
+          this.playAnimation('exit', animationPayload);
+        },
+
+        // fired from neon-animated-pages
+        _pageAnimationComplete(event) {
+          const toPage   = event.detail.toPage;
+          const fromPage = event.detail.fromPage;
+
+          if (toPage.id === 'previewPage') {
+            toPage.parentPageAnimationFinished('entry');
+            fromPage.playCustomSVGAnimation(); // 'search-page'
+          } else {
+            fromPage.parentPageAnimationFinished('exit');
+            toPage.playCustomSVGAnimation(); // 'search-page'
+          }
+        },
+
+        // called by search icon button in main-toolbar-buttons.html
+        openSearch() {
+          // stamp dom which triggers the entry animation once it is done stamping
+          this.set('showThisElement', true);
+        },
+
+        // called from close icon button in top toolbar of both childeren elements
+        _close() {
+          // lower this element below the rest of the app
+          this.set('showThisElement', false);
+          this.style.zIndex = -1;
+          this.style.display = 'none';
+        },
+
+        // fired from preview-page back button
+        _back() {
+          this.set('selected', 0);
+        },
+
+        // fired from preview-page load button
+        _load() {
+          window.Redaap.loadDialog.open();
+        },
+
+        // give user the option to look over the survey before loading it into the app
+        _surveyPreview(event) {
+          this.survey = event.detail.data;
+          this.set('selected', 1);
+        },
+
+        // inject data back into the app for review and editing
+        // need to recreate userSelectedArray for light-tally ui
+        // plus pricing and client for email-modal ui
+        _surveySelected(event) {
+          // show a modal that asks the user to verify that they intend to clear their
+          // current survey in leu of the archived survey
+          this.survey = event.detail.data;
+          window.Redaap.loadDialog.open();
+        },
+
+        // called by 'iron-overlay-closed' event by #loadOldSurveyDialog in index.html
+        _dialogFullyClosed(event) {
+          // confirmed true only when user taps load button
+          // user can cancel with cancel button tap or tap outside dialog card
+          if (event.detail.confirmed && !event.detail.canceled) {
+            this._loadOldSurvey();
+          }
+        },
+
+        // called by _dialogFullyClosed() dialog is fully closed
+        _loadOldSurvey() {
+          // get a clean copy so edits dont affect the search data
+          const survey = Object.assign({}, this.survey);
+          const data = survey.survey;
+
+          const unusedKeys = key => {
+            return (key !== 'survey' && key !== 'pdf' && key !== 'pricing' && key !== 'rep');
+          };
+          const clientKeys = Object.keys(survey).filter(unusedKeys);
+
+          const client = clientKeys.reduce((prev, curr) => {
+            prev[curr] = survey[curr];
+            return prev;
+          }, {});
+
+          // have lighting-main reset 'valid' and 'talliesValid' after fresh reload
+          window.Redaap.lightingMain.resetValidity();
+          // pass client object to account-form
+          window.Redaap.accountForm.reloadClientFromSavedSurvey(client);
+          this.set('userSelectedArray', data);
+          // wait for data to propogate throughout the app then close
+          this.async(() => {
+            window.requestAnimationFrame(this._animateClosed.bind(this, true));
+          }, 500);
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

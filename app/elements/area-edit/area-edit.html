@@ -1,0 +1,511 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="area-edit-card.html">
+<link rel="import" href="../close-save-button/close-save-button.html">
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+<link rel="import" href="../redaap-behaviors/open-close-fullscreen-behavior.html">
+<link rel="import" href="../redaap-behaviors/expand-collapse-classes-behavior.html">
+
+
+
+<dom-module id="area-edit">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        @apply(--fullscreen-elements);
+        background-color: white;
+      }
+
+      paper-toolbar {
+        color: var(--primary-text-color);
+        --paper-toolbar-background: var(--light-primary-color);
+        --paper-toolbar-title: {
+          line-height: normal;
+        };
+      }
+
+      .container {
+        display: flex;
+        justify-content: center;
+      }
+
+      #content {
+        width: 100%;
+        max-width: 460px;
+      }
+
+      .expanderTransitions {
+        -webkit-transition: transform 0.3s ease-out;
+                transition: transform 0.3s ease-out;
+      }
+
+    </style>
+    
+    <paper-scroll-header-panel id="panel">
+      <paper-toolbar id="toolbar">
+        <paper-icon-button id="bulb" 
+                           on-tap="_addFixtureButtonTapped" 
+                           icon="custom-icons:lightbulb-outline">
+        </paper-icon-button>
+        <span id="title" class="title noSelect">[[data.name]]</span>
+
+        <close-save-button id="closeButton"></close-save-button>
+
+      </paper-toolbar>
+
+      <div class="container">
+        <div id="content">
+          
+          <template id="fixtureRepeater" 
+                    is="dom-repeat" 
+                    items="{{fixtures}}"
+                    target-framerate="60" 
+                    strip-whitespace>
+
+            <template is="dom-if" if="[[showCards]]">
+              <area-edit-card class="card"
+                              item="{{item}}" 
+                              index="[[index]]" 
+                              defer-photo="{{deferPhoto}}">
+              </area-edit-card>
+            </template>
+
+          </template>
+         
+        </div>
+      </div>
+    </paper-scroll-header-panel>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'area-edit',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior,
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.Utilities, 
+          window.Redaap.Behaviors.OnTapBehavior, 
+          window.Redaap.Behaviors.OpenCloseFullscreenBehavior, 
+          window.Redaap.Behaviors.ExpandCollapseClassesBehavior 
+        ],
+
+        properties: {
+
+          animationConfig: {
+            value() {
+              return {
+                'entry': [{
+                  name: 'slide-from-top-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'slide-from-top-animation',
+                  nodes:  [
+                    this.$.bulb, 
+                    this.$.title, 
+                    this.$.closeButton
+                  ],
+                  timing: {duration: 200, delay: 150, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'fade-in-animation',
+                  nodes:  [
+                    this.$.bulb, 
+                    this.$.title, 
+                    this.$.closeButton
+                  ],
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
+                }],
+                'cardEntry': [{
+                  name: 'cascaded-animation',
+                  animation: 'slide-from-left-animation',
+                  // set imperitively after dom-repeat is initiaized
+                  timing: {duration: 200, delay: 150, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'fade-in-animation',
+                  // set imperitively after dom-repeat is initiaized
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
+                }],
+                'exit': [{
+                  name: 'slide-up-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this,
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
+                }]
+              };
+            }
+          },
+          // local dom data
+          data: {
+            type: Object,
+            observer: '_dataChanged'
+          },
+          // pull fixtures array out of data for the template repeater
+          fixtures:  Array,
+
+          showCards: Boolean,
+
+          cardObserver: Object,
+
+          allCards: Array,
+
+          deferPhoto: Boolean,
+          // set true on first dom-change event in order to ignore any other events in 
+          // the same burst
+          domChangeLatch: Boolean,
+
+          selectedIndex: Number,
+
+          selectedCard: Object,
+          // maintain a list of replacements with zero quantity
+          // it is checked when user attempts to close
+          zeroQuantityDreading: {
+            type: Object,
+            value: () => ({})
+          },
+
+          deleteHandler: Object,
+          // applied to the deleted element
+          transformString: {
+            type: String,
+            value: 'scale(0, 0)'
+          },
+          // applied to the deleted and remaining elements animations
+          transitionString: {
+            type: String,
+            value: 'transform 0.3s ease-out, opacity 0.1s ease-in'
+          },
+          // ref to area-tab custom element inside lighting-main
+          areaPageCE: Object,
+        },
+
+
+        listeners: {
+          'neon-animation-finish':                          '_animationFinished',
+          // fired from replacement-repeater.html
+          'replacements-repeater-zero-quantity':            '_zeroQuantity',
+          // fired by area-edit-card anytime its model data is altered
+          // used to animate exit button into a check button
+          'area-edit-card-item-edited':                     '_editMade',
+          // forwarded by area-edit-card from slide-delete after delete animation completes
+          'area-edit-card-forwarded-delete-animation-done': '_editMade',
+          // fired from area-edit-card's slide-delete custom element
+          'slide-delete-element-deleted':                   '_removeDeletedElementFromDreading',
+          // fired from area-edit-card's slide-delete custom element
+          'slide-delete-last-element-deleted':              '_deleteFixture',
+          // last-element-deleted event intercepted by replacements-repeater
+          // and emmitted as 'last-replacement-deleted' if necessary
+          'replacements-repeater-last-replacement-deleted': '_deleteFixture',
+          // fired by close-save-button
+          'close-save-button-tapped':                       '_closeButtonTapped'
+        },
+        
+
+        observers: [
+        // must observe splices on fixtures coming back out from slide-delete
+          '_fixturesChanged(fixtures.splices)'
+        ],
+        // pull fixtures out of data object for the template repeater
+        // cannot use a computed property here because of a dom-repeat bug
+        _dataChanged(data) {
+          if (data && data.fixtures) {
+            this.set('fixtures', data.fixtures);
+            // must force the repeater to render
+            // may be a Polymer bug
+            this.$.fixtureRepeater.render();
+          } else {
+            this.set('fixtures', undefined);
+          }
+        },
+
+        // observe splices to fixtures and update this.data
+        // should pick up any changes made in area-edit-card
+        _fixturesChanged(splices) {
+          // update this.data
+          if (splices) {
+            this.set('data.fixtures', this.fixtures);
+          }
+        },
+
+        // change to a save button anytime user makes edits of any kind
+        _editMade() {
+          this.$.closeButton.makeCheck();
+        },
+
+
+        _getAllCards() {
+          return Polymer.dom(this.$.content).querySelectorAll('area-edit-card');
+        },
+        // repeater dom-change event cb for delete method for deletes
+        // originating from within card (not top level delete)
+        _repeaterDomChanged(remainingElements, newY, transition) {
+          if (this.domChangeLatch) {
+            return;
+          }
+          // ignore subsequent events
+          this.domChangeLatch = true;
+
+          this.$.fixtureRepeater.removeEventListener(
+            'dom-change', 
+            this._repeaterDomChanged(remainingElements, newY, transition),
+            false
+          );
+          // update exit button ui after slide animations complete
+          const callback = this._editMade.bind(this);
+          // redaap behavior
+          this.ecClassesSlideRemainingCards(remainingElements, newY, transition, callback);
+        },
+
+        // transitionend event listnener cb
+        _deleteDone(cb, event) {
+          if (event.propertyName === 'transform') {
+            this.selectedCard.removeEventListener('transitionend', this.deleteHandler, false);
+            this.selectedCard.style.transition = '';
+            this.selectedCard.style.transform  = '';
+            this.selectedCard.style.opacity    = '';
+            // splice instead of this.arrayDelete
+            this.splice('fixtures', this.selectedIndex, 1); 
+            this.splice('allCards', this.selectedIndex, 1); 
+
+            if (this.fixtures.length === 0) {
+              this.areaPageCE.deleteArea(this.data.name);
+              // provide a callback that will be executed after animation completes
+              const unsetData = () => {
+                 // reset template data
+                this.set('data', undefined);
+              };
+
+              this.async(() => {
+                this.close(unsetData);
+              }, 50);            
+            } else if (cb && typeof cb === 'function') {
+              cb();
+            }
+          }
+        },
+
+
+        _applyDeleteStyles(callback) {
+          this.selectedCard.style.transition = this.transitionString;
+          this.selectedCard.style.transform  = this.transformString;
+          this.selectedCard.style.opacity    = '0';
+          this.deleteHandler = this._deleteDone.bind(this, callback);
+          this.selectedCard.addEventListener('transitionend', this.deleteHandler, false);
+        },
+        // called by 'slide-delete-last-element-deleted' and 
+        // 'replacements-repeater-last-replacement-deleted' events
+        // must animate deleting the entire card since there is no more data
+        _deleteFixture(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          // clean up the zero qty dreading list incase user decided to delete
+          // the fixture which had no qty
+          this._removeDeletedElementFromDreading(event);
+          this.selectedIndex = this.$.fixtureRepeater.
+                                 indexForElement(Polymer.dom(event).rootTarget.domHost);
+          this.allCards      = this._getAllCards();                                 
+          this.selectedCard  = this.allCards[this.selectedIndex];
+
+          if (this.allCards.length === 1) {
+            // no remaining elements left so dont setup to animate them
+            this._applyDeleteStyles();
+          } else {
+            // setup any elements below the current element to slide down
+            const remainingElements = this.allCards.slice(this.selectedIndex + 1);
+
+            if (remainingElements.length === 0) {
+              // no other elements below current one so skip remaining elements setup
+              this._applyDeleteStyles();
+            } else {
+              // measure the distance the remaining elements will be slid up
+              const newY = this.selectedCard.getBoundingClientRect().height;
+              // listen for repeater dom-change event for remaining elements animation timing
+              const callback = () => {
+                // listen to the 'dom-change' event from the template repeater
+                // so animations can be fired once the element is removed
+                this.$.fixtureRepeater.addEventListener(
+                  'dom-change', 
+                  this._repeaterDomChanged(remainingElements, newY, 'expanderTransitions'), 
+                  false
+                );
+                this.domChangeLatch = false;
+              };
+
+              this._applyDeleteStyles(callback);
+            }
+          } 
+        },
+
+
+        _animationFinished(_, animationType) {
+          if (animationType === 'cardEntry') {
+            const loadPhotos = () => {
+              this.deferPhoto = true;
+            };
+            
+            this.schedule(loadPhotos);
+          }
+        },
+
+
+        _playCardEntry() {
+          Polymer.dom(this.$.content).unobserveNodes(this.cardObserver);
+          this.allCards = this._getAllCards();
+          this.animationConfig.cardEntry[0].nodes = this.allCards; 
+          this.animationConfig.cardEntry[1].nodes = this.allCards;
+          this.playAnimation('cardEntry', 'cardEntry');
+        },
+
+        // wait for the repeater to fully stamp its dom before starting the open() animation
+        _repeaterDomInit() {
+          // event is fired for each dom element that is stamped
+          // so debounce until they are all ready
+          this.debounce('editDebounce', () => {
+            this.unlisten(this.$.fixtureRepeater, 'dom-change', '_repeaterDomInit');
+
+            const loadCardsCallback = () => {
+              this.showCards    = true;
+              const handler     = this._playCardEntry.bind(this);
+              this.cardObserver = Polymer.dom(this.$.content).observeNodes(handler);
+            };            
+
+            const open = this.open.bind(this, loadCardsCallback);
+            this.schedule(open);
+          }, 100);
+        },
+
+        // called by area-page edit buttons
+        init(newData, areaPageElement) {
+
+          if (!this.areaPageCE) {
+            this.areaPageCE = areaPageElement;
+          }  
+
+          const setData = () => {
+            // triggers dom-change events that run _repeaterDomInit()
+            this.set('data', newData);
+          };
+
+          this.showCards = false;
+          this.data = undefined;
+          this.listen(this.$.fixtureRepeater, 'dom-change', '_repeaterDomInit');
+          this.schedule(setData);
+        },
+
+        // called by area-page updateUSA method any time the uSA is updated by solution-view
+        update(newData) {
+          // no need to run the update if area-edit is not already open
+          const areaEditIsNotOpen = (
+            window.getComputedStyle(this).getPropertyValue('display') === 'none'
+          );
+
+          if (areaEditIsNotOpen) {
+            return;
+          }
+
+          const setData = () => {
+            this.set('data', newData);
+            this.deferPhoto = true;
+          };
+
+          this.data = undefined;
+          this.$.closeButton.makeCheck();
+          this.schedule(setData);
+        },
+
+
+        _addFixtureButtonTapped() {
+          const openLightSelector = () => {
+            window.Redaap.lightSelector.setAreaName(this.data.name);
+            window.Redaap.lightSelector.open();
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = openLightSelector;
+        },
+
+
+        _removeNameFromDreading(name) {
+          delete this.zeroQuantityDreading[name];
+        },
+        // clean up dreading list if user decides to delete a replacement or 
+        // fixture that is highlighted with zero qty
+        _removeDeletedElementFromDreading(event) {
+          const deletedItem = event.detail.deletedItem;
+
+          if (deletedItem.replacements) {
+            deletedItem.replacements.forEach(replacement => {
+              this._removeNameFromDreading(replacement.name);
+            });
+          } else {
+            this._removeNameFromDreading(deletedItem.name);
+          }          
+        },
+
+        // maintain a dreading list of all replacements which have no quantity
+        _zeroQuantity(event) {
+          const isZero = event.detail.zeroQuantity;
+          const name   = event.detail.model.item.name;
+
+          if (isZero) {
+            this.zeroQuantityDreading[name] = true;
+            this.$.closeButton.makeX();
+          } else {
+            this._removeNameFromDreading(name);
+          }
+        },
+
+
+        _unsetDataCallback() {
+          // provide a callback that will be executed after animation completes
+          // reset template data
+          this.set('data', undefined);
+          this.showCards = false;
+          this.$.closeButton.makeX();
+        },
+
+
+        _closeButtonTapped() {
+          // check zeroQuantityDreading list for any outstanding replacements lacking a qty
+          const listSize = Object.keys(this.zeroQuantityDreading).length;
+
+          if (listSize) {
+            this.warn('Please include a fixture quantity');
+            return;
+          }
+          // update the model data from uSA with user edits
+          const editData = Object.assign({}, this.data);
+          this.areaPageCE.editUSA(editData);
+
+          this.async(() => {
+            // onTap property found in redaap-behaviors/on-tap-behavior
+            this.onTap = this.close.bind(this, this._unsetDataCallback.bind(this));
+          }, 50);
+        }
+
+
+      });
+    })();
+  </script>
+
+</dom-module>

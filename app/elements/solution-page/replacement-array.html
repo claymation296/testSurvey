@@ -1,0 +1,237 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<dom-module id="replacement-array">
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'replacement-array',
+
+        properties: {
+
+          // must match index of fixture list in fixture-list.html
+        	replacements: {
+        		type: Array,
+        		notify: true,
+        		readOnly: true,
+        		value: () => ([
+              // '2x2 Troffer / 2ft Strip Fixture'
+        			[
+        				{name: 'LED 2ft T8 10w, 1 Lamp', label: '1 Lamp (17-20W Fl)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+        				{name: 'LED 2ft T8 10w, 2 Lamp', label: '2 Lamp (17-20W Fl)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+        				{name: 'LED 2ft T8 10w, 3 Lamp', label: '3 Lamp (17-20W Fl)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+        				{name: 'LED 2ft T8 10w, 4 Lamp', label: '4 Lamp (17-20W Fl)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+      				],
+              // '2x2 Troffer with U-bend'
+							[
+								{name: 'LED 2ft T8 10w, 3 Lamp Kit', label: '3 Lamp Kit (2 40W U-Bend)',    icon: undefined, color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+								{name: 'LED 2ft T8 10w, 4 Lamp Kit', label: 'HO 4 Lamp Kit (2 40W U-Bend)', icon: undefined, color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+							],
+              // '2x4 Troffer / 4ft Strip Fixture / 4ft F Bay'	
+							[
+								{name: 'LED 4ft T8 18w, 1 Lamp',    label: '1 Lamp (32-40W Fl)', icon: undefined, color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+								{name: 'LED 4ft T8 18w, 2 Lamp',    label: '2 Lamp (32-40W Fl)', icon: undefined, color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+								{name: 'LED 4ft T8 18w, 3 Lamp',    label: '3 Lamp (32-40W Fl)', icon: undefined, color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+								{name: 'LED 4ft T8 18w, 4 Lamp',    label: '4 Lamp (32-40W Fl)', icon: undefined, color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+								{name: 'LED 4ft T8 18w, 6 Lamp',    label: '6 Lamp (32-40W Fl)', icon: undefined, color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED 4ft T8 HO 22w, 2 Lamp', label: 'HO 2 Lamp (52W Fl)', icon: undefined, color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED 4ft T8 HO 22w, 3 Lamp', label: 'HO 3 Lamp (52W Fl)', icon: undefined, color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED 4ft T8 HO 22w, 4 Lamp', label: 'HO 4 Lamp (52W Fl)', icon: undefined, color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+							],
+              // '8ft Strip Fixture'			
+							[
+								{name: 'LED 8ft T8 36w, 1 Lamp', label: '1 Lamp (65-95W Fl)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}, 
+								{name: 'LED 8ft T8 36w, 2 Lamp', label: '2 Lamp (65-95W Fl)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+							],
+              // '6" Can Screw in / 8" Can Screw in'	
+							[
+                {name: 'LED GU/MR 6w Lamp',  label: 'GU/MR 6W (50W Hl)',   icon: 'mr16', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED GU/MR 7w Lamp',  label: 'GU/MR 7W (65W Hl)',   icon: 'mr16', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par20 7w Lamp',  label: 'Par20 (50W In)',      icon: 'par',  color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 6w Lamp',    label: 'A19 6W (50W In)',     icon: 'a19',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 7w Lamp',    label: 'A19 7W (60W In)',     icon: 'a19',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 9.5w Lamp',  label: 'A19 9.5W (75W In)',   icon: 'a19',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 10.5w Lamp', label: 'A19 10.5W (85W In)',  icon: 'a19',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 12w Lamp',   label: 'A19 12W (100W In)',   icon: 'a19',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 15w Lamp',   label: 'A19 15W (120W In)',   icon: 'a19',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par30 10w Lamp', label: 'Par30 10W (75W In)',  icon: 'par',  color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par30 14w Lamp', label: 'Par30 14W (100W In)', icon: 'par',  color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par38 15w Lamp', label: 'Par38 15W (120W In)', icon: 'par2', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par38 17w Lamp', label: 'Par38 17W (150W In)', icon: 'par2', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br20 4w Lamp',   label: 'Br20 4W (30W In)',    icon: 'br',   color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br20 7w Lamp',   label: 'Br20 7W (50W In)',    icon: 'br',   color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br30 9w Lamp',   label: 'Br30 9W (75W In)',    icon: 'br30', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br30 11w Lamp',  label: 'Br30 11W (85W In)',   icon: 'br30', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br40 13w Lamp',  label: 'Br40 13W (100W In)',  icon: 'br38', color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br40 15w Lamp',  label: 'Br40 15W (120W In)',  icon: 'br38', color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br40 17w Lamp',  label: 'Br40 17W (150W In)',  icon: 'br38', color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // '6" Can PL Vertical / 8" Can PL Vertical'
+							[
+                {name: 'LED PL 13w (Vert)', label: '13W (26W Vert)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // '6" Can PL Horizontal / 8" Can PL Horizontal'
+              [
+                {name: 'LED PL 13w (HTZL), 1 Lamp', label: '13W 1 Lamp (26W Horz)', icon: undefined,  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED PL 13w (HTZL), 2 Lamp', label: '13W 2 Lamp (26W Horz)', icon: undefined,  color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // '8" Can HID / 10" Can HID'
+              [
+                {name: 'LED Br40 18w', label: 'Br40 18W (100W HID)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ], 
+              // 'Track Light'  
+              [
+                {name: 'LED GU/MR 6w Lamp',  label: 'GU/MR 6W (50W Hl)',   icon: 'mr16', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED GU/MR 7w Lamp',  label: 'GU/MR 7W (65W Hl)',   icon: 'mr16', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par20 7w Lamp',  label: 'Par20 7W (50W In)',   icon: 'par',  color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par30 10w Lamp', label: 'Par30 10W (75W In)',  icon: 'par',  color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par30 14w Lamp', label: 'Par30 14W (100W In)', icon: 'par',  color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par38 15w Lamp', label: 'Par38 15W (120W In)', icon: 'par2', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par38 17w Lamp', label: 'Par38 17W (150W In)', icon: 'par2', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br20 4w Lamp',   label: 'Br20 4W (30W In)',    icon: 'br',   color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br20 7w Lamp',   label: 'Br20 7W (50W In)',    icon: 'br',   color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br30 9w Lamp',   label: 'Br30 9W (75W In)',    icon: 'br30', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br30 11w Lamp',  label: 'Br30 11W (85W In)',   icon: 'br30', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br40 13w Lamp',  label: 'Br40 13W (100W In)',  icon: 'br38', color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br40 15w Lamp',  label: 'Br40 15W (120W In)',  icon: 'br38', color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br40 17w Lamp',  label: 'Br40 17W (150W In)',  icon: 'br38', color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ], 
+              // 'Wall Sconce Screw in / Drum/Ceiling Light'
+              [
+                {name: 'LED Candle 4w Lamp',      label: 'Candelabra 4W (25W In)', icon: 'candelabra', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Candle 5w Lamp',      label: 'Candelabra 5W (35W In)', icon: 'candelabra', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Candle 6w Lamp',      label: 'Candelabra 6W (45W In)', icon: 'candelabra', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 6w Lamp',         label: 'A19 6W (50W In)',        icon: 'a19',        color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 7w Lamp',         label: 'A19 7W (60W In)',        icon: 'a19',        color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 9.5w Lamp',       label: 'A19 9.5W (75W In)',      icon: 'a19',        color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 10.5w Lamp',      label: 'A19 10.5W (85W In)',     icon: 'a19',        color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 12w Lamp',        label: 'A19 12W (100W In)',      icon: 'a19',        color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 15w Lamp',        label: 'A19 15W (120W In)',      icon: 'a19',        color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Sconce 6w E26 Lamp',  label: 'E26 6W (50W In)',        icon: 'sconce',     color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Sconce 9w E26 Lamp',  label: 'E26 9W (75W In)',        icon: 'sconce',     color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Sconce 12w E26 Lamp', label: 'E26 12W (100W In)',      icon: 'sconce',     color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // 'Wall Sconce PL / Drum/Ceiling Light PL'
+              [
+                {name: 'LED Sconce PL-13w, 1 Lamp', label: '13W 1 Lamp (26W)', icon: undefined, color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Sconce PL-13w, 2 Lamp', label: '13W 2 Lamp (26W)', icon: undefined, color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // 'Chandelier'
+              [
+                {name: 'LED Candle 4w Lamp', label: 'Candelabra 4W (25W In)', icon: 'candelabra', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Candle 5w Lamp', label: 'Candelabra 5W (35W In)', icon: 'candelabra', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Candle 6w Lamp', label: 'Candelabra 6W (45W In)', icon: 'candelabra', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 6w Lamp',    label: 'A19 6W (50W In)',        icon: 'a19',        color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 7w Lamp',    label: 'A19 7W (60W In)',        icon: 'a19',        color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // 'Edison Fixture'		
+							[
+                {name: 'LED Par20 7w Lamp',  label: 'Par20 7W (50W In)',      icon: 'par',        color: '',       tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Candle 4w Lamp', label: 'Candelabra 4W (25W In)', icon: 'candelabra', color: 'color',  tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Candle 5w Lamp', label: 'Candelabra 5W (35W In)', icon: 'candelabra', color: 'color',  tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Candle 6w Lamp', label: 'Candelabra 6W (45W In)', icon: 'candelabra', color: 'color',  tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 6w Lamp',    label: 'A19 6W (50W In)',        icon: 'a19',        color: '',       tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 7w Lamp',    label: 'A19 7W (60W In)',        icon: 'a19',        color: '',       tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 9.5w Lamp',  label: 'A19 9.5W (75W In)',      icon: 'a19',        color: '',       tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 10.5w Lamp', label: 'A19 10.5W (85W In)',     icon: 'a19',        color: '',       tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 12w Lamp',   label: 'A19 12W (100W In)',      icon: 'a19',        color: '',       tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED A19 15w Lamp',   label: 'A19 15W (120W In)',      icon: 'a19',        color: '',       tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par30 10w Lamp', label: 'Par30 10W (75W In)',     icon: 'par',        color: 'color',  tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par30 14w Lamp', label: 'Par30 14W (100W In)',    icon: 'par',        color: 'color',  tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par38 15w Lamp', label: 'Par38 15W (120W In)',    icon: 'par2',       color: '',       tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par38 17w Lamp', label: 'Par38 17W (150W In)',    icon: 'par2',       color: '',       tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br20 4w Lamp',   label: 'Br20 4W (30W In)',       icon: 'br',         color: 'color',  tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br20 7w Lamp',   label: 'Br20 7W (50W In)',       icon: 'br',         color: 'color',  tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br30 9w Lamp',   label: 'Br30 9W (75W In)',       icon: 'br30',       color: '',       tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br30 11w Lamp',  label: 'Br30 11W (85W In)',      icon: 'br30',       color: '',       tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br40 13w Lamp',  label: 'Br40 13W (100W In)',     icon: 'br38',       color: 'color',  tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br40 15w Lamp',  label: 'Br40 15W (120W In)',     icon: 'br38',       color: 'color',  tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br40 17w Lamp',  label: 'Br40 17W (150W In)',     icon: 'br38',       color: 'color',  tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // 'Edison Flood Light / Small Flood Light'
+              [
+                {name: 'LED Par30 10w Lamp',  label: 'Par30 10W (75W In)',         icon: 'par',   color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par30 14w Lamp',  label: 'Par30 14W (100W In)',        icon: 'par',   color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par38 15w Lamp',  label: 'Par38 15W (120W In)',        icon: 'par2',  color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Par38 17w Lamp',  label: 'Par38 17W (150W In)',        icon: 'par2',  color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br30 9w Lamp',    label: 'Br30 9W (75W In)',           icon: 'br30',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br30 11w Lamp',   label: 'Br30 11W (85W In)',          icon: 'br30',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br40 13w Lamp',   label: 'Br40 13W (100W In)',         icon: 'br38',  color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br40 15w Lamp',   label: 'Br40 15W (120W In)',         icon: 'br38',  color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Br40 17w Lamp',   label: 'Br40 17W (150W In)',         icon: 'br38',  color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Small Flood 21w', label: 'Small Flood 21W (75W HID)',  icon: 'flood', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Small Flood 30w', label: 'Small Flood 30W (100W HID)', icon: 'flood', color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // 'Flood Light'  
+              [
+                {name: 'LED ShoeBox 40w',   label: 'Shoebox 40W (150W HID)',   icon: 'shoeBox',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED ShoeBox 60w',   label: 'Shoebox 60W (250W HID)',   icon: 'shoeBox',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED ShoeBox 100w',  label: 'Shoebox 100W (400W HID)',  icon: 'shoeBox',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED ShoeBox 150w',  label: 'Shoebox 150W (500W HID)',  icon: 'shoeBox',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED ShoeBox 200w',  label: 'Shoebox 200W (600W HID)',  icon: 'shoeBox',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED ShoeBox 300w',  label: 'Shoebox 300W (1000W HID)', icon: 'shoeBox',  color: '',      tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Wall Pack 28w', label: 'Wallpack 28W (100W HID)',  icon: 'wallPack', color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Wall Pack 36w', label: 'Wallpack 36W (175W HID)',  icon: 'wallPack', color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Wall Pack 60w', label: 'Wallpack 60W (250W HID)',  icon: 'wallPack', color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Wall Pack 90w', label: 'Wallpack 90W (400W HID)',  icon: 'wallPack', color: 'color', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // 'Pole/Street Light'  
+              [
+                {name: 'LED ShoeBox 40w',  label: '40W (150W HID)',   icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED ShoeBox 60w',  label: '60W (250W HID)',   icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED ShoeBox 100w', label: '100W (400W HID)',  icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED ShoeBox 150w', label: '150W (500W HID)',  icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED ShoeBox 200w', label: '200W (600W HID)',  icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED ShoeBox 300w', label: '300W (1000W HID)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // 'Wall Pack'        
+              [
+                {name: 'LED Wall Pack 28w', label: '28W (100W HID)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Wall Pack 36w', label: '36W (175W HID)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Wall Pack 60w', label: '60W (250W HID)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Wall Pack 90w', label: '90W (400W HID)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // 'High Bay/Canopy'
+							[
+                {name: 'LED High Bay 40w',  label: '40W (150W HID)',   icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED High Bay 60w',  label: '60W (250W HID)',   icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED High Bay 100w', label: '100W (400W HID)',  icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED High Bay 150w', label: '150W (500W HID)',  icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED High Bay 300w', label: '300W (1000W HID)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // 'Parking Garage'		
+							[
+                {name: 'LED Garage 40w', label: '40W (150W HID)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]},
+                {name: 'LED Garage 60w', label: '60W (250W HID)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // 'Gas Station Canopy'
+              [
+                {name: 'LED Gas Station 120w', label: '120W (400W HID)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // 'Battery Backup'   
+              [
+                {name: 'Battery Backup, 1 Lamp', label: '1 Lamp (20W max)', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ],
+              // 'Custom'
+              // 'custom: true' property used for solution-view template repeat   
+              [
+                {custom: true, name: 'Custom', label: 'Custom', icon: undefined, color: '', tallies: [{tally0: undefined, tally1: undefined, tally2: undefined, tally3: undefined}]}
+              ]
+        		])
+        	}
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

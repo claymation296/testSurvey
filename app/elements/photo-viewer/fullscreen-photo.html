@@ -1,0 +1,346 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+<link rel="import" href="../redaap-behaviors/open-close-fullscreen-behavior.html">
+
+
+<dom-module id="fullscreen-photo">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        @apply(--fullscreen-elements);
+        background-color: var(--accent-color);
+      }
+
+      paper-toolbar {
+      	background-color: var(--accent-color);
+        color: var(--primary-text-color);
+      }
+
+      .img {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 100vw;
+        height: 100vh;
+        transform: translate(-50%, -50%);
+        background-color: var(--divider-color);
+      }
+
+      .orientation3 {
+        transform: translate(-50%, -50%) rotate(180deg);
+      }
+
+      .orientation6 {
+        width: 100vh;
+        height: 100vw;
+        transform: translate(-50%, -50%) rotate(90deg);
+      }
+
+      .orientation8 {
+        width: 100vh;
+        height: 100vw;
+        transform: translate(-50%, -50%) rotate(-90deg);
+      }
+
+      paper-fab {
+        --paper-fab: {
+          position: fixed;
+          bottom: 16px;
+          right: 16px;
+          display: none;
+        };
+        --paper-fab-background: var(--default-primary-color);
+      }
+
+    </style>
+
+
+    <paper-scroll-header-panel id="panel">
+    	<paper-toolbar id="toolbar">
+    		<paper-icon-button id="back" 
+                           on-tap="_backButtonTapped" 
+                           icon="custom-icons:arrow-back">
+        </paper-icon-button>
+    		<span id="title" class="title">[[label]]</span>
+        <paper-icon-button id="close" 
+                           on-tap="_closeButtonTapped" 
+                           icon="custom-icons:close">
+        </paper-icon-button>
+    	</paper-toolbar>
+
+
+      <iron-image id="img"
+                  class$="img [[_computeOrientation(photo.orient)]]"
+                  src="[[photo.src]]"
+                  sizing="cover"
+                  preload 
+                  fade
+                  loaded="{{imageLoaded}}"
+                  error="{{imageLoadError}}">
+      </iron-image>
+
+      <paper-fab id="trash" on-tap="_deletePhotoButtonTapped" icon="custom-icons:delete"></paper-fab>
+
+  	</paper-scroll-header-panel>
+    
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'fullscreen-photo',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior,
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.Utilities,                  
+          window.Redaap.Behaviors.OnTapBehavior,              
+          window.Redaap.Behaviors.OpenCloseFullscreenBehavior 
+        ],
+
+        properties: {
+
+          animationConfig: {
+            value() {
+              return {
+                'fullscreenEntry': [{
+                  name: 'slide-from-top-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this,
+                  timing: {duration: 200, delay: 100, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'slide-from-top-animation',
+                  nodes:  [
+                    this.$.back,
+                    this.$.title,
+                    this.$.close
+                  ],
+                  timing: {duration: 400, delay: 50, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'fade-in-animation',
+                  nodes:  [
+                    this.$.back,
+                    this.$.title,
+                    this.$.close
+                  ],
+                  timing: {duration: 200, delay: 250, easing: 'ease-out'}
+                }],
+                'fullscreenFabEntry1': [{
+                  name: 'fade-in-animation',
+                  node: this.$.trash,
+                  timing: {duration: 100, easing: 'ease-in'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.trash,
+                  transformFrom: 'scale(0, 0)',
+                  transformTo: 'scale(1.2, 1.2)',
+                  timing: {duration: 200, easing: 'ease-out'}
+                }],
+                'fullscreenFabEntry2': {
+                  name: 'transform-animation',
+                  node: this.$.trash,
+                  transformFrom: 'scale(1.2, 1.2)',
+                  transformTo: 'scale(1, 1)',
+                  timing: {duration: 200, easing: 'ease-out'}
+                },
+                'fullscreenDeleteLast': [{
+                  name: 'slide-down-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this,
+                  timing: {duration: 300, delay: 100, easing: 'ease-in'}
+                }],
+                'fullscreenBack': [{
+                  name: 'slide-left-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this,
+                  timing: {duration: 300, delay: 100, easing: 'ease-in'}
+                }],
+                'fullscreenClose': [{
+                  name: 'slide-up-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this,
+                  timing: {duration: 300, delay: 100, easing: 'ease-in'}
+                }]
+              };
+            }
+          },
+
+          label: String,
+
+          cachedPhoto: Object,
+
+          photo: Object,
+
+          imageLoaded: {
+            type: Boolean,
+            observer: '_imageLoaded'
+          },
+
+          imageLoadError: {
+            type: Boolean,
+            observer: '_imageLoadError'
+          }
+        },
+
+
+        listeners: {
+          'neon-animation-finish': '_animationFinished'
+        },
+
+
+        _computeOrientation(orient) {
+          switch (orient) {
+            case 3:
+              return 'orientation3';
+            case 6:
+              return 'orientation6';
+            case 8:
+              return 'orientation8';
+            default:
+              return '';
+          }
+        },
+        
+
+        _cleanup() {
+          this.photo       = undefined;
+          this.cachedPhoto = undefined;
+          this.$.trash.style.display = 'none';
+          this.close();
+        },
+
+        // called by photo-viewer when user selects a photo in photo-selector
+        playEntryAnimation(photo) {
+          this.cachedPhoto = photo;
+          this.open();
+          this.cancelAnimation();
+          this.playAnimation('fullscreenEntry', 'fullscreenEntry');
+        },
+
+
+        _runFabEntry() {
+          this.$.trash.style.display = 'flex';
+          this.cancelAnimation();
+          this.playAnimation('fullscreenFabEntry1', 'fullscreenFabEntry1');
+        },
+
+
+        _playExitAnimation(animationType) {
+          this.cancelAnimation();
+          this.playAnimation(animationType, animationType);
+        },
+
+
+        _animationFinished(_, animationType) {
+          switch(animationType) {
+            case 'fullscreenEntry':
+              this.photo = this.cachedPhoto;
+              break;
+            case 'fullscreenFabEntry1':
+              this.cancelAnimation();
+              this.playAnimation('fullscreenFabEntry2', 'fullscreenFabEntry2');
+              break;
+            case 'fullscreenClose':
+            case 'fullscreenDeleteLast':
+              this._cleanup();
+              this.fire('fullscreen-photo-close-animation-done');
+              break;
+            case 'fullscreenBack':
+              this._cleanup();
+              break;
+            default:
+              return;
+          }
+        },
+
+
+        _showImage() {
+          window.URL.revokeObjectURL(this.photo.src);
+          // delay fab til after image fades in
+          this.async(() => {
+            this.schedule(this._runFabEntry.bind(this));
+          }, 500);
+        },
+
+
+        _imageLoaded(bool) {
+          if(!bool) { return; }
+          this.schedule(this._showImage.bind(this));
+        },
+
+
+        _imageLoadError(bool) {
+          if (!bool) { return; }
+          console.log('fullscreen-photo image load error: ', this.photo.src);
+        },
+
+
+        playDeleteAnimation() {
+          this.fire('fullscreen-photo-back');
+          this._playExitAnimation('fullscreenBack');
+        },
+
+
+        playDeleteLastPhotoAnimation() {
+          this.fire('fullscreen-photo-close');
+          this._playExitAnimation('fullscreenDeleteLast');
+        },
+
+
+        _deletePhotoButtonTapped() {
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = this.fire.bind(this, 'fullscreen-photo-delete', {photo: this.photo});
+        },
+
+
+        _backButtonTapped() {
+          const back = () => {
+            this.fire('fullscreen-photo-back');
+            this._playExitAnimation('fullscreenBack');
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = back;
+        },
+        
+
+        _closeButtonTapped() {
+          const close = () => {
+            this.fire('fullscreen-photo-close');
+            this._playExitAnimation('fullscreenClose');
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = close;
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

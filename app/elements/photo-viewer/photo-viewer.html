@@ -1,0 +1,281 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+
+<link rel="import" href="photo-selector.html">
+<link rel="import" href="fullscreen-photo.html">
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+<link rel="import" href="../redaap-behaviors/open-close-fullscreen-behavior.html">
+
+
+
+
+<dom-module id="photo-viewer">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        display: none;
+      }
+
+    </style>
+
+    <!-- <neon-animated-pages id="pages" 
+                         selected="[[selected]]"
+                         attr-for-selected="id"> -->
+
+      <photo-selector id="photoSelector" 
+                      label="[[label]]" 
+                      photo-data-array="[[photoDataArray]]">
+      </photo-selector>
+
+      <!-- <photo-hero id="photoHero" photo="[[photo]]"></photo-hero> -->
+
+    <!-- </neon-animated-pages> -->
+
+
+
+    <fullscreen-photo id="fullscreenPhoto" 
+                      label="[[label]]">
+    </fullscreen-photo>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'photo-viewer',
+
+        behaviors: [
+          window.Redaap.Behaviors.Utilities,                  
+          window.Redaap.Behaviors.OnTapBehavior,              
+          window.Redaap.Behaviors.OpenCloseFullscreenBehavior 
+        ],
+
+        properties: {
+
+          selected: {
+            type: String,
+            value: 'photoSelector'
+          },
+          // reference to photo-capture element that opened photo-viewer
+          // used to update the element's data including:
+          // key, keys, savedUrl, orientation
+          capture: Object,
+
+          label: String,
+          // array of objects used to populate photo-selector 
+          // and update capture after a delete
+          photoDataArray: Array
+        },
+
+
+        listeners: {
+          // 'neon-animation-finish':                 '_animationFinished',
+          // photo-selector encountered bad photo data while loading
+          // so remove it from the photoDataArray to maintain state
+          'photo-selector-dead-photo-data':        '_removeDeadPhotoData',
+          // photo-selector user takes a new photo
+          'photo-selector-new-photo-placeholder':  '_newPhotoPlaceholder',
+          // photo-selector user takes a new photo
+          'photo-selector-new-photo-external-src': '_newPhotoExternalSrc',
+          // photo-selector user selects a photo from the list
+          'photo-selector-photo-selected':         '_photoSelected',
+          // photo-selector close button
+          'photo-selector-close':                  '_closeButtonTapped',
+          // fullscreen-photo close button
+          'fullscreen-photo-close':                '_fullscreenClose',
+          // fullscreen-photo after close animation
+          'fullscreen-photo-close-animation-done': '_closeButtonTapped',
+          // fullscreen-photo close button
+          'fullscreen-photo-back':                 '_fullscreenPhotoBackButtonTapped',
+          // fullscreen-photo delete fab
+          'fullscreen-photo-delete':               '_deletePhoto'
+        },
+
+
+        // _animationFinished(_, animationType) {
+        // },
+
+
+        _removeObjFromPhotoDataArray(obj) {
+          const index        = this.photoDataArray.findIndex(photo => photo.key === obj.key);
+          const [deletedObj] = this.photoDataArray.splice(index, 1);
+
+          return deletedObj;
+        },
+        // called by photo-selector when attempting to find valid urls for all photos sent to it
+        // if a savedUrl is not already present and it cannot fetch a temprorary url from web-worker
+        // localForage, then it fires this event to clean up the photoDataArray
+        _removeDeadPhotoData(event) {
+          console.log('dead photo: ', event.detail.obj);
+          const deadObj = event.detail.obj;
+          this._removeObjFromPhotoDataArray(deadObj);
+        },
+        // after a photo is deleted, the next photo in line should take its place, if one exists.
+        // must update capture data with its set method for Polymer to propagate the changes to 
+        // the dom  
+        _updateCaptureData(remainingKeys, currentKeys) {
+          if (remainingKeys.length) {
+            // there are remaining photos on the list so use the last
+            // one on the list since it should be the next newest photo
+            const nextLowestKey = remainingKeys[remainingKeys.length - 1];
+            const nextPhoto     = currentKeys[nextLowestKey];
+            // the next photo has been saved to db
+            this.capture.updateThumbnail({
+              key:         nextPhoto.key,
+              orient:      nextPhoto.orient,
+              placeholder: nextPhoto.placeholder,
+              url:         nextPhoto.savedUrl 
+            });
+
+            this.schedule.bind(this, this.$.fullscreenPhoto.playDeleteAnimation());
+          } else {
+            // the last photo was deleted so reset photo-capture
+            this.capture.resetCapture();
+            this.schedule.bind(this, this.$.fullscreenPhoto.playDeleteLastPhotoAnimation());
+          }
+        },
+
+        // fullscreen-photo delete button event
+        _deletePhoto(event) {
+          // model data to update
+          const photoToDelete = event.detail.photo;
+          const currentKeys   = this.capture.keys;
+          // remove the photo obj from the photoDataArray
+          // removed obj returned from this._removeObjFromPhotoDataArray
+          const deletedObj  = this._removeObjFromPhotoDataArray(photoToDelete);
+          const keyToDelete = deletedObj.key;
+          // delete from photo-selector data model
+          this.$.photoSelector.updateDelete(keyToDelete);
+          // remove data from localforage
+          window.Redaap.webWorker.removeUserDeletedPhoto(keyToDelete);
+          // remove the key and value from list of saved keys
+          delete currentKeys[keyToDelete];
+          // Object keys are arranged in ascending order
+          const remainingKeys = Object.keys(currentKeys);
+          // if photo to delete is also the current thumbnail
+          // update the thumbnail data with the next lowest key number data
+          // or reset the photo-capture if its the last photo in the list
+          if (this.capture.key === keyToDelete) {
+            this._updateCaptureData(remainingKeys, currentKeys);
+          } else {
+            // not the current thumbnail photo so assume the deleted photo is not the
+            // last in the list
+            this.schedule.bind(this, this.$.fullscreenPhoto.playDeleteAnimation());
+          }
+        },
+        // from photo-selector
+        // add new photo data to the element that opened photo-viewer
+        // add new photo to photos array
+        _newPhotoPlaceholder(event) {
+          if (!this.capture) { return; }
+
+          const {placeholder, key, keys, orientation} = event.detail;
+          // two events are fired each time a new photo is taken
+          // ignore the second event that resets placeholder
+          if (!placeholder || placeholder === '#') { return; }
+          // set new data onto the element to reflect the new photo taken in photo-selector
+          this.capture.updateKeys(key, keys);
+          this.capture.updateThumbnail({
+            key: key,
+            orient: orientation,
+            placeholder,
+            url: undefined
+          });
+
+          const newKeyObj = keys[key];
+          // place new photo to the front of the photos list
+          this.photoDataArray.unshift(newKeyObj);
+          // update the photo-selector model data
+          this.$.photoSelector.updateAdd(newKeyObj, placeholder);
+        },
+        // from photo-selector
+        // add new saved photo data to the element that opened photo-viewer
+        _newPhotoExternalSrc(event) {
+          if (!this.capture) { return; }
+
+          const {externalSrc, key, keys} = event.detail;
+          // must match elements since this event is from the asynchronous
+          // photo save to cloud db, so user may have closed this page
+          // before this event fires
+          if (key !== this.capture.key) { return; }
+          // update the photo keys data in the photoDataArray
+          const index = this.photoDataArray.findIndex(obj => obj.key === key);
+          const newKeyObj = keys[key];
+          // remove and replace the old keys data
+          // no need to update photo-selector model data
+          // since the data object is only being replaced, not added or deleted
+          this.photoDataArray.splice(index, 1, newKeyObj);
+          this.capture.updateSavedUrl(externalSrc);
+          this.capture.updateKeys(key, keys);
+        },
+ 
+
+        _openSelectorCallback() {
+          this.$.photoSelector.playEntryAnimation();
+        },
+        // called by any photo-input instance when user taps on a thumbnail that has already
+        // been loaded into the app.  Show a fullscreen view of the photo along with the 
+        // option to delete the pic
+        openPhotoViewer(captureElement) {
+          const {filename, keys} = captureElement;
+          this.capture = captureElement;
+          this.label   = filename;
+          // keys === {key: {key, orient, savedUrl}}
+          // Object.keys will create an array with the keys ordered in ascending
+          // order which puts the elements in order of newest last since
+          // each key is a timestamp
+          // cache the array in order of newest to oldest taken photos
+          this.photoDataArray = Object.keys(keys).map(key => keys[key]).reverse();
+
+          this.selected = 'photoSelector';
+          this.open(this._openSelectorCallback.bind(this));
+        }, 
+
+
+        _photoSelected(event) {
+          // // start photo-hero entry
+          // this.selected = 'photoHero';
+          this.$.fullscreenPhoto.playEntryAnimation(event.detail.photo);
+        }, 
+
+
+        _fullscreenPhotoBackButtonTapped() {
+          // reset for hero animation
+          // this.selected = 'photoSelector';
+        },
+
+
+        _fullscreenClose() {
+          this.$.photoSelector.close();
+        },
+        
+
+        _closeButtonTapped() {
+          // to be run after close
+          const cleanup = () => {
+            this.capture        = undefined;
+            this.label          = undefined;
+            this.photoDataArray = undefined;
+            this.$.photoSelector.cleanUp();
+          };
+
+          this.close(cleanup);
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

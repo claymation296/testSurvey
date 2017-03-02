@@ -1,0 +1,112 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<dom-module id="ripple-origin">
+  <template>
+    <style>
+
+      :host {
+        display: block;
+        background-color: transparent;
+      }
+
+      #ripple {
+        width: 1px;
+        height: 1px;
+        position: absolute;
+        /*top and left are set imperitively*/
+        top: 0;
+        left: 0;
+        border-radius: 50%;
+        background-color: white;
+      }
+
+    </style>
+
+    <div id="ripple"></div>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'ripple-origin',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior,
+          Polymer.NeonSharedElementAnimationBehavior
+        ],
+
+        properties: {
+          
+          animationConfig: {
+            value() {
+              return {
+                'exit': {
+                  name: 'ripple-animation',
+                  id: 'ripple',
+                  fromPage: this,
+                  timing: {duration: 400, easing: 'ease-out'}
+                },
+                'entry': {
+                  name: 'ripple-animation',
+                  id: 'ripple',
+                  toPage: this,
+                  timing: {duration: 300, easing: 'ease-in'}
+                }
+              };
+            }
+          },
+
+          sharedElements: {
+            value() {
+              return {
+                'ripple': this.$.ripple
+              };
+            }
+          },
+          // x y pos of tap event from light-selector
+          tapCoords: {
+          	type: Object,
+          	observer: '_tapCoordsChanged'
+          },
+          // bound with solution-view via solution-page or quote-view via quote-page
+          prepareSharedElementAnimation: {
+            type: Boolean,
+            observer: '_prepareSharedElementAnimation'
+          }
+        },
+        // x y pos of tap event from light-selector to center the ripple origin
+        _tapCoordsChanged(obj) {
+        	this.$.ripple.style.top = `${obj.y}px`;
+        	this.$.ripple.style.left = `${obj.x}px`;
+        },
+        // bound from solution-view _setExitAnimation() to avoid a warning from
+        // polymer about not having a 'fromPage' when running the 'save'
+        // animation which is not a shared element animation
+        _prepareSharedElementAnimation(bool) {
+          if (bool) {
+            this.animationConfig.entry = {
+              name: 'ripple-animation',
+              id: 'ripple',
+              toPage: this,
+              timing: {easing: 'ease-in-out'}
+            };
+            return;
+          }
+          this.animationConfig.entry = undefined;
+        }
+ 
+      });
+    })();
+  </script>
+
+</dom-module>

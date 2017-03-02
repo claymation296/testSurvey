@@ -1,0 +1,544 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../slide-delete/slide-delete.html">
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/tab-page-animation-behavior.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+<link rel="import" href="../redaap-behaviors/open-close-fullscreen-behavior.html">
+<link rel="import" href="../redaap-behaviors/expand-collapse-classes-behavior.html">
+
+
+<dom-module id="area-page">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        display: block;
+      }
+
+      #bottomPadding {
+        display: flex;
+        justify-content: center;
+        padding-bottom: 64px;
+      }
+
+      #centeredContent {
+        position: relative;
+        width: 100%;
+        max-width: 460px;
+      }
+
+      .cardContainer {
+        position: relative;
+        margin-bottom: 16px;
+      }
+
+      paper-card {
+        margin-bottom: 0px;
+      }
+
+      .buttonRight {
+        --paper-icon-button: {
+          float: right;
+        };
+      }
+
+      paper-input {
+        display: inline-block;
+        width: calc(100% - 56px);
+        --paper-input-container-color: white;
+        --paper-input-container-focus-color: white;
+        --paper-input-container-invalid-color: white;
+        --paper-input-container-input-color: white;
+      }
+
+      .new {
+        position: absolute;
+        height: 112px;
+        margin-bottom: 32px;
+      	--paper-card-background-color: var(--dark-primary-color);
+      }
+
+      .showFilter {
+        height: 172px;
+      }
+
+      .areaCardContent {
+        position: absolute;
+        top: 16px;
+        left: 0px;
+        right: 0px;
+        padding: 0px 16px 0px 16px;
+        color: white;
+      }      
+
+      .repeaterDiv {
+        width: 100%;
+        position: absolute;
+        top: 159px;
+        padding-bottom: 128px;
+      }
+
+      .pushRepeaterToShowFilter {
+        top: 219px;
+      }
+
+      .toggleDiv{
+        display: flex;
+        justify-content: center;
+        position: absolute;
+        left: 0px;
+        right: 0px;
+        top: 64px;
+      }
+
+      .pushToggleDown {
+        top: 124px;
+      }
+
+      .expanderTransitions {
+        -webkit-transition: transform 0.3s ease-out;
+                transition: transform 0.3s ease-out;
+      }
+
+      .filterInput {
+        display: none;
+        width: calc(100% - 88px);
+        position: absolute;
+        top: 48px;
+        left: 16px;
+        opacity: 0;
+        -webkit-transition: opacity 0.2s ease-in;
+                transition: opacity 0.2s ease-in;
+      }
+
+      .setFilterInputDisplay {
+        display: inline-block;
+      }
+
+      .showFilterInput {
+        opacity: 1;
+      }
+
+      #svgIconButton {
+        --paper-icon-button: {
+          min-width: 24px;
+          width: 40px;
+          height: 40px;
+          position: absolute;
+          top: -8px;
+        };
+      }
+
+      .svgIcon {
+        width: 24px;
+        height: 24px;
+        fill: white;
+        overflow: visible;
+        transform-origin: 50% 50%;
+      }
+
+      .left {
+        fill: white;
+        transform-origin: 50% 50%;
+        transform: rotate(-135deg);
+        transition: transform 0.5s ease-in-out;
+      }
+
+      .leftToRight {
+        transform: translate(4.64px, 0px) rotate(-315deg);
+      }
+
+      .right {
+        fill: white;
+        transform-origin: 50% 50%;
+        transform: rotate(135deg);
+        transition: transform 0.5s ease-in-out;
+      }
+
+      .rightToLeft {
+        transform: translate(-4.64px, 0px) rotate(315deg);
+      }
+
+      .savedArea {
+        color: var(--primary-text-color);
+      }
+
+      .editButtons {
+        top: -8px;
+      }
+      
+    </style>
+
+    <div id="bottomPadding">
+      <div id="centeredContent">
+
+
+        <paper-card id="new" class="new"></paper-card>
+
+        <div class="areaCardContent">
+
+
+          <paper-input id="areaNameInput"
+                       label="New Area" 
+                       no-label-float 
+                       value="{{areaName}}" 
+                       type="text"
+                       autocapitalize 
+                       autocomplete 
+                       autocorrect
+                       allowed-pattern="[-.0-9a-zA-Z\s]" 
+                       prevent-invalid-input>
+          </paper-input>
+
+
+          
+          <paper-icon-button id="addArea" 
+                             class="buttonRight"
+                             on-tap="_addAreaButtonTapped" 
+                             icon="custom-icons:add">
+          </paper-icon-button>
+
+          <paper-input id="filterInput"
+                       class="filterInput"
+                       label="Filter Areas"
+                       value="{{filter}}" 
+                       type="text"
+                       autocapitalize 
+                       autocomplete 
+                       autocorrect
+                       allowed-pattern="[.-0-9a-zA-Z\s]" 
+                       prevent-invalid-input>
+          </paper-input>
+
+          <div id="toggleDiv" class="toggleDiv">
+            <paper-icon-button id="svgIconButton" 
+                               on-tap="_toggleFilterButtonTapped">
+            </paper-icon-button>
+            <!-- creates an animated chevron -->
+            <svg id="svgIcon"
+                 class="svgIcon" 
+                 version="1.1" 
+                 xmlns="http://www.w3.org/2000/svg" 
+                 xmlns:xlink="http://www.w3.org/1999/xlink" 
+                 x="0px" 
+                 y="0px" 
+                 viewBox="0 0 24 24" 
+                 enable-background="new 0 0 24 24" 
+                 xml:space="preserve">
+              <rect id="left" class="left" x="5.46" y="11.27" width="8.5" height="2"/>
+              <rect id="right" class="right" x="10.1" y="11.27" width="8.5" height="2"/>
+            </svg>
+          </div>
+
+        </div>
+
+        <div id="repeaterDiv" class="repeaterDiv">
+          <template id="areaRepeater" 
+                    is="dom-repeat" 
+                    items="{{userSelectedArray}}"
+                    initial-count="5" 
+                    target-framerate="60" 
+                    strip-whitespace
+                    filter="{{_computeFilterFunc(filter)}}">
+              
+            <slide-delete class="cardContainer"
+                          template-id="areaRepeater"
+                          template-item-class-name="cardContainer"
+                          index="[[index]]">
+
+              <paper-card class="savedArea">
+                <div class="card-content">
+                  <span class="dialogTitle noSelect">[[item.name]]</span>
+                  <paper-icon-button id="editArea" 
+                                     class="buttonRight editButtons"
+                                     on-tap="_editAreaButtonTapped" 
+                                     icon="custom-icons:create">
+                  </paper-icon-button>
+                </div>
+              </paper-card>
+            </slide-delete>
+
+          </template>
+        </div>
+
+      </div>
+    </div>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'area-page',
+
+        behaviors: [
+        	Polymer.NeonAnimatableBehavior,
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.Utilities,                    
+          window.Redaap.Behaviors.TabPageAnimationBehavior,     
+          window.Redaap.Behaviors.OnTapBehavior,                
+          window.Redaap.Behaviors.ExpandCollapseClassesBehavior 
+        ], 
+        
+        properties: {
+          // manages the template repeat and 'Saved Fixtures' tab paper-badge
+          // area === {name, fixtures}
+          // fixture === {name, label, quantity, replacements, notes, elevation, animate, icon, openQty}
+          // replacement === {color, count, domIf, elevation, icon, label, name, openQty, showButtons, tallies}
+          // tally === {tally0, tally1, tally2, tally3}
+        	userSelectedArray: {
+        		type: Array,
+            notify: true,
+        		value: () => ([])
+        	},
+        	// user input area name
+        	areaName: String,
+
+          filterToggle: {
+            type: String,
+            value: 'closed'
+          }
+        },
+
+        // match the filter input with the area name substring of the same length
+        _computeFilterFunc(str) {
+          if (!str) { return null; }
+          str = str.toLowerCase();
+          const endOfSubStr = str.length;
+          // return a filter function
+          return item => item.name.substr(0, endOfSubStr).toLowerCase() === str;
+        },
+        
+        // common func
+        _getIndexByName(array, name) {
+          const testAreaNames = area => area.name === name;
+          return array.findIndex(testAreaNames);
+        },
+
+        // called by area-edit
+        deleteArea(name) {
+          const index = this._getIndexByName(this.userSelectedArray, name);
+          this.splice('userSelectedArray', index, 1);
+        },
+        // called by solution-view sendDataAndClear() method
+        // search the uSA for any match to the new data coming in
+        // so that all data is collated as concisely as possible
+        updateUSA({name, fixture, replacement}) {
+          // area === {name, fixtures}
+          // fixture === {name, label, notes, icon, pic, file}
+          // replacement === {color, count, domIf, elevation, icon, label, name, openQty, showButtons, tallies}
+          // tally === {tally0, tally1, tally2, tally3}
+          const replacements = [replacement];
+          fixture.replacements = replacements;
+          const fixtures = [fixture];
+          // on users first use of this app, uSA is undefined
+          // so make it an array
+          if (!Array.isArray(this.userSelectedArray)) {
+            this.set('userSelectedArray', []);
+          }
+          // search for a match of the area names first
+          const areaIndex = this._getIndexByName(this.userSelectedArray, name);
+          // no area match
+          if (areaIndex === -1) {
+            // build the new collection
+            const newArea = {
+              name,
+              fixtures,
+            };
+
+            this.unshift('userSelectedArray', newArea);
+          } else {
+            const matchingArea = this.userSelectedArray[areaIndex];
+            const fixtureIndex = this._getIndexByName(matchingArea.fixtures, fixture.name);
+            // no fixture match
+            if (fixtureIndex === -1) {
+              this.unshift(`userSelectedArray.${areaIndex}.fixtures`, fixture);
+              // push new data into area-edit
+              window.Redaap.areaEdit.update(this.userSelectedArray[areaIndex]);
+            } else {
+              const matchingFixture = matchingArea.fixtures[fixtureIndex];
+              // update fixture notes, image file key, and saved image url with most current 
+              // version if its truthy
+              const props = ['key', 'keys', 'notes', 'orientation', 'placeholder', 'savedUrl'];
+
+              props.forEach(prop => {
+                matchingFixture[prop] = fixture[prop] ? fixture[prop] : matchingFixture[prop];
+              });
+
+              const replacementIndex = this._getIndexByName(matchingFixture.replacements, replacement.name);
+              // no replacement match
+              if (replacementIndex === -1) {
+                this.unshift(
+                  `userSelectedArray.${areaIndex}.fixtures.${fixtureIndex}.replacements`, 
+                  replacement
+                );
+                // push new data into area-edit
+                window.Redaap.areaEdit.update(this.userSelectedArray[areaIndex]);
+              } else {
+                // new tally
+                const matchingReplacement = matchingFixture.replacements[replacementIndex];
+                // sum counts
+                matchingReplacement.count += replacement.count;
+                // consolidate tallies
+                matchingReplacement.tallies = replacement.tallies.concat(matchingReplacement.tallies);
+                this.set(
+                  `userSelectedArray.${areaIndex}.fixtures.${fixtureIndex}.replacements.${replacementIndex}`, 
+                  matchingReplacement
+                );
+                // push new data into area-edit
+                window.Redaap.areaEdit.update(this.userSelectedArray[areaIndex]);
+              }
+            }
+          }
+        },
+
+        // called by area-edit
+        editUSA(data) {
+          // search for a match of the area names first
+          const areaIndex = this._getIndexByName(this.userSelectedArray, data.name);
+
+          if (areaIndex === -1) {
+            console.log('edit failed');
+            // add toast warning?
+            return;
+          }
+          // update all dom and local storage with Polymer data api
+          this.set(`userSelectedArray.${areaIndex}`, data);
+        },
+
+        // called by solution-view _clearSolutions() method
+        clearAreaName() {
+          this.areaName = undefined;
+        },
+
+        // chevron icon button
+        _toggleFilterButtonTapped() {
+          if (this.filterToggle === 'closed') {
+            this.filterToggle = 'open';
+            Polymer.dom(this.$.filterInput).classList.add('setFilterInputDisplay');
+
+            const showInputCallback = () => {
+              Polymer.dom(this.$.filterInput).classList.add('showFilterInput');
+              // // animates chevron icon button to point up
+              Polymer.dom(this.$.left).classList.add('leftToRight');
+              Polymer.dom(this.$.right).classList.add('rightToLeft');
+            };
+
+            this.ecClassesAnimation(
+              this.$.new, 
+              'showFilter', 
+              'expanderTransitions', 
+              undefined,
+              showInputCallback 
+            );
+
+            this.ecClassesAnimation(
+              this.$.toggleDiv, 
+              'pushToggleDown', 
+              'expanderTransitions'
+            );
+
+            this.ecClassesAnimation(
+              this.$.repeaterDiv, 
+              'pushRepeaterToShowFilter', 
+              'expanderTransitions'
+            );
+
+          } else if (this.filterToggle === 'open') {
+            this.filterToggle = 'closed';
+            let removeListener;
+
+            const collapseFilter = event => {
+              event.preventDefault();
+              event.stopPropagation();
+              event.stopImmediatePropagation();
+
+              if (event.propertyName === 'opacity') {
+                removeListener();
+
+                Polymer.dom(this.$.filterInput).classList.remove('setFilterInputDisplay');
+
+                const toggleCallBack = () => {
+                  // animates chevron icon button to point down
+                  Polymer.dom(this.$.left).classList.remove('leftToRight');
+                  Polymer.dom(this.$.right).classList.remove('rightToLeft');
+                };
+
+                this.ecClassesAnimation(
+                  this.$.new, 
+                  'showFilter', 
+                  'expanderTransitions', 
+                  'reverse',
+                  toggleCallBack
+                );
+
+                this.ecClassesAnimation(
+                  this.$.toggleDiv, 
+                  'pushToggleDown', 
+                  'expanderTransitions', 
+                  'reverse'
+                );
+
+                this.ecClassesAnimation(
+                  this.$.repeaterDiv, 
+                  'pushRepeaterToShowFilter', 
+                  'expanderTransitions', 
+                  'reverse'
+                );
+              }
+            };
+
+            removeListener = () => {
+              this.$.filterInput.removeEventListener('transitionend', collapseFilter, false);
+            };
+            // clear filter if user has closed it
+            this.filter = undefined;
+            Polymer.dom(this.$.filterInput).classList.remove('showFilterInput');
+            this.$.filterInput.addEventListener('transitionend', collapseFilter, false);
+          }
+        },
+
+
+        _addAreaButtonTapped() {
+        	if (!this.areaName) {
+            this.warn('Please name the area first.');
+        		return;
+        	}
+
+        	const openLightSelector = () => {
+        		window.Redaap.lightSelector.setAreaName(this.areaName);
+        		window.Redaap.lightSelector.open();
+        	};
+        	// onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = openLightSelector;
+        },
+
+
+        _editAreaButtonTapped(event) {
+          const data = event.model.item;
+
+          const openEditor = () => {
+            // send data and ref to this element so this.editUSA() can be called by area-edit
+            window.Redaap.areaEdit.init(data, this);
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          // open area-edit and pass in its requred data
+          this.onTap = openEditor;
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

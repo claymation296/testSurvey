@@ -1,0 +1,133 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../ripple-origin/ripple-origin.html">
+<link rel="import" href="quote-view.html">
+
+
+<dom-module id="quote-page">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        display: none;
+        position: fixed;
+        top: 0px;
+        left: 0px;
+        width: 100%;
+		    height: 100%;
+		    background-color: transparent;
+      }
+
+    </style>
+
+    <neon-animated-pages selected="[[selected]]"
+                         on-neon-animation-finish="_animationComplete">
+
+      <ripple-origin tap-coords="[[quoteSelectorTapCoords]]"
+                     prepare-shared-element-animation="[[prepareSharedElementAnimation]]">
+      </ripple-origin>
+      
+      <quote-view id="quoteView"
+                  client="[[client]]"
+                  selected-pricing="[[selectedPricing]]"
+                  version="[[version]]">
+      </quote-view>
+
+    </neon-animated-pages>
+    
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'quote-page',
+
+        properties: {
+          // neon-animated-pages index
+          selected: {
+            type: Number,
+            value: 0
+          },
+          // from account-form
+          client: Object,
+          // from lighting-main
+          selectedPricing: Object,
+          // from lighting-main
+          version: Number,
+          // used to reset user selection in quote-selector
+          quoteSelectorCustomElement: Object,
+          // avoid a warning from Polymer about not having a valid 'fromPage' in animation.config
+          // in the ripple-origin element
+          prepareSharedElementAnimation: {
+            type: Boolean,
+            value: false
+          }
+        },
+
+        // from quote-view
+        listeners: {
+          'closeQuote': '_closeQuote',
+        },
+
+
+        attached() {
+          this.async(() => {
+            this.quoteSelectorCustomElement = Polymer.dom(window.Redaap.lightingMain).node.$.quoteSelector;
+          });
+        },
+
+        // called by options-card in quote-selector
+        setTapCoords(obj) {
+          this.quoteSelectorTapCoords = obj;
+        },
+        
+        // called by quote-selector
+        openQuotePage() {
+          // open page
+          this.style.zIndex = 50;
+          this.style.display = 'block';
+          // kick off neon-animated-pages animations
+          this.selected = 1;
+        },
+        // hide this element, reset triggers and selections
+        // also called by email-options
+        close() {
+          this.selected = 0;
+          this.$.quoteView.resetForNextAnimation();
+          // reset user selection from quote-selector options-card
+          this.quoteSelectorCustomElement.resetPlanIndex();
+          // close
+          this.style.zIndex = -1;
+          this.style.display = 'none';
+        },
+        // set page back to 0 to start exit animation sequence
+        // called from close button in quote-view
+        _closeQuote() {
+          this.selected = 0;
+        },
+        // trigger quote-view to animate its contents after the 
+        // main ripple animation completes
+        _animationComplete() {
+          if (this.selected === 1) {
+            // trigger quote-view content animations
+            this.$.quoteView.animateContent();
+          } else {
+            // all closing animations are done so hide this element and reset
+            this.close();
+          }
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

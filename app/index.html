@@ -1,0 +1,491 @@
+<!-- 
+Site created by the REDAAP Dev Team, TEU Services, Inc. 
+
+Special thanks to Google, YouTube, Mozilla Developer Network, w3schools, StackOverflow, Github, Codepen.io, Polymer, Parse, Bower, Gulp, Babel, Node.js, SignatrePad.js, exif.js, localforage.js, Jimp.js and jsPDF
+-->
+
+
+
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+
+
+
+<!doctype html>
+
+<html lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="">
+  <!-- setting user-scalable to 0 so mobile browsers dont auto zoom when focusing
+        an input since it is 100% annoying -->
+  <meta name="viewport" 
+    content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=0">
+
+  <meta name="generator" content="REDAAP" />
+  <title>REDAAP</title>
+  <!-- Place favicon.ico in the `app/` directory -->
+
+  <!-- Chrome for Android theme color -->
+  <meta name="theme-color" content="#7c0000">
+
+  <!-- Web Application Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Tile color for Win8 -->
+  <meta name="msapplication-TileColor" content="#7c0000">
+
+  <!-- Add to homescreen for Chrome on Android -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="REDAAP">
+  <link rel="icon" sizes="192x192" href="images/touch/chrome-touch-icon-192x192.png">
+
+  <!-- Add to homescreen for Safari on iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="REDAAP">
+  <link rel="apple-touch-icon" href="images/touch/apple-touch-icon.png">
+
+  <!-- Tile icon for Win8 (144x144) -->
+  <meta name="msapplication-TileImage" content="images/touch/ms-touch-icon-144x144-precomposed.png">
+  
+  <!-- inlining styles for first paint perf -->
+  <style>
+
+    body {
+      background: #fafafa;
+      font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #333;
+      /*remove after upgrade to app layout elements*/
+      overflow: visible;
+    }
+    /*remove after upgrade to app layout elements*/
+    #paperDrawerPanel {
+      position: fixed;
+    }
+
+    #splash {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: 100vh;
+      background-color: #7c0000;
+      opacity: 0;
+      transition: opacity 0.3s ease-out;
+      z-index: 101;
+    }
+
+    body.loading #splash {
+      opacity: 1;
+    }
+
+    #whiteRedaapLogo {
+      width: 80%;
+      max-width: 500px;
+      position: relative;
+      top: -33.33%;
+    }
+
+  </style>
+
+</head>
+
+<body class="loading">  
+
+  <div id="splash">
+    <svg id="whiteRedaapLogo" 
+         version="1.1" 
+         xmlns="http://www.w3.org/2000/svg" 
+         xmlns:xlink="http://www.w3.org/1999/xlink" 
+         x="0px" 
+         y="0px" 
+         viewBox="0 0 792 129.6" 
+         enable-background="new 0 0 792 129.6" 
+         xml:space="preserve">
+      <path fill="#FFFFFF" d="M0,128.494c1.167-10.78,2.089-20.49,2.766-29.131c0.675-8.639,1.259-18.655,1.75-30.051c0.491-11.395,0.861-23.419,1.106-36.07c0.246-12.65,0.37-22.713,0.37-30.189c7.656,0.184,13.844,0.275,18.56,0.275c4.9,0,10.874-0.137,17.918-0.413c7.045-0.275,13.905-0.413,20.582-0.413c7.841,0,14.825,0.307,20.951,0.918c4.593,0.43,8.773,1.319,12.542,2.665c3.767,1.348,6.937,2.988,9.51,4.917c2.574,1.93,4.717,4.09,6.432,6.479c1.714,2.39,3.046,5.193,3.998,8.409c0.949,3.216,1.424,6.663,1.424,10.339c0,4.105-0.521,7.949-1.563,11.534c-1.042,3.584-2.681,6.954-4.916,10.108c-2.237,3.156-5.055,5.882-8.455,8.18c-3.4,2.297-8.165,4.64-14.291,7.029l4.78,11.671c1.346,3.25,2.786,6.559,4.319,9.927l12.314,26.926c0.552,1.166,1.531,3.463,2.94,6.891c-10.103-0.12-16.897-0.183-20.387-0.183c-4.408,0-11.634,0.063-21.675,0.183c-0.981-3.183-2.759-9.096-5.335-17.733c-1.042-3.615-1.933-6.402-2.668-8.366c-1.473-4.348-3.65-10.444-6.533-18.286l-9.476-26.007c3.308,0.614,6.555,0.917,9.741,0.917c4.472,0,8.532-0.673,12.175-2.022c3.645-1.346,6.402-3.429,8.271-6.249c1.869-2.817,2.803-5.79,2.803-8.913c0-2.634-0.706-4.948-2.114-6.939c-1.409-1.991-3.629-3.477-6.663-4.458c-3.032-0.979-7.705-1.47-14.013-1.47c-2.146,0-4.366,0.045-6.664,0.137c-2.297,0.093-4.978,0.17-8.041,0.231c-0.786,12.559-1.48,27.876-2.084,45.95c-0.605,18.072-0.998,35.813-1.178,53.207c-10.245-0.12-16.899-0.183-19.965-0.183C15.671,128.312,9.262,128.374,0,128.494z"/>
+      <path fill="#FFFFFF" d="M121.944,128.494c1.535-15.806,2.657-29.036,3.364-39.699c0.707-10.66,1.413-24.827,2.119-42.503c0.707-17.675,1.061-29.393,1.061-35.151l-0.092-8.088c14.456,0.125,31.944,0.184,52.466,0.184c18.928,0,35.619-0.059,50.078-0.184l-0.185,3.023c-0.061,0.732-0.215,3.388-0.459,7.968l-0.55,9.983c-0.124,2.139-0.184,4.307-0.184,6.504c-11.825-0.49-21.75-0.736-29.776-0.736c-8.822,0-14.781,0.016-17.874,0.046c-3.096,0.03-7.92,0.169-14.475,0.415l-1.115,21.136c7.231,0.184,15.658,0.274,25.278,0.274c3.431,0,12.562-0.213,27.393-0.643c-0.612,7.843-1.195,17.187-1.744,28.029c-10.594-0.123-18.737-0.183-24.431-0.183c-8.45,0-17.91,0.215-28.381,0.641l-1.092,22.333h10.561c3.122,0,9.583-0.093,19.378-0.276l19.012-0.457c2.815-0.062,7.53-0.308,14.142-0.736c-0.733,9.066-1.348,18.443-1.837,28.119c-14.95-0.12-31.338-0.183-49.166-0.183l-40.436,0.095L121.944,128.494z"/>
+      <path fill="#FFFFFF" d="M233.936,128.494c1.355-13.965,2.282-25.146,2.774-33.541c0.74-12.498,1.479-28.672,2.218-48.522c0.555-15.195,0.833-26.069,0.833-32.625V3.053c7.165,0.184,13.351,0.275,18.558,0.275c5.023,0,11.607-0.137,19.753-0.413c8.146-0.275,15.801-0.413,22.969-0.413c8.207,0,15.403,0.49,21.59,1.47c6.186,0.98,11.959,3.002,17.318,6.066c5.357,3.064,9.844,7.076,13.458,12.038c3.612,4.963,6.37,10.769,8.267,17.417c1.899,6.647,2.851,13.494,2.851,20.538c0,6.927-0.736,13.589-2.207,19.988c-1.47,6.405-3.522,12.179-6.156,17.325c-2.636,5.146-5.714,9.57-9.236,13.279c-3.523,3.705-7.552,6.877-12.085,9.511c-3.37,1.961-6.77,3.491-10.201,4.594c-3.431,1.103-8.118,1.993-14.06,2.667c-6.615,0.731-14.124,1.1-22.517,1.1l-37.126-0.272C247.445,128.222,241.778,128.312,233.936,128.494z M273.666,100.832c3.368,0.311,6.889,0.464,10.563,0.464c6.245,0,11.816-0.553,16.714-1.658c4.899-1.101,9.2-3.459,12.906-7.076c3.704-3.612,6.443-8.253,8.22-13.921c1.773-5.666,2.664-11.471,2.664-17.416c0-7.289-1.319-13.431-3.95-18.425c-2.636-4.993-6.144-8.469-10.524-10.431c-4.382-1.959-10.339-2.94-17.874-2.94c-4.413,0-9.62,0.183-15.625,0.551L273.666,100.832z"/>
+      <path fill="#FFFFFF" d="M347.032,128.494l7.633-13.23l47.536-89.512l5.059-10.018c1.469-2.94,3.521-7.167,6.158-12.682c10.783,0.125,18.656,0.184,23.615,0.184c8.638,0,16.632-0.059,23.984-0.184l13.408,38.322l27.277,73.703l5.328,13.416c-10.612-0.12-17.053-0.183-19.322-0.183c-5.149,0-12.723,0.063-22.721,0.183c-2.691-10.105-6.575-21.991-11.653-35.653h-46.261c-5.324,10.782-10.833,22.668-16.527,35.653c-11.409-0.12-18.4-0.183-20.975-0.183C364.91,128.312,357.398,128.374,347.032,128.494zM418.186,66.096h28.544c-7.096-21.589-10.979-33.484-11.651-35.687c-4.04,8.992-7.468,16.361-10.281,22.109L418.186,66.096z"/>
+      <path fill="#FFFFFF" d="M515.794,128.494l7.629-13.23l47.539-89.512l5.057-10.018c1.472-2.94,3.521-7.167,6.159-12.682c10.782,0.125,18.654,0.184,23.617,0.184c8.635,0,16.63-0.059,23.981-0.184l13.408,38.322l27.276,73.703l5.329,13.416c-10.611-0.12-17.052-0.183-19.319-0.183c-5.152,0-12.724,0.063-22.722,0.183c-2.691-10.105-6.577-21.991-11.652-35.653h-46.264c-5.324,10.782-10.833,22.668-16.525,35.653c-11.408-0.12-18.399-0.183-20.975-0.183C533.671,128.312,526.157,128.374,515.794,128.494z M586.946,66.096h28.546c-7.097-21.589-10.979-33.484-11.653-35.687c-4.042,8.992-7.468,16.361-10.282,22.109L586.946,66.096z"/>
+      <path fill="#FFFFFF" d="M683.926,128.494l1.819-24.188l27.55-24.571l-25.059-24.423l0.891-28.824c0.061-3.492,0.094-6.984,0.094-10.476c0-2.634-0.033-6.954-0.094-12.958c8.089,0.184,14.588,0.275,19.491,0.275c4.715,0,11.183-0.137,19.398-0.413c8.208-0.275,15.167-0.413,20.867-0.413c8.212,0,14.294,0.521,18.247,1.562c3.953,1.042,7.521,2.681,10.709,4.917c3.188,2.237,5.821,4.855,7.907,7.857c2.083,3.003,3.646,6.419,4.689,10.247c1.04,3.831,1.563,7.735,1.563,11.717c0,8.211-1.994,15.715-5.974,22.516c-3.984,6.799-9.592,11.884-16.818,15.254c-7.231,3.37-15.347,5.057-24.354,5.057c-3.309,0-18.767-0.369-23.118-1.104c0,0,0.665-7.19,0.851-12.926c0.171-5.246,0.063-12.072,0.063-12.072c2.694,0.552,10.165,0.827,13.105,0.827c6.188,0,10.8-1.484,13.83-4.457c3.035-2.971,4.552-6.6,4.552-10.89c0-2.082-0.34-3.935-1.013-5.56c-0.674-1.624-1.745-2.955-3.217-3.998c-1.469-1.041-3.095-1.714-4.87-2.021c-1.778-0.307-3.801-0.459-6.063-0.459c-2.207,0-4.505,0.061-6.893,0.184l-7.72,0.55c-0.792,11.825-1.396,24.967-1.821,39.428c-0.789,26.343-1.184,42.149-1.184,47.418v11.945l-18.301-0.183C700.479,128.312,694.102,128.374,683.926,128.494z"/>
+      <rect x="383.455" 
+            y="66.294" 
+            fill-rule="evenodd" 
+            clip-rule="evenodd" 
+            fill="#FFFFFF" 
+            width="300.471" 
+            height="27.639"/>
+    </svg>
+  </div>
+
+  <span id="browser-sync-binding"></span>
+  
+  <template is="dom-bind" id="app">
+
+    <!-- inline style to work around mobile scroll issue before new carbon elements are released -->
+    <paper-drawer-panel id="paperDrawerPanel" responsive-width="1281px" disable-edge-swipe>
+
+
+      <!-- Drawer Scroll Header Panel -->
+      <paper-scroll-header-panel id="drawerScroll" drawer fixed>
+
+        <!-- Drawer Toolbar -->
+        <paper-toolbar id="drawerToolbar" class="medium-tall">
+          <div class="paper-font-title">Menu</div>
+          <span class="flex bottom"></span>
+          <div class="bottom">[[userName]]</div>
+        </paper-toolbar>
+
+        <!-- Drawer Content -->
+        <paper-menu class="list" attr-for-selected="data-route" selected="[[route]]">
+
+          <!-- <a data-route="home" href="/" on-tap="onDataRouteClick">
+            <iron-icon icon="custom-icons:home"></iron-icon>
+            <span>Home</span>
+          </a> -->
+
+          <a data-route="client" href="/client" on-tap="onDataRouteClick">
+            <iron-icon id="homeLabel" icon="custom-icons:assignment-ind"></iron-icon>
+            <span>Client</span>
+            <!-- badge hidden state controlled by account-form -->
+            <paper-badge id="accountBadge"
+                         for="homeLabel" 
+                         icon="custom-icons:check"
+                         hidden>
+            </paper-badge>
+          </a>
+
+          <a data-route="signs" href="/signs" on-tap="onDataRouteClick">
+            <iron-icon icon="custom-icons:picture-in-picture-alt"></iron-icon>
+            <span>Signage</span>
+          </a>
+
+          <a data-route="lights" href="/lights" on-tap="onDataRouteClick">
+            <iron-icon icon="custom-icons:lightbulb-outline"></iron-icon>
+            <span>Lighting</span>
+          </a>
+
+          <!-- <a data-route="users" href="/users" on-tap="onDataRouteClick">
+            <iron-icon icon="custom-icons:info"></iron-icon>
+            <span>Users</span>
+          </a> -->
+
+          <a data-route="contact" href="/contact" on-tap="onDataRouteClick">
+            <iron-icon icon="custom-icons:mail"></iron-icon>
+            <span>Contact</span>
+          </a>
+
+        </paper-menu>
+      </paper-scroll-header-panel>
+
+
+
+      <!-- Main Area -->
+      <paper-scroll-header-panel id="mainScroll"
+                                 main 
+                                 condenses 
+                                 condensed-header-height="128">
+
+        <!-- Main Toolbar -->
+        <paper-toolbar id="mainToolbar" class="tall">
+
+          <!-- Toolbar icons -->
+          <paper-icon-button id="paperToggle" 
+                             icon="custom-icons:menu" 
+                             paper-drawer-toggle>
+          </paper-icon-button>
+
+          <nav-title class="app-name" 
+                     signage-tab="[[signageTab]]"
+                     lighting-tab="[[lightingTab]]"
+                     route="[[route]]">
+          </nav-title>
+
+          <span class="flex"></span>
+          <!-- search, more, clear and logout buttons custom element -->
+          <main-toolbar-buttons></main-toolbar-buttons>
+
+          <!-- Application name and user email-->
+          <div id="middle" 
+               class="middle middle-container center horizontal layout noSelect">
+            <div class="paper-font-title">[[displayedClientCompanyName]]</div>
+          </div>
+
+          <!-- Application tabs -->
+
+          <!-- lighting-tabs are hidden when not on 'lighting' menu selection -->
+          <lighting-tabs class="bottom bottom-container center horizontal layout"
+                         lighting-tab="{{lightingTab}}"
+                         selected-label="{{selectedLabel}}"
+                         user-selected-array="{{userSelectedArray}}"
+                         route="[[route]]"
+                         client-valid="[[clientValid]]"
+                         tallies-valid="{{talliesValid}}">
+          </lighting-tabs>
+
+          <signage-tabs class="bottom bottom-container center horizontal layout"
+                        signage-tab="{{signageTab}}"
+                        client-valid="[[clientValid]]"
+                        route="[[route]]">
+          </signage-tabs>
+
+        </paper-toolbar>
+
+        <!-- Main Content -->
+        <neon-animated-pages id="neonPages" 
+                             attr-for-selected="data-route" 
+                             selected="{{route}}"
+                             entry-animation="scale-up-animation"
+                             exit-animation="fade-out-animation">
+
+
+          <!-- route default set to client by account-form
+                delete attached func to revert -->
+
+
+          <!-- <section data-route="home">
+          </section> -->
+
+          <section data-route="client">
+            <account-form client="{{client}}"
+                          displayed-client-company-name="{{displayedClientCompanyName}}"
+                          version="[[version]]" 
+                          client-valid="{{clientValid}}"
+                          route="{{route}}">
+            </account-form>
+          </section>
+
+          <section data-route="signs">
+            <signage-main signage-tab="[[signageTab]]"></signage-main>
+          </section>
+
+          <section data-route="lights">
+            <lighting-main lighting-tab="{{lightingTab}}"
+                           user-selected-array="{{userSelectedArray}}"
+                           selected-pricing="{{selectedPricing}}"
+                           version="{{version}}"
+                           displayed-client-company-name="{{displayedClientCompanyName}}"
+                           client="[[client]]"
+                           client-valid="{{clientValid}}"
+                           tallies-valid="{{talliesValid}}"
+                           route="{{route}}"
+                           saved-photo-data="[[savedPhotoData]]">
+            </lighting-main>
+          </section>
+
+          <!-- <section data-route="users">
+            <paper-material elevation="1" 
+                            style="background-color: white; padding: 16px;">
+              <h2 class="page-title">Under Construction</h2>
+              <h2 class="page-title">Users</h2>
+              <p>This is the users section</p>
+              <a href="/users/Clay">Clay</a>
+            </paper-material>
+          </section> -->
+
+          <!-- <section data-route="user-info">
+            <paper-material elevation="1">
+              <h2 class="page-title">
+              User:<span>{{params.name}}</span>
+              </h2>
+              <div>This is <span>{{params.name}}</span>'s section</div>
+            </paper-material>
+          </section> -->
+
+          <section data-route="contact">
+            <paper-material elevation="1"
+                            style="background-color: white; padding: 16px;">
+              <h2 class="page-title">Contact Us</h2>
+              <p>quicksale@teuservices.com</p>
+              <p>v0.4.6</p>
+            </paper-material>
+          </section>
+
+        </neon-animated-pages>
+        
+      </paper-scroll-header-panel>
+    </paper-drawer-panel>
+
+
+
+    <!-- ************************ overlays *************************** -->
+
+    <web-worker saved-photo-data="{{savedPhotoData}}" queue-size="{{queueSize}}"></web-worker>
+
+    <app-security displayed-user-name="{{userName}}"></app-security>
+
+    <area-edit></area-edit>
+
+    <light-selector></light-selector>
+
+    <solution-page id="solutions"></solution-page>
+
+    <notes-page></notes-page>
+
+    <photo-viewer></photo-viewer>
+
+    <account-nav route="{{route}}" client-valid="[[clientValid]]"></account-nav>
+
+    <quote-page selected-pricing="[[selectedPricing]]"
+                client="[[client]]"
+                version="[[version]]">
+    </quote-page>
+
+    <email-options queue-size="[[queueSize]]"></email-options>
+
+    <success-page></success-page>
+
+    <survey-search user-selected-array="{{userSelectedArray}}"
+                   lighting-tab="{{lightingTab}}">
+    </survey-search>
+
+    
+
+
+
+
+    <!-- Uncomment next block to enable Service Worker support (1/2) -->
+
+
+    
+    <!-- <paper-toast id="caching-complete"
+                 duration="6000"
+                 text="REDAAP can now work offline.">
+    </paper-toast>
+
+    <platinum-sw-register auto-register
+                          clients-claim
+                          skip-waiting
+                          on-service-worker-installed="displayInstalledToast">
+      <platinum-sw-cache default-cache-strategy="fastest"
+                         cache-config-file="cache-config.json">
+      </platinum-sw-cache>
+    </platinum-sw-register> -->
+
+
+
+
+
+ 
+    <!-- <paper-dialog id="emailNotVerifiedDialog" modal
+      entry-animation="scale-up-animation"
+      exit-animation="fade-out-animation">
+      <div class="dialogTitle">Email Verification Required</div>
+      <div>Please verify your email address.  Check your account email (your username) for a verification email.  Follow the steps in the email, then try logging in again.</div>
+      <div class="buttons">
+        <paper-button on-tap="_logIn">Dismiss</paper-button>
+      </div>
+    </paper-dialog> -->
+
+    <!-- referenced in app-security -->
+    <paper-dialog id="logoutDialog" 
+                  modal
+                  entry-animation="scale-up-animation"
+                  exit-animation="fade-out-animation">
+      <div class="dialogTitle noSelect">Logging Out</div>
+      <div class="noSelect">Are you ready to log out?</div>
+      <div class="noSelect">
+        <iron-icon icon="custom-icons:warning"></iron-icon>
+        <strong>Warning!</strong>
+        <div>This will DELETE the app DATA including any work you have not uploaded!</div>        
+      </div>
+      <div class="buttons">
+        <paper-button class="buttonColor" on-tap="logOutUser">Yes</paper-button>
+        <paper-button class="buttonColor" on-tap="cancelLogOut">No</paper-button>
+      </div>
+    </paper-dialog>
+
+    <!-- referenced in main-page -->
+    <paper-dialog id="clearDialog" 
+                  modal
+                  entry-animation="scale-up-animation"
+                  exit-animation="fade-out-animation">
+      <div class="dialogTitle noSelect">New Quote?</div>
+      <div class="noSelect">Do you want to start a new quote?</div>
+      <div class="noSelect">
+        <iron-icon icon="custom-icons:warning"></iron-icon>
+        <strong>Warning!</strong>
+        <div>This will DELETE the app DATA including any work you have not uploaded!</div>        
+      </div>
+      <div class="buttons">
+        <!-- clearSurvey listened for in lighting main -->
+        <paper-button class="buttonColor" dialog-confirm on-tap="clearSurvey">Yes</paper-button>
+        <paper-button class="buttonColor" dialog-dismiss>No</paper-button>
+      </div>
+    </paper-dialog>
+
+    <!-- referenced in survey-search -->
+    <paper-dialog id="loadDialog" 
+                  with-backdrop
+                  entry-animation="scale-up-animation"
+                  exit-animation="fade-out-animation">
+      <div class="dialogTitle noSelect">Load Archived Survey?</div>
+      <div class="noSelect">
+        <iron-icon icon="custom-icons:warning"></iron-icon>
+        <strong>Warning!</strong>
+        <div>This will REPLACE the app DATA including any work you have not uploaded!</div>        
+      </div>
+      <div class="buttons">
+        <paper-button class="buttonColor" dialog-confirm>Load</paper-button>
+        <paper-button class="buttonColor" dialog-dismiss>Cancel</paper-button>
+      </div>
+    </paper-dialog>
+
+
+    <!-- referenced by web-worker -->
+    <paper-dialog id="workerDialog" 
+                  modal
+                  entry-animation="scale-up-animation"
+                  exit-animation="fade-out-animation">
+      <div class="dialogTitle noSelect">Browser Not Supported!</div>
+      <div class="noSelect">
+        <iron-icon icon="custom-icons:warning"></iron-icon>
+        <strong>Warning!</strong>
+        <div>REDAAP does not support this browser!</div>
+        <div>Please try again with a different browser.</div>        
+      </div>
+      <div class="buttons">
+        <paper-button class="buttonColor" dialog-dismiss>OK</paper-button>
+      </div>
+    </paper-dialog>
+
+
+
+    <!-- used by multiple custom elements -->
+    <paper-toast id="warningToast">
+      <iron-icon style="float: left;" icon="custom-icons:warning"></iron-icon>
+    </paper-toast>
+    <!-- main-page toasts -->
+    <paper-toast id="toast"></paper-toast>
+
+
+  </template>
+
+  
+
+
+  <!-- build:js scripts/app.js -->
+  <script src="scripts/babel-polyfill.min.js"></script>
+  <script src="scripts/app.js"></script>
+  <!-- endbuild-->
+
+
+</body>
+
+</html>

@@ -1,0 +1,228 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="lighting-tabs">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+      	display: flex;
+        justify-content: center;
+        position: absolute;
+        left: 0px;
+      	-webkit-transition: opacity 0.2s ease-in-out;
+		            transition: opacity 0.2s ease-in-out;
+      }
+
+    </style>
+
+
+      <paper-tabs selected="{{lightingTab}}" attr-for-selected="tabname" selected-class="selectedTab">
+        <span class="flex"></span>
+        <paper-tab tabname="areaPage">
+          <iron-icon id="areaTabIcon" icon="custom-icons:room"></iron-icon>
+          <span class="tabLabel">Areas</span>
+        </paper-tab>
+        <span class="flex"></span>
+        <paper-tab tabname="quoteSelector">
+          <iron-icon id="quoteTabIcon" icon="custom-icons:assignment"></iron-icon>
+          <span class="tabLabel">Pricing</span>
+        </paper-tab>
+        <span class="flex"></span>
+      </paper-tabs>
+
+      <paper-badge id="areaBadge" 
+                   class="badge"
+                   for="areaTabIcon" 
+                   label="[[badgeCount]]">
+      </paper-badge>
+      <paper-badge id="quoteBadge" 
+                   class="badge"
+                   for="quoteTabIcon" 
+                   icon="custom-icons:check">
+      </paper-badge>
+
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'lighting-tabs',
+
+        behaviors: [ 
+          window.Redaap.Behaviors.Utilities,
+          window.Redaap.Behaviors.OnTapBehavior 
+        ],
+
+        properties: {
+        	// bound from lighting-main
+        	lightingTab: {
+        		type: String,
+            value: 'areaPage',
+        		notify: true
+        	},
+        	// bound from main-page
+        	userSelectedArray: {
+        		type: Array,
+        		notify: true
+        	},
+          // passed in from account-form via main-page if all inputs are complete and valid
+          clientValid: Boolean,
+          // bound from area-tab to control quote generation flow
+          talliesValid: {
+            type: Boolean,
+            notify: true
+          },
+          // display the number of cards/fixtures in area-tab badge
+          badgeCount: {
+            type: Number,
+            notify: true,
+            computed: '_computeBadgeCount(userSelectedArray.*)'
+          },
+          // pull in the main menu routing string
+          // hide tabs unless on 'home' page
+          route: {
+            type: String,
+            observer: '_routeChanged'
+          },
+          // tab badge state
+          // observing valid and talliesValid
+          quoteBadgeState: {
+            type: Boolean,
+            value: false,
+            computed: '_computeQuoteBadgeState(clientValid, talliesValid)',
+            observer: '_setQuoteBadgeState'
+          }
+        },
+
+        ready() {
+          // hide quote badge as default to prevent it from an initial flash
+          // if uSA is empty or undefined
+          this._applyHideClass(true, this.$.quoteBadge);
+        },
+
+
+        _applyHideClass(bool, badge) {
+          const apply = () => {
+            this.toggleClass('hideBadge', bool, badge);
+            badge.updatePosition();
+            this.updateStyles();
+          };
+          
+          this.schedule(apply);
+        },
+
+        // watch valid and tallies valid to determine whether to show/hide quote badge
+        _computeQuoteBadgeState: (clientValid, talliesValid) => clientValid && talliesValid,
+        // tab badge state
+        // the badge displays when the quote is ready to be sent off ie. clientValid and talliesValid
+        _setQuoteBadgeState(bool, oldBool) {
+          if (bool === undefined || oldBool === undefined) { return; }
+          
+          this._applyHideClass(!bool, this.$.quoteBadge);
+        },
+
+        // common badge state code
+        _hideAreaTabBadge(bool) {
+          this.debounce('badgeDebounce', () => {
+            if (!this.badgeCount) {
+              this._applyHideClass(true, this.$.areaBadge);
+            } else {
+              this._applyHideClass(bool, this.$.areaBadge);
+            }
+          }, 100);
+        },
+
+        // control transitions of account and quote badges on route changes
+        _hideQuoteTabBadges(bool) {
+          this.debounce('otherBadgesDebounce', () => {
+            if (this.talliesValid) {
+              this._applyHideClass(bool, this.$.quoteBadge);
+            }
+          }, 100);
+        },
+        
+
+        _hide() {
+          this.style.opacity = '0';
+          this._hideQuoteTabBadges(true);
+          this._hideAreaTabBadge(true);
+          this.async(() => {
+            // so user cannot access tabs
+            const hideTabs = () => this.style.display = 'none';
+
+            this.schedule(hideTabs);
+          }, 200);
+        },
+
+
+        _show() {
+          const showTabs = () => {
+            this.style.display = 'flex';
+            this.async(() => {
+              this.style.opacity = '1';
+              this._hideQuoteTabBadges(false);
+              this._hideAreaTabBadge(false);
+            }, 1);
+          };
+          // wait for other tabs to hide
+          this.async(() => {
+            this.schedule(showTabs);
+          }, 250);
+        },
+
+        // only show tabs and badge if on 'home' page
+        _routeChanged(route) {
+          if (route === 'lights') {
+            this._show();
+          } else {
+            this._hide();
+          }
+        },
+
+        // display the number of saved fixtures in a badge over the 'Saved Fixtures' tab
+        _computeBadgeCount(array) {
+          // any edits to the uSA after the data has been sent to the cloud
+          // makes the quote invalid
+          this.set('talliesValid', false);
+          // make sure we are dealing with an array
+          if (Array.isArray(array.base)) {
+          	// displayed number in area badge
+            const length = array.base.length;
+            // hide the badge if length is less than 1
+            // hide the badge upon first load or reload of the site
+            // with a clean survey ie. userSelectedArray === []
+            if (length) {
+              this._hideAreaTabBadge(false);
+              return length;
+            } else {
+              this._hideAreaTabBadge(true);              
+              // set length to null for animation purposes
+              // otherwise the text '0' appears for a brief instant before the badge fades out
+              return null;
+            }
+          }
+          this._hideAreaTabBadge(true);
+          return null;
+        }
+
+
+      });
+    })();
+  </script>
+
+</dom-module>

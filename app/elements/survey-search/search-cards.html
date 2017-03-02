@@ -1,0 +1,330 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+<link rel="import" href="../redaap-behaviors/expand-collapse-classes-behavior.html">
+
+
+<dom-module id="search-cards">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        display: block;
+        width: 100%;
+		    height: 100vh;
+		    background-color: var(--dark-primary-color);
+		    margin-bottom: 32px;
+		    opacity: 0;
+      }
+
+      paper-card {
+        width: initial;
+      }
+
+      .heading {
+        position: relative;
+        padding-top: 16px;
+        border-top-left-radius: 2px;
+        border-top-right-radius: 2px;
+        overflow: hidden;
+        background-color: var(--card-status-color);
+      }
+
+      .company {
+      	color: var(--card-title-color);
+      }
+
+      .date {
+        padding: 0px 16px 8px 16px;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 24px;
+        color: var(--card-subtitle-color);
+      }
+
+      .rightAlign {
+        display: inline-block;
+        float: right;
+      }
+
+      .card {
+        display: block;
+        margin: 16px 8px 0px 8px;
+      }
+
+      .fullscreenCard {
+        height: 150vh;
+        margin: 0px;
+      }
+
+      .fullscreenContent {
+        opacity: 0;
+        -webkit-transition: opacity 0.2s ease-in;
+                transition: opacity 0.2s ease-in;
+      }
+
+      .fullscreenTransition {
+        -webkit-transition: transform 0.5s ease-out;
+                transition: transform 0.5s ease-out;
+      }
+
+      .centeredHor {
+        text-align: center;
+      }
+
+      /* Tablet+ */
+      @media (min-width: 601px) {
+
+        .card {
+          display: inline-block;
+          margin: 32px 16px;
+        }
+        
+      }
+
+    </style>
+
+      
+		<template id="searchRepeater" is="dom-repeat" items="[[surveys]]" 
+	    initial-count="5" target-framerate="60" strip-whitespace>
+
+	      <paper-card class="card" elevation="2">
+
+          <div id="cardContent">
+  	        <div class="heading noSelect">
+  	          <paper-item class="inline company" disabled>
+  	            <div class="dialogTitle">[[item.company]]</div>
+  	          </paper-item>
+  	          <div class="date">[[item.createdAt]]
+  	            <div class="rightAlign" hidden$="[[!item.surveyVersion]]">v[[item.surveyVersion]]</div>
+  	          </div>
+  	        </div>
+  					<div class="centeredHor noSelect">
+  	          <paper-item class="inline" disabled>
+  	            <paper-item-body two-line>
+  	              <div>[[item.client]]</div>
+  	              <div secondary>Client</div>
+  	            </paper-item-body>
+  	          </paper-item>
+  	          <paper-item class="inline" disabled>
+  	            <paper-item-body two-line>
+  	              <div>$[[item.payment]]</div>
+  	              <div secondary>Payment</div>
+  	            </paper-item-body>
+  	          </paper-item>
+  	          <paper-item class="inline" disabled>
+  	            <paper-item-body two-line>
+  	              <div>[[item.repFirstName]] [[_computeLastInitial(item.repLastName)]]</div>
+  	              <div secondary>Rep</div>
+  	            </paper-item-body>
+  	          </paper-item>
+  	        </div>
+  					<div class="card-actions">
+  	          <paper-button class="buttons" on-tap="_surveyPreviewButtonTapped">preview</paper-button>
+  	          <paper-button class="buttons" on-tap="_surveySelectButtonTapped">select</paper-button>
+  					</div>
+          </div>
+
+				</paper-card>
+
+		</template>
+    <!-- faux padding for bottom of scroller -->
+    <div style="width: 100%; height: 300px;"></div> 
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'search-cards',
+
+        behaviors: [
+        	Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.OnTapBehavior, 
+          window.Redaap.Behaviors.ExpandCollapseClassesBehavior
+        ],
+
+        properties: {
+
+        	animationConfig: {
+            value() {
+              return {
+                'cards': [{
+           				name: 'cascaded-animation',
+                  animation: 'slide-from-bottom-animation',
+                  // nodes set imperitively
+                  timing: {duration: 300, easing: 'ease-out'}
+           			}, {
+           				name: 'cascaded-animation',
+                  animation: 'fade-in-animation',
+                  // nodes set imperitively
+                  timing: {duration: 300, delay: 150, easing: 'ease-out'}
+           			}]
+              };
+            }
+          },
+          // template repeat elements
+          cards: Array,
+          // used for card entry animation on first load but not on cached load
+          runCardAnimation: Boolean,
+          // used by dom-repeat template to create cards for each returned survey
+        	surveys: Array,
+          // parent
+          parentCustomElement: Object,
+
+        	searchPageCustomElement: Object
+        },
+
+        listeners: {
+          // for animation timing between 'toolbar' animation and 'item' animation
+          'dom-change': '_repeaterDomChanged',
+          // listen for card animation finished
+          'neon-animation-finish': '_animationFinished'
+        },
+
+        // include the version number in the card heading if not the original version
+        _computeCardHeading(title, version) {
+          return version ? `${title} v${version}` : title;
+        },
+        // display the first letter of the Rep's last name
+        _computeLastInitial: str => str ? str.charAt(0) : '',
+         // wait for the repeater to fully stamp its dom before starting the items entry animation
+        _repeaterDomChanged() {
+          // event is fired for each dom element that is stamped
+          // so debounce until they are all ready
+          this.debounce('searchTemplateDebounce', () => {
+
+          	if (!this.searchPageCustomElement) {
+          		this.searchPageCustomElement = Polymer.dom(this).node.dataHost.dataHost;
+          		this.parentCustomElement = Polymer.dom(this).node.dataHost;
+          	}
+            // dont run animation when dom is being removed, only after its been stamped out
+            if (this.surveys && this.surveys.length) {
+              this.searchPageCustomElement.hideSpinner(); 
+              // update the cascade animation nodes
+              const cards = Polymer.dom(this.root).querySelectorAll('.card');
+              this.cards = cards;
+
+              if (this.runCardAnimation) {
+                this.animationConfig.cards[0].nodes = cards;
+                this.animationConfig.cards[1].nodes = cards;
+                // hide the cards before the animation to avoid a flicker
+                cards.forEach(card => {
+                  card.style.opacity = '0';
+                });
+                // unhide this
+                this.style.opacity = '1';
+                // passed through to _animationFinished()
+                const cardAnimationObj = {
+                  name: 'cards',
+                  cards
+                };
+
+                this.playAnimation('cards', cardAnimationObj);
+
+              } else if (!this.runCardAnimation) {
+                this.style.webkitTransition = 'opacity 0.2s ease-in';
+                this.style.transition = 'opacity 0.2s ease-in';
+                this.style.opacity = '1';
+              }
+            }
+          }, 100);
+        },
+        // card entry animation complete event
+        _animationFinished(_, animationType) {
+          // object send as animationType arg in this._surveyPreviewButtonTapped() func
+          if (animationType.name) {
+          	if (animationType.name === 'cards') {
+              animationType.cards.forEach(card => {
+                card.style.opacity = '1';
+              });
+            }
+          }
+        },
+        // reset selected card css props after all preview page tranistions
+        resetCards() {
+          this.cards.forEach(card => {
+            const cardContent = Polymer.dom(card).querySelector('#cardContent');
+            Polymer.dom(card).classList.remove('fullscreenCard');
+            Polymer.dom(cardContent).classList.remove('fullscreenContent');
+          });
+        },
+        // make the selected 'preview' button's card grow to fullscreen
+        _cardToFullscreen(type, index) {
+          // card that was selected
+          const card = this.cards[index]; 
+          const {top, height} = card.getBoundingClientRect();
+          const topMarginStr = window.getComputedStyle(card).getPropertyValue('margin-top');
+          // cut 'px' from topMarginStr
+          const topMarginNum = Number(topMarginStr.substr(0, topMarginStr.length - 2));
+          const cardContent = Polymer.dom(card).querySelector('#cardContent'); 
+
+          const cardToFullscreen = event => {
+            if (event.propertyName === 'opacity') {
+              cardContent.removeEventListener('transitionend', cardToFullscreen, false);
+              this.ecClassesInit(card, 'fullscreenCard');
+              // expansion distance === -150vh + card height + top margin
+              const newY = (window.innerHeight * -1.5) + height + topMarginNum;
+              // ecClassesSlideRemainingCards expects an array
+              const remainingCards = this.cards.slice(index + 1);
+              this.ecClassesSlideRemainingCards(remainingCards, newY, 'fullscreenTransition');
+              // run the setup elements
+              this.ecClassesPlay(card, 'fullscreenTransition');
+            }
+          };
+
+          const startFullscreenAnimation = () => {
+            // called after preview entry animation in search-page
+            const cardResetCallback = () => {
+              this.resetCards();
+            };
+            // run search exit in parallel with card to fullscreen animation
+            this.parentCustomElement.cardSelected(type, index, cardResetCallback);
+            cardContent.addEventListener('transitionend', cardToFullscreen, false);
+            Polymer.dom(cardContent).classList.add('fullscreenContent');
+          };
+
+          this.searchPageCustomElement.scrollCardToTop(top);
+
+          this.async(() => {
+            window.requestAnimationFrame(startFullscreenAnimation);
+          }, 1);
+        },
+        // show a preview of the survey before choosing to load the data 
+        // back into the app for further review/editing
+        _surveyPreviewButtonTapped(event) {
+
+          const loadPreview = () => {
+            const index = event.model.index;
+            this._cardToFullscreen('preview', index);
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = loadPreview;
+        },
+        // inject data back into the app for review and editing
+        // need to recreate userSelectedArray for light-tally ui
+        // plus modalObj for email-modal ui
+        _surveySelectButtonTapped(event) {
+          const loadSelected = () => {
+            const index = event.model.index;
+            this.parentCustomElement.cardSelected('selected', index);
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = loadSelected;
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

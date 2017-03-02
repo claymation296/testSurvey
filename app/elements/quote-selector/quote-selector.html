@@ -1,0 +1,187 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../redaap-behaviors/tab-page-animation-behavior.html">
+<link rel="import" href="options-card.html">
+
+
+<dom-module id="quote-selector">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        width: 100%;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-justify-content: center;
+        justify-content: center;
+      }
+
+    </style> 
+    
+    <options-card
+      plan-index="{{planIndex}}"
+      displayed-prices="[[displayedPrices]]">
+    </options-card>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'quote-selector',
+        // track window resizes and page animation
+        behaviors: [
+          Polymer.IronResizableBehavior, 
+          window.Redaap.Behaviors.TabPageAnimationBehavior
+        ], 
+
+        properties: {
+          // data bound to main-page.html
+          // used in template repeater for client review
+          // pricing === [{collection, grandMontly, totalQuantity, term}]
+          // pricing[index].collection is a collection of objects
+          // obj === {
+          //   inputFixture: dataArray[index].fixture,
+          //   fixture: el.existingFixture,
+          //   inputDescription: dataArray[index].description,
+          //   description: el.name,
+          //   count: dataArray[index].count,
+          //   hardCostEach: hardCostEach,
+          //   productSubEach: productSubEach,
+          //   installSubEach: installSubEach,
+          //   total: total,
+          //   maintenance: maintenance,
+          //   tax: tax,
+          //   loan: loan,
+          //   monthlyPayment: monthlyPayment
+          // }
+          // data bound from lighting-main
+          pricing: Array,
+          // pull grandMonthly out of all three pricing elements
+          // and put them into an object for displaying to user
+          displayedPrices: {
+            type: Object,
+            computed: '_computeDisplayedPrices(pricing)'
+          },
+          // passed in from main-page
+          version: Number,
+          // passed in from account-form.html
+          // controls hidden state of signature capture and badge
+          clientValid: Boolean,
+          // passed in from main-page
+          // controls hidden stat of signature capture and badge
+          talliesValid: {
+            type: Boolean,
+            observer: '_talliesValidChanged'
+          },
+          // bound from options-card paper-listbox
+          planIndex: {
+            type: Number,
+            observer: '_planSelected'
+          },
+          // user chooses which plan they want from the three
+          // term/payment options which populates selectedPricing
+          // and sends it up to main-page for final save to the cloud 
+          selectedPricing: {
+            type: Object,
+            notify: true,
+            computed: '_computeSelectedPricing(planIndex, pricing)'
+          },
+          // control state of displayed cards depending on whether the user has
+          // selected a plan yet or not
+          planSelected: {
+            type: Boolean,
+            value: false
+          }
+        },
+
+
+        observers: [
+          // open quote-page when everything is ready to send an email
+          '_readyToSend(clientValid, talliesValid, planSelected)'
+        ],
+
+        // called by quote-page in index.html when it is closed
+        resetPlanIndex() {
+          this.planIndex = null;
+        },
+        // watches this.pricing builds an object from the grandMonthly
+        // and term from each of the three elements to display as plan options
+        _computeDisplayedPrices(array) {
+          // ie. {12: '4', 36: '2', 60: '1', 0: '23', -1: '28'}
+          return array.reduce((prev, curr) => {
+            prev[curr.term] = curr.grandMonthly;
+            return prev;
+          }, {});
+        },
+
+        // open quote-page when all conditions have been met
+        _readyToSend(clientValid, talliesValid, planSelected) {
+          if (clientValid, talliesValid, planSelected) {
+            window.Redaap.quotePage.openQuotePage();
+          }
+        },
+        // observe seletion index of paper-listbox
+        // pull the matching array element out by matching the correct term
+        // the found element will become the pricing data that is saved in DB
+        _computeSelectedPricing(index, array) {
+          if (typeof index !== 'number') { return; }
+
+          let term;
+          // align index with term
+          switch(index) {
+            case 0:
+              term = 60;
+              break;
+            case 1:
+              term = 36;
+              break;
+            case 2:
+              term = 12;
+              break;
+            case 3:
+              term = 0;
+              break;
+            case 4:
+              term = -1;
+              break;
+            default:
+              return;
+          }
+          // find the element in the array that matches the term length chosen
+          const findPrice = quote => quote.term === term;
+          return array.find(findPrice);
+        },
+        
+        // selected index from price chooser card
+        _planSelected(index) {
+          // dont trigger quote-page to open/animate til valid is true
+          if (typeof index === 'number' && this.clientValid) {
+            this.planSelected = true;
+            return;
+          }
+          this.planSelected = false;
+        },
+        // observer for talliesValid
+        // must reset planSelected and planIndex any time user edits the uSA
+        _talliesValidChanged(bool) {
+          if (!bool) {
+            this.planSelected = false;
+            this.resetPlanIndex();
+          }
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

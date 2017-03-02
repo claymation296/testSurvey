@@ -1,0 +1,419 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="logo-screen.html">
+<link rel="import" href="login-screen.html">
+<link rel="import" href="login-screen2.html">
+<link rel="import" href="login-screen3.html">
+<link rel="import" href="faux-screen.html">
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+
+<dom-module id="app-security">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        display: block;
+        position: fixed;
+        top: 0px;
+        left: 0px;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        -webkit-transition: opacity 0.3s ease-in-out;
+                transition: opacity 0.3s ease-in-out;
+        opacity: 0;
+      }
+
+    </style>
+
+    <template is="dom-if" if="[[!currentUser]]" restamp on-dom-change="_loginTemplateDomChanged">
+      <neon-animated-pages id="pages" 
+                           selected="[[selected]]"
+                           on-neon-animation-finish="_animationComplete">
+        <logo-screen x="{{x}}" y="{{y}}"></logo-screen>
+        <login-screen selected="[[selected]]" 
+                      x="[[x]]" 
+                      y="[[y]]" 
+                      type="[[type]]" 
+                      error="[[error]]">
+        </login-screen>
+        <login-screen2 selected="[[selected]]" 
+                       email="{{email}}" 
+                       password="{{password}}" 
+                       type="[[type]]">
+        </login-screen2>
+        <login-screen3 selected="[[selected]]" error="[[error]]"></login-screen3>
+        <faux-screen></faux-screen>
+      </neon-animated-pages>
+    </template>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'app-security',
+
+        behaviors: [ 
+          window.Redaap.Behaviors.Utilities,    
+          window.Redaap.Behaviors.OnTapBehavior 
+        ], 
+        properties: {
+          // from Parse
+          currentUser: Object,
+          // neon-animated-pages
+          selected: {
+            type: Number,
+            value: 0
+          },
+          // login vs signup state
+          type: {
+            type: String,
+            value: 'Log In'
+          },
+          // animation state if there was an error logging in or signing up
+          error: {
+            type: Boolean,
+            value: false
+          },
+          // passed to Parse login
+          email: String,
+          // passed to Parse login and gets cleared after logout
+          password: String,
+          // current user email username
+          username: {
+            type: String,
+            value: '',
+          },
+          // truncated username
+          displayedUserName: {
+            type: String,
+            notify: true,
+            computed: '_computeDisplayedUserName(username)'
+          },
+          // track the users choice to either logout or cancel the logout dialog
+          logout: Boolean,
+        },
+
+
+        listeners: {
+          // fired from logo-screen
+          'showLogin':  '_showLogin',
+          'showSignup': '_showSignup',
+          // fired from login-screen2
+          'login':      '_logInUser',
+          // fired from signup-screen2
+          'signup':     '_signUpNewUser',
+          // fired from login-screen2 or signup-screen2
+          'cancel':     '_cancelLoginSignup'
+        },
+
+
+        attached: function() {
+          this.async(() => {
+            // grab the button on-tap event from index.html
+            const app = document.querySelector('#app');
+            // dialog modal buttons
+            app.logOutUser   = () => this._logOutUser();
+            app.cancelLogOut = () => this._cancelLogOut();
+
+
+            // const emailNotVerifiedDialog = Polymer.dom(this.$.app).querySelector('#emailNotVerifiedDialog');
+            // // bug fix: force the backdrop to close
+            // emailNotVerifiedDialog.addEventListener('iron-overlay-closed', () => {
+            //   emailNotVerifiedDialog.backdropElement.complete();
+            // });
+
+            
+            // this.set('emailNotVerifiedDialog', emailNotVerifiedDialog);
+
+            // listen for when dialog is fully closed
+            window.Redaap.logoutDialog.addEventListener('iron-overlay-closed', event => {
+              // boolean true if user canceled the dialog
+              const canceled = event.detail.canceled;
+              // bug fix: force the backdrop to close
+              window.Redaap.logoutDialog.backdropElement.complete();
+              this._dialogClosingAnimationDone(canceled);
+            });
+          });
+        },
+
+        // remove imperatively added event listeners
+        detached() {
+          window.Redaap.logoutDialog.removeEventListener('iron-overlay-closed', () => {
+            window.Redaap.logoutDialog.backdropElement.complete();
+          });
+        },
+
+        // truncate username string by removing email portion
+        _computeDisplayedUserName: str => str.split('@')[0],
+
+
+        _removeSplashScreen() {
+          const splash = document.querySelector('#splash');
+
+          if (!splash) { return; }
+
+          const splashOnTransitionEnd = () => {
+            splash.removeEventListener('transitionend', splashOnTransitionEnd, false);
+            // transitionend being called twice in gulp serve:dist so ignore if splash screen
+            // has already been removed
+            if (splash.parentNode) {
+              splash.parentNode.removeChild(splash); // IE 10 doesn't support el.remove()
+            }      
+          };
+          
+          splash.addEventListener('transitionend', splashOnTransitionEnd, false);
+          document.body.classList.remove('loading');
+        },
+        // used to correctly time the stamping of the login ui vs removal of the 
+        // splash screen so there is no premature app reveal
+        _loginTemplateDomChanged() {
+          if (this.currentUser === null) {
+            // 500ms to account for the 0.3s opacity transition timing
+            this.async(() => {
+              this._removeSplashScreen();
+            }, 500);
+          }
+        },
+
+        // called by web-worker
+        checkCurrentUser(currentUser) {
+          // tied to the dom-if around neon-animated-pages
+          this.currentUser = currentUser;
+          if (currentUser) {
+            //hide neon animated pages and add user name to upper toolbar
+            const {first, username} = currentUser;
+            this.username = username;
+            this._revealApp();
+            this._removeSplashScreen();
+            this.async(() => {
+              this.message(`Welcome back ${first}!`); 
+            }, 500);
+          } else {
+            this.style.opacity = '1';
+            this.style.zIndex  = '100';
+            // setting this.currentUser above to null restamps the dom-if template
+            // which inturn checks the currentUser and removes the splash screen
+            // only after its contents are present in the document
+          }
+        },
+
+        // bad session token handler
+        currentUserError() {
+          this.currentUser   = null;
+          this.style.opacity = '1';
+          this.style.zIndex  = '100';
+        },
+
+        // worker job
+        _userLoggedIn({first, username}) {
+          //show welcome and add user name to upper toolbar
+          this.username = username;
+          this.message(`Welcome back ${first}`);
+          // animate into the app
+          this.async(() => {
+            this.selected = 4;
+          }, 800);
+        },
+
+        // worker job
+        _newUserSignedIn({first, username}) {
+          // username is displayed in main toolbar
+          this.username  = username;
+          this.message(`Hello ${first}! You are now signed up to use window.REDAAP`);
+          // animate into the app
+          this.async(() => {
+            this.selected = 4;
+          }, 800);
+        },
+
+        // worker job
+        _userLoggedOut() {
+          // allow condtional template to stamp neon-animated-pages for login/signup
+          this.currentUser = undefined;
+          this.username    = '';
+          this.password    = '';
+          window.Redaap.logoutDialog.close();
+        },
+
+        // worker job
+        _userLoginError() {
+          // go back to white input card
+          this.set('error', true);
+          // console.log('login error: ', error);
+          this.warn('There was a problem logging you into your account!  Please try again.');
+          this.async(() => {
+            this._showLogin();
+          }, 800);
+        },
+
+        // worker job
+        _userSignupError(error) {
+          // go back to white input card
+          this.set('error', true);
+          this.async(() => {
+            this._showSignup();
+          }, 800);
+
+          if (error.code === 141) {
+            let message = error.message.message.split('');
+            message[0]  = message[0].toUpperCase();
+            message     = `${message.join('')} Please try again.`;
+            // error message will need to be cleaned up
+            // before being displayed by capitalizing the first character
+            this.warn(message);
+            return;
+          }
+
+          this.warn('There was a problem creating your new account!  Please try again.');
+        },
+
+        // choose to show the login forms/buttons
+        _showLogin() {
+          // select the type of forms to fill out to be login
+          this.type     = 'Log In';
+          this.selected = 1;
+          this.set('error', false);
+
+          // TODO:
+          //      use an event or call a method directly for proper timing here
+
+
+          // animation timing from login-screen to login-screen2
+          // 550 ms is VERY important to ios animation timing
+          this.async(() => {
+            this.selected = 2;
+          }, 550);
+        },
+
+        // choose to show the signup forms/buttons
+        _showSignup() {
+          // select the type of forms to fill out to be signup
+          this.type     = 'Sign Up';
+          this.selected = 1;
+          this.set('error', false);
+
+          // TODO:
+          //      use an event or call a method directly for proper timing here
+
+
+          // animation timing from signup-screen to signup-screen2
+          // 550 ms is VERY important to ios animation timing
+          this.async(() => {
+            this.selected = 2;
+          }, 550);
+        },
+
+        // set neon-animated-pages to starting screen
+        _cancelLoginSignup() {
+          this.selected = 0;
+        },
+
+        // set this element to the background and hide it then reset to page 0
+        _hideAppSecurity() {
+          this.style.zIndex  = -1;
+          this.style.display = 'none';
+          this.selected      = 0;
+          this.unlisten(this, 'transitionend', '_hideAppSecurity');
+        },
+
+        // hide this element to show the app
+        _revealApp() {
+          if (this.style.opacity === '1') {
+            // fade this element out
+            this.style.opacity = '0';
+            this.listen(this, 'transitionend', '_hideAppSecurity');
+          } else {
+            this._hideAppSecurity();
+          }          
+        },
+
+        // called from neon-animated-pages
+        _animationComplete() {
+          // end of last page animation so reveal the app
+          if (this.selected === 4) {
+            this._revealApp();
+          }
+        },
+
+        // custom event from login-screen2.html
+        _logInUser() {
+          // switch to screen with spinner
+          this.selected = 3;
+          window.Redaap.webWorker.login(this.email, this.password).
+            then(user => {
+              this._userLoggedIn(user);
+            }).
+            catch(error => {
+              this._userLoginError(error);
+            });
+        },
+
+        // called by signup-screen2 custom event
+        _signUpNewUser() {
+          // switch to screen with spinner while waiting on Parse to sign up user
+          this.selected = 3;
+          window.Redaap.webWorker.signup(this.email, this.password).
+            then(user => {
+              this._newUserSignedIn(user);
+            }).
+            catch(error => {
+              this._userSignupError(error);
+            });
+        },
+
+        // called by main-toolbar-buttons.html in index.html
+        openLogOut() { 
+          // reset this elements style so child can be layered above the rest of the app
+          this.style.zIndex  = 100;
+          this.style.display = 'block';
+          window.Redaap.logoutDialog.open();
+        },
+
+        // iron-overlay-closed event
+        _dialogClosingAnimationDone(canceled) {
+          if (canceled) {
+            this._revealApp();
+            return;
+          }
+          // fade this element in
+          this.style.opacity = 1;
+        },
+
+        // called from logout dialog in index.html
+        _logOutUser() {
+          window.Redaap.webWorker.logout().
+            then(() => {
+              this._userLoggedOut();
+            }).
+            catch(error => console.log('logout error: ', error));
+        },
+        
+        // called from logout dialog in index.html
+        _cancelLogOut() {
+          const cancel = () => {
+            window.Redaap.logoutDialog.cancel();
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = cancel;
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

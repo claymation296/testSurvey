@@ -1,0 +1,370 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="solution-card.html">
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+<link rel="import" href="../redaap-behaviors/expand-collapse-classes-behavior.html">
+
+
+<dom-module id="solution-content">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        display: block;
+        width: 100%;
+        max-width: 460px;
+		    background-color: transparent;
+        padding: 16px;
+        margin-bottom: 264px;
+      }
+
+      .content {
+        width: 100%;
+        max-width: 460px;
+        opacity: 0;
+      }
+
+      .opacity1 {
+        opacity: 1;
+      }
+
+      .expandingHolder {
+        position: relative;
+        min-height: 48px;
+      }
+
+      .selectable {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        height: 48px;
+        position: absolute;
+        top: 0px;
+        padding: 0px;
+        background-color: var(--disabled-primary-color);
+      }
+
+      .color {
+        background-color: var(--disabled-text-color);
+      }
+
+      .itemIcons {
+        --iron-icon: {
+          margin-left: 16px;
+        };
+        --iron-icon-width: 32px;
+        --iron-icon-height: 32px;
+        --iron-icon-stroke-color: var(--primary-text-color);
+      }
+
+      .cardTitles {
+        margin-left: 16px;
+      }
+
+      .makeHeader {
+        border-radius: 3px 3px 0px 0px;
+      }
+
+      .expandCardTransitions {
+        -webkit-transition: transform 0.3s ease-out;
+                transition: transform 0.3s ease-out;
+      }
+
+    </style>
+
+
+  	<div id="content" class="content">
+
+      <iron-selector selected="{{itemIndex}}" 
+                     selected-class="selectedClass" 
+                     selected-item="{{selectedItem}}">
+        <template	id="repeater" 
+                  is="dom-repeat" 
+                  items="[[solutions]]"
+                  target-framerate="60" 
+                  strip-whitespace>
+
+
+          <div class="expandingHolder">
+
+            <div class$="selectable [[item.color]]">
+              <iron-icon class="itemIcons" 
+                         icon="custom-icons:[[item.icon]]" 
+                         hidden$="[[!item.icon]]">
+              </iron-icon>
+              <div class="cardTitles noSelect">[[item.label]]</div>
+            </div>
+
+            <template id="domIf" is="dom-if" if="[[showSolutionCard]]">
+              <solution-card id="solutionCard" 
+                             solution="{{item}}"
+                             index="[[index]]"
+                             selected-index="[[itemIndex]]">
+              </solution-card>
+            </template>
+
+          </div>
+
+
+        </template>
+    	</iron-selector>
+
+    </div>
+
+    <div class="bottomPadding96"></div>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'solution-content',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior,
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.Utilities, 
+          window.Redaap.Behaviors.OnTapBehavior,
+          window.Redaap.Behaviors.ExpandCollapseClassesBehavior 
+        ],
+
+        properties: {
+          
+          animationConfig: {
+            value() {
+              return {
+                'items': [{
+                  name: 'cascaded-animation',
+                  animation: 'slide-from-left-animation',
+                  // 'nodes' key is set imperitively in '_repeaterDomChanged' func
+                  timing: {duration: 300, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'fade-in-animation',
+                  // 'nodes' key is set imperitively in '_repeaterDomChanged' func
+                  timing: {duration: 300, delay: 100, easing: 'ease-in'}
+                }]
+              };
+            }
+          },
+          // show only the appropriate set of replacement fixtures for a given 
+          // existing fixture selection
+        	solutions: Array,
+          // block the item animation being run every time user adds a new area to a card
+          // which adds elements to the dom thereby firing the _repeaterDomChanged() method
+          canPlayItemsAnimation: {
+            type: Boolean,
+            notify: true
+          },
+          // iron-selector index of dom-repeat instances
+          itemIndex: {
+            type: Number,
+            observer: '_itemIndexChanged'
+          },
+          // all .expandingHolder elements
+          holders: Array,
+          // currently selected .expandingHolder
+          holder: Object,
+          // currently selected .selectable bar
+          selectable: Object,
+          // currently selected dom-if template
+          domIfTemplate: Object,
+          // currently selected solution-card
+          selectedSolutionCard: Object,
+          // Polymer dom api observeNodes
+          solutionCardObserver: Object,
+          // local dom div for show/hide animation purposes
+					cardContent: Object,
+          // the selected expanding element
+          expandingCard: Object,
+          // cached value first expantion into full card animation
+          // height not including margin of paper-material class="expanding"
+          initialCardExpandedHeight: {
+            type: Number,
+            value: 188
+          }
+        },
+
+        
+        listeners: {
+          'neon-animation-finish': '_animationFinished',
+          // for animation timing between 'toolbar' animation and 'item' animation
+          'dom-change':            '_repeaterDomChanged',
+        },
+        // called by solution-card on save button tap
+        // send the selected solution data up to solution-view
+        saveSolution(index) {
+          const parent = Polymer.dom(this.root).node.host.domHost;
+          parent.saveData(this.solutions[index]);
+        },
+        // called by solution-view
+        // clear all data and close all dropdowns
+        clearSolutions() {
+          // clear template repeater specific data only, not labels and icons
+          this.solutions.forEach(el => {
+            // reset data
+            el.count     = undefined;
+            el.openQty   = undefined;
+            el.tallies 	 = [{
+              tally0: undefined, 
+              tally1: undefined, 
+              tally2: undefined, 
+              tally3: undefined
+            }];
+          });
+          // clear array
+          this.solutions = undefined;
+          // deselect local user selection focus
+          this.itemIndex = undefined;
+          Polymer.dom(this.$.content).classList.remove('opacity1');
+        },
+
+        // wait for the repeater to fully stamp its dom before starting the items entry animation
+        _repeaterDomChanged() {
+          // grab references for items animation if the page has been opened, selected === 1
+          if (this.canPlayItemsAnimation) {
+            // event is fired for each dom element that is stamped
+            // so debounce until they are all ready
+            this.debounce('templateDebounce', () => {
+             this.holders = Polymer.dom(this.root).querySelectorAll('.expandingHolder');
+              // update the cascade animation nodes
+              this.animationConfig.items[0].nodes = this.holders; 
+              this.animationConfig.items[1].nodes = this.holders;
+              // unhide the items then play the animation
+              Polymer.dom(this.$.content).classList.add('opacity1');
+              // block the item animation being run every time user adds a new area to a card
+              // which adds elements to the dom thereby firing this event listener
+              this.set('canPlayItemsAnimation', false);
+              this.playAnimation('items', 'items');
+            }, 10);
+          } 
+        },
+
+        // after user cancels the picker wait to close until after 'preCancel' animation finishes
+        _animationFinished(_, animationType) {
+          switch(animationType) {
+            case 'items':
+              const loadPhotoCallback = () => {
+                // if there is only one option automatically morph the selection into a card
+                if (this.solutions.length === 1) {
+                  this.itemIndex = 0;
+                }
+                this.deferPhoto = true;
+              };
+
+              this.schedule(loadPhotoCallback);
+              break;
+            default:
+              return;
+          }
+        },
+        // called locally and by solution-card
+        // used any time cards futher down the screen need to slide down 
+        // ie. initial card expansion and adding tally rows
+        getRemainingCards(index) {
+          const remainingCards = this.holders.slice(index + 1);
+          return remainingCards;
+        },
+
+
+        _afterCardExpansion() {
+          this.unlisten(this.cardContent, 'transitionend', '_afterCardExpansion');
+
+          const setupExpanding = () => {
+            Polymer.dom(this.selectable).classList.add('makeHeader');
+          };
+
+          this.schedule(setupExpanding);
+        },
+
+
+        _showCardContent() {
+          this.listen(this.cardContent, 'transitionend', '_afterCardExpansion');
+          Polymer.dom(this.cardContent).classList.add('opacity1');
+        },
+
+        // raise paper-material and fade-in buttons after expanding element transition
+        _expandToCard(index) {
+          this.cardContent     = this.selectedSolutionCard.$.cardContent;
+          // setup any cards below the current card to slide down
+          const newY           = 50 - this.initialCardExpandedHeight;
+          const remainingCards = this.getRemainingCards(index);
+
+          const expand = () => {
+            // expand-collapse-classes-behavior method
+            // takes the element to animate, the css class that styles the element after
+            // the animation, the css class which containes transition definitions, and a callback
+            this.ecClassesInit(this.expandingCard, 'expandCard');
+            this.ecClassesSlideRemainingCards(remainingCards, newY, 'expandCardTransitions');
+            this.ecClassesPlay(this.expandingCard, 'expandCardTransitions');
+            const showCardContent = this._showCardContent.bind(this);
+            this.schedule(showCardContent);
+          };
+
+          this.schedule(expand);
+        },
+
+
+        _setupExpandingCard() {
+          this.selectedSolutionCard = Polymer.dom(this.holder).children[1];
+          this.expandingCard        = this.selectedSolutionCard.$.expanding;
+        },
+
+
+        _startCardAnimation() {
+          const makeCard = this._expandToCard.bind(this, this.itemIndex);
+          this.schedule(makeCard);
+        },
+
+
+        _solutionCardHandler() {
+          Polymer.dom(this.holder).unobserveNodes(this.solutionCardObserver);
+          this._setupExpandingCard();
+          this._startCardAnimation();
+        },
+
+
+        _stampSolutionCardAndAnimate() {
+          // use dom-if to stamp solution-card one at a time for items animation perf
+          this.domIfTemplate.if     = true;
+          const handler             = this._solutionCardHandler.bind(this);
+          this.solutionCardObserver = Polymer.dom(this.holder).observeNodes(handler);
+        },
+        // observing itemIndex in order to setup dom for animation
+        // using requestAnimationFrame since these calculations are happening during
+        // the css background-color transition
+        _itemIndexChanged(index) {
+          if (typeof index !== 'number') { return; }
+          // set currently selected card elements for animations
+          this.holder          = this.holders[index];
+          const holderDom      = Polymer.dom(this.holder);
+          this.selectable      = holderDom.firstChild; // always first child
+          this.domIfTemplate   = holderDom.lastChild;  // always last child
+
+          const solutionCardNotStamped = holderDom.children.length < 3;
+
+          if (solutionCardNotStamped) {
+            this._stampSolutionCardAndAnimate();
+            return;
+          }
+
+          this._setupExpandingCard();
+        }
+
+
+      });
+    })();
+  </script>
+
+</dom-module>

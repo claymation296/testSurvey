@@ -1,0 +1,542 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../account-form/account-form.html">
+<link rel="import" href="../area-page/area-page.html">
+<link rel="import" href="../quote-selector/quote-selector.html">
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+
+<dom-module id="lighting-main">
+  <template>
+    <style>
+
+      :host {
+        display: block;
+        height: 100%;
+      }
+
+      neon-animated-pages {
+        height: 100%;
+      }
+
+    </style>
+
+    <iron-localstorage name="redaap-userSelectedArray"
+                       value="{{userSelectedArray}}"
+                       error-message="{{localStorageError}}">
+    </iron-localstorage>
+
+
+    <neon-animated-pages id="neon" 
+                         selected="[[computedTab]]" 
+                         attr-for-selected="id">
+
+
+      <!-- id's used to reference these elements from outside of lighting-main dom -->
+      <area-page id="areaPage"
+                 user-selected-array="{{userSelectedArray}}"
+                 reverse-animation="[[reverseAnimation]]">
+      </area-page>
+
+      <quote-selector id="quoteSelector"
+                      pricing="[[pricing]]"
+                      selected-pricing="{{selectedPricing}}"
+                      client-valid="[[clientValid]]"
+                      tallies-valid="[[talliesValid]]"
+                      reverse-animation="[[reverseAnimation]]">
+      </quote-selector>
+
+
+
+  	</neon-animated-pages>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'lighting-main',
+
+        behaviors: [ 
+          window.Redaap.Behaviors.Utilities,    
+          window.Redaap.Behaviors.OnTapBehavior 
+        ],
+
+        properties: {
+          // sets page to be rendered
+          // data-bound to lighting-tabs and survey-search
+          lightingTab: {
+            type: String,
+            notify: true,
+            observer: '_lightingTabChanged'
+          },
+
+          computedTab: String,
+          // main data collection that is shared with most of the app
+          // userSelectedArray === [{count, 
+          //                         fixture: {name, label, icon, checked}, 
+          //                         replacement: {name, label, icon, color}, 
+          //                         tallyArray: [{name, tally0, tally1, tally2, tally3}]}]
+          userSelectedArray: {
+            type: Array,
+            notify: true
+          },
+          // saved photo data from web-worker.html
+          savedPhotoData: {
+            type: Object,
+            observer: '_savedPhotoDataChanged'
+          },
+          // saved photo data that is waiting for the user to save
+          // their current work
+          dreading: {
+            type: Object,
+            value: () => ({})
+          },
+          // save a snapshot of the uSA to be passed to the database
+          // in order to guarantee the data strictly aligns with its pricing
+          // just in case the uSA is altered and the pricing not updated
+          // accordingly through some unknown failure in the app logic
+          // surveyDataSnapShot === userSelectedArray
+          surveyDataSnapShot: Array,
+          // object with client data from email-modal.html
+          // to be combined with survey data then saved to Parse
+          // client === {clientName, phone, email, companyName, address, city, state,
+          //    zip, projectName, projectAddress, projectCity, projectState, projectZip, 
+          //    projectContact, projectDescription, surveyVersion}
+          client: {
+            type: Object,
+            notify: true,
+            observer: '_clientUpdated'
+          },
+          // displayed in app main toolbar middle
+          displayedClientCompanyName: {
+            type: String,
+            notify: true
+          },
+          // pricing array comes from Parse.Cloud fincance function
+          // data bound to quote-viewer.html for client review
+          // it contains data for all three term options so user
+          // can choose their preference
+          // pricing === [{
+          //   grandMonthly,
+          //   term,
+          //   totalQuantity,
+          //   collection === [{
+          //     inputFixture: dataArray[index].fixture,
+          //     fixture: el.existingFixture,
+          //     inputDescription: dataArray[index].description,
+          //     description: el.name,
+          //     count: dataArray[index].count,
+          //     hardCostEach: hardCostEach,
+          //     productSubEach: productSubEach,
+          //     installSubEach: installSubEach,
+          //     total: total,
+          //     maintenance: maintenance,
+          //     tax: tax,
+          //     loan: loan,
+          //     monthlyPayment: monthlyPayment
+          //   }]}]
+          pricing: {
+            type: Array,
+            value: () => ([])
+          },
+          // selectedPricing obj comes from quote-selector.html after user 
+          // chooses a plan
+          selectedPricing: {
+            type: Object,
+            notify: true,
+            observer: '_selectedPricingChanged'
+          },
+          // passed to quote-page.html after a survey is saved to Parse
+          // in case user wants to iterate on the original during the same session
+          version: {
+            type: Number,
+            notify: true
+          },
+          // passed in from account-form.html if all inputs are complete and valid
+          // passed to quote-selector to control state of badge and displayed card
+          clientValid: {
+            type: Boolean,
+            notify: true
+          },
+          // bound from light-tally to control quote generation flow
+          talliesValid: {
+            type: Boolean,
+            notify: true
+          },
+          // control naivation back to account-form if not completed
+          route: {
+            type: String,
+            notify: true
+          },
+          // used to run its showQuoteSpinner() method
+          optionsCardCE: Object,
+          // the last element found to have zero or no quantity in _validateAreas()
+          // so that the highlighted values can be removed in a more performant manner
+          // than simply iterating over the entire uSA to find and remove them
+          lastZeroQty: Object,
+          // error message from iron-localstorage
+          localStorageError: {
+            type: String,
+            observer: '_localStorageError'
+          }
+        },
+        
+
+        observers: [
+          '_newFixtureAdded(userSelectedArray.*)'
+        ],
+
+
+        attached() {
+          this.async(() => {
+            // 'clear survey' dialog button events
+            document.querySelector('#app').clearSurvey = () => this.clearSurvey();
+            // get reference to options-card custom element that is within quote-selector
+            // in order to run its showQuoteSpinner() method
+            this.optionsCardCE = Polymer.dom(this.$.quoteSelector).node._nodes[0];
+
+            window.Redaap.accountForm.addEventListener(
+              'account-form-validated', 
+              () => this._accountFormValidated(), 
+              false
+            );
+          });
+        },
+
+
+        detached() {
+          window.Redaap.accountForm.removeEventListener(
+            'account-form-validated', 
+            () => this._accountFormValidated(), 
+            false
+          );
+        },
+
+        // add saved photo data into the given element
+        _addPhotoToMatch(match, job) {
+          const {key, savedUrl} = job;
+          // this is the data for the current photo
+          if (match.key === key) {
+            match.savedUrl = savedUrl;
+          }
+          match.keys[key].savedUrl  = savedUrl;
+        },
+
+        // search uSA for a given key and return the element with that key
+        _findFixtureByKey(key) {
+
+          const compareKeys = fixture => fixture.keys && fixture.keys[key];
+          // using for of in order to break out early when first match is found
+          for (const area of this.userSelectedArray) {
+            const match = area.fixtures.find(compareKeys);
+
+            if (match) {
+              return match;
+            }
+          }
+        },
+        // uSA observer
+        // find a home for saved photo data each time the uSA is changed
+        _newFixtureAdded() {
+          this.debounce('emptyDreadingDebounce', () => {
+            // iterate over dreading list looking for the key
+            // that matches the saved data
+            for (const key in this.dreading) {
+              const match = this._findFixtureByKey(key);
+              const job   = this.dreading[key]; 
+
+              if (match) {
+                this._addPhotoToMatch(match, job);
+                delete this.dreading[key];
+              }
+            }
+          }, 10);
+        },
+        // savePhotoData changed by web-worker after a photo is saved to cloud
+        // db on first attempt or after a failed attempt to save to cloud 
+        // when promise is resolved or later after the photo is saved to cloud
+        // from the worker dreading list
+        _savedPhotoDataChanged(data) {
+          const key = data.key;
+          const match = this._findFixtureByKey(key);
+
+          if (match) {
+            this._addPhotoToMatch(match, data);
+          } else  {
+            this.dreading[key] = data;
+          }
+        },
+
+        // _lightingTabChanged helper func
+        _getTabNumber(tab) {
+          switch (tab) {
+            case 'areaPage':
+              return 0;
+            case 'quoteSelector':
+              return 1;
+            default:
+              return;
+          }
+        },
+
+        // observe lightingTab
+        _lightingTabChanged(newTab, oldTab) {
+          this.$.neon.cancelAnimation();
+          // must intercept selectionTab so the correct animation direction
+          // can be set before triggering neon-animated-pages
+          // this.reverseAnimation found in redaap-behaviors/tab-page-animation-behavior.html
+          const newTabNum = this._getTabNumber(newTab);
+          const oldTabNum = this._getTabNumber(oldTab);
+          this.set('reverseAnimation', (newTabNum < oldTabNum) ? true : false);
+          // check users work before they navigate to quote tab
+          if (newTab === 'quoteSelector' && !this.talliesValid) {
+            this._validateAreas();
+
+            return;
+          }
+          // bound to neon-animated-pages
+          const setTab = () => {
+            this.computedTab = newTab;
+          };
+
+          this.schedule(setTab);
+        },
+        // navigate user to account-form if they choose a price plan but dont have
+        // the account form filled in
+        _selectedPricingChanged(obj) {
+          if (obj === undefined || obj === null || this.clientValid) { return; }
+
+          this.warn('Please complete the account information so we can send the quote');
+          this.async(() => {
+            // reset user selection then navigate them back to quote-selector
+            this.$.quoteSelector.resetPlanIndex();
+            // redirect user to account form so they may complete it before moving forward
+            // to the email steps
+            this.set('route', 'client');
+          }, 800);
+        },
+
+        // reset both valid states and hide badges after a survey is loaded in
+        resetValidity() {
+          this.set('clientValid', false);
+          this.set('talliesValid', false);
+        },
+
+        // action to take in case any of the cards has no quantity entered
+        _isNotValid() {
+          // disallow main-page from creating a quote with partial data
+          this.set('talliesValid', false);
+          this.warn('Oops! Please start by adding an area to the list');
+          this.async(() => {
+            this.set('lightingTab', 'areaPage');
+          }, 800);
+        },
+        // iterate over the uSA looking for cards that have no quantity
+        // empty rows are allowed as long as one of the rows has a non-zero entry
+        _validateAreas() {
+          // build an array of indexes that lead to each replacement that have a zero qty
+          // so that said tally elements can be highlighted for the user
+          if (!Array.isArray(this.userSelectedArray) || this.userSelectedArray.length === 0) {
+            this.userSelectedArray = [];
+            this._isNotValid();
+            return;
+          }
+
+          this.schedule(this._getPricing.bind(this));
+        },
+
+        // called from this._validateAreas() if tallies are verified
+        _getPricing() {
+          // show spinner that covers the pricing card in quote-viewer
+          this.optionsCardCE.showQuoteSpinner(true);
+
+          const setTab = () => {
+            this.computedTab = 'quoteSelector';
+          };         
+
+          this.schedule(setTab);
+
+          window.Redaap.webWorker.
+            pricing(this.userSelectedArray).
+            then(({uSA, pricing}) => {
+              this.set('talliesValid', true);
+              // set the new data to this.surveyDataSnapShot to be passed to the database
+              // in order to guarantee the data strictly aligns with its pricing
+              // just in case the uSA is altered and the pricing not updated
+              // accordingly
+              // copy of uSA, not pointer or reference
+              this.surveyDataSnapShot = uSA;
+              // data-bound to quote-viewer.html
+              this.set('pricing', pricing);
+
+              const animatePricing = () => {
+                this.optionsCardCE.showQuoteSpinner(false);
+              };
+
+              this.schedule(animatePricing);
+            }).
+            catch(() => {
+              this.set('pricing', []);
+              this.optionsCardCE.showQuoteSpinner(false);
+
+              if (window.navigator.onLine) {
+                this.warn('Uh Oh! There was an error while trying to crunch the numbers!');
+              } else {
+                this.warn('Please reconnect to the internet to get pricing');
+              }
+            });
+        },
+        // fired from account-form upon completion
+        // navigate user to correct tab based on the state of the survey
+        _accountFormValidated() {
+          // dont change the tab unless on the lighting page
+          if (this.route !== 'lights') { return; }
+
+          if (!this.userSelectedArray || this.userSelectedArray.length === 0) {
+            // navigate back to area-tab if user has not 
+            // saved any fixtures
+            this.set('lightingTab', 'areaPage');
+          } else {
+            // navigate to quote-selector if user has saved fixtures
+            // but not uploaded the data yet
+            this.set('lightingTab', 'quoteSelector');
+          }
+        },
+        // observe client to maintain version in quote-viewer
+        _clientUpdated(obj) {
+          if (obj && obj.surveyVersion) {
+            this.set('version', obj.surveyVersion ? obj.surveyVersion : 0);
+          } else {
+            this.set('version', 0);
+          }
+        },
+        // called by clear survey dialog in index.html 
+        // and by web-worker on logout
+        clearSurvey() {
+          const clearData = () => {
+            this.set('userSelectedArray', []);
+            this.surveyDataSnapShot = undefined;
+            window.Redaap.accountForm.clearClient();
+            window.Redaap.webWorker.clearPhotoData();
+            this.set('clientValid', false);
+            this.set('talliesValid', false);
+            // reset page to account-form
+            this.async(() => {
+              this.set('lightingTab', 'areaPage');
+            }, 500);
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = clearData; 
+        },
+        // determine if all the data that constitues a completed quote is present
+        _isReadyToSave() {
+          // need recipients email, first and last name, and 
+          // info including full survey list with no missing counts
+          const ready = this.clientValid && 
+                        this.client !== undefined && 
+                        this.client !== null &&
+                        this.surveyDataSnapShot;
+
+          if (!ready) {
+            this.warn('Not ready to email your quote at this time. ' +
+                      'Please review the survey and try again');
+          }
+
+          return ready;
+        },
+        // change the version number after Parse function returns successfully
+        _createNewVersion(version) {
+          // increment the survey version number to help keep track of edits
+          // the original surveyVersion key will be undefined
+          if (version === undefined) {
+            return 2;
+          // increment all other versions
+          } else {
+            return version += 1;
+          }
+        },
+        // create a new version number and open the success screen
+        _saveSuccess() {
+          this.set('version', this._createNewVersion(this.client.surveyVersion));
+          // run success-page method to play its entry animation
+          window.Redaap.successPage.open();
+          // trigger quote-page to close
+          window.Redaap.emailOptions.saveSuccess();
+        },
+        // show user an error toast and stop the spinner in email-options
+        _saveError(error) {
+          console.log(error);
+          this.warn('There was an unexpected error while trying to send your quote');
+          this.async(() => {
+            window.Redaap.emailOptions.saveError();
+          }, 2000);
+        },
+
+
+
+//*********** test dummy to fake successfull response **********************
+
+        // save(type, options) {
+        //   if (!this._isReadyToSave()) { return; }
+        //   // options === {brochure: bool, credit: bool, contract: bool, capture: dataURL}
+        //   console.log('running email dummy function: ', options);
+          
+
+        //   this.async(() => {
+        //     window.Redaap.emailOptions.saveSuccess();
+        //     // run success-page method to play its entry animation
+        //     window.Redaap.successPage.open();
+        //   }, 2000);
+          
+        // },
+
+//**************** production code ************************
+
+        
+
+        // called by email-options
+        save(type, options) {
+          if (!this._isReadyToSave()) { return; }
+          
+          // options === {brochure: bool, credit: bool, contract: bool, capture: dataURL}
+          const data = {
+            type,
+            options,
+            client:  this.client,
+            pricing: this.selectedPricing,
+            survey:  this.surveyDataSnapShot
+          };
+
+          window.Redaap.webWorker.
+            save(data).
+            then(() => {
+              this._saveSuccess();
+            }).
+            catch(error => {
+              this._saveError(error);
+            });
+        },
+
+
+
+        _localStorageError(newVal) {
+          console.log(newVal);
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

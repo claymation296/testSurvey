@@ -1,0 +1,565 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<dom-module id="login-screen2">
+  <template>
+    <style>
+
+      :host {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background-color: var(--default-primary-color);
+      }
+      
+      paper-button {
+        margin: 0px;
+      }
+
+      paper-material {
+        display: inline-block;
+        border-radius: 3px;
+      }
+
+      paper-input {
+        --paper-input-container-focus-color: var(--default-primary-color);
+      }
+
+      gold-email-input {
+        --paper-input-container-focus-color: var(--default-primary-color);
+      }
+
+      #main {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        -webkit-transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%);
+        background-color: var(--dark-primary-color);
+      }
+
+      #redMain {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        -webkit-transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%);
+        background-color: var(--dark-primary-color);
+        border-radius: 50%;
+        overflow: hidden;
+        -webkit-transition: height 0.5s ease-in-out, width 0.5s ease-in-out;
+                transition: height 0.5s ease-in-out, width 0.5s ease-in-out;
+        z-index: 1;
+      }
+
+      #hero {
+        width: 214px;
+        height: 275px;
+        background-color: var(--default-primary-color);
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        -webkit-transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%);
+        z-index: 2;
+        -webkit-transition: opacity 0.3s ease-in-out;
+                transition: opacity 0.3s ease-in-out;
+      }
+
+      #login {
+        width: 214px;
+        height: 275px;
+        overflow: hidden;
+      }
+
+      #redLogin {
+        width: 214px;
+        height: 275px;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        -webkit-transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%);
+        background-color: var(--default-primary-color);
+        overflow: hidden;
+        --paper-card-header-text: {
+          color: white;
+        };
+        --paper-card-actions: {
+          border-top: 1px solid white;
+        };
+      }
+
+      .redInputs {
+        --paper-input-container-color: white;
+        --paper-input-container-focus-color: white;
+        --paper-input-container-invalid-color: white;
+        --paper-input-container-input-color: white;
+      }
+
+      .whiteButtons {
+        color: var(--dark-primary-color);
+        background-color: white;
+      }
+
+      .redButtons {
+        color: white;
+        background-color: var(--dark-primary-color);
+      }
+
+      .floated {
+        float: right;
+      }
+
+      .opacityTransition {
+        -webkit-transition: opacity 0.2s ease-in-out;
+                transition: opacity 0.2s ease-in-out;
+      }
+
+    </style>
+
+    <iron-localstorage name="redaap-userLogin"
+      value="{{email}}"
+      error-message="{{localStorageError}}">
+    </iron-localstorage>
+
+
+    <!-- after user taps login/signup the white card will be 'painted' red by this element -->
+    <div id="redMain">
+      <!-- dummy element for outgoing hero animation -->
+      <paper-material id="hero" elevation="3" hidden$="[[heroHidden]]"></paper-material>
+      <!-- dummy red card for login/signup animation -->
+      <paper-card id="redLogin" heading="[[type]]" hidden$="[[hidden]]">
+        <div class="card-content">
+          <paper-input id="redEmail" class="redInputs" label="email" type="email"
+            auto-validate required value="[[email]]"
+            error-message="Please enter a valid email format">
+          </paper-input>
+          <paper-input id="redPassword" class="redInputs" label="password"
+            type="password" value="[[password]]">
+          </paper-input>
+        </div>
+        <div class="card-actions">
+          <paper-material id="redLoginButton" class="redButtons opacityTransition" 
+            animated elevation="[[loginElevation]]">
+            <paper-button>[[type]]</paper-button>
+          </paper-material>
+          <paper-material id="redCancelButton" class="redButtons floated opacityTransition"
+            animated elevation="[[cancelElevation]]">
+            <paper-button>Cancel</paper-button>
+          </paper-materail>
+        </div>
+      </paper-card>
+    </div>
+    <!-- white card for user input to be hidden by red card when user taps login/signup -->
+    <div id="main">
+      <paper-card id="login" animated-shadow heading="[[type]]" 
+        elevation="[[cardElevation]]" hidden$="[[hidden]]">
+        <div class="card-content">
+          <paper-input id="email" label="email" type="email"
+            auto-validate required value="{{email}}"
+            error-message="Please enter a valid email format">
+          </paper-input>
+          <iron-a11y-keys 
+            target="[[a11yTarget]]" 
+            keys="enter" 
+            on-keys-pressed="_login">
+          </iron-a11y-keys>
+          <paper-input id="password" label="password" type="password" 
+            value="{{password}}">
+          </paper-input>
+        </div>
+        <div class="card-actions">
+        	<paper-material id="loginButton" class="whiteButtons opacityTransition" 
+            animated elevation="[[loginElevation]]">
+          	<paper-button on-tap="_login" noink>[[type]]</paper-button>
+		      </paper-material>
+		      <paper-material id="cancelButton" class="whiteButtons floated opacityTransition" 
+            animated elevation="[[cancelElevation]]">
+          	<paper-button on-transitionend="_cancel">Cancel</paper-button>
+		      </paper-materail>
+        </div>
+      </paper-card>
+    </div>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'login-screen2',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior, 
+          Polymer.NeonAnimationRunnerBehavior
+        ],
+
+        properties: {
+
+        	animationConfig: {
+            value() {
+              return {
+                'entry': [{
+                  name: 'slide-from-left-animation',
+                  node: this.$.password,
+                  timing: {duration: 350, easing: 'ease-in-out'}
+                }, {
+                	name: 'fade-in-animation',
+                	node: this.$.password,
+                	timing: {delay: 100, easing: 'ease-in-out'}
+                }, {
+                	name: 'slide-from-left-animation',
+                  node: this.$.email,
+                  timing: {duration: 350, delay: 50, easing: 'ease-in-out'}
+                }, {
+                	name: 'fade-in-animation',
+                	node: this.$.email,
+                	timing: {delay: 150, easing: 'ease-in-out'}
+                }],
+                'preExit': [{
+                  name: 'slide-left-animation',
+                  node: this.$.redPassword,
+                  timing: {delay: 150, easing: 'ease-in-out'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this.$.redPassword,
+                  timing: {duration: 350, easing: 'ease-in-out'}
+                }, {
+                  name: 'slide-left-animation',
+                  node: this.$.redEmail,
+                  timing: {delay: 200, easing: 'ease-in-out'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this.$.redEmail,
+                  timing: {duration: 350, easing: 'ease-in-out'}
+                }],
+                'exit': {
+                	name: 'hero-animation',
+                	id: 'hero',
+                	fromPage: this,
+                	timing: {easing: 'ease-in-out'}
+                }
+              };
+            }
+          },
+
+          sharedElements: {
+            value() {
+              return {
+                'hero': this.$.hero
+              };
+            }
+          },
+          // from neon-animated-pages in app-security.html
+          selected: {
+            type: Number,
+            observer: '_selectedChanged'
+          },
+          // login or signup
+          type: {
+            type: String,
+            observer: '_setAnimationConfigByType'
+          },
+          // for animations
+          heroHidden: {
+            type: Boolean,
+            value: true
+          },
+          // for animations
+          hidden: {
+            type: Boolean,
+            value: false
+          },
+          // animation
+          cardElevation: {
+          	type: Number,
+          	value: 0
+          },
+          // animation
+          loginElevation: {
+            type: Number,
+            value: 0
+          },
+          // animation
+          cancelElevation: {
+            type: Number,
+            value: 0
+          },
+          // data passed up to app-security
+          email: {
+          	type: String,
+          	notify: true
+          },
+          // data passed up to app-security
+          password: {
+          	type: String,
+          	notify: true
+          },
+
+          a11yTarget: Object,
+
+          // error message from iron-localstorage
+          localStorageError: {
+            type: String,
+            observer: '_localStorageError'
+          }
+        },
+
+
+        attached() {
+          this.async(() => {
+            this.a11yTarget = this.$$('#password');
+          });
+        },
+
+        // for anti-ripple effect
+        _setMask(x, y, r) {
+          // set the dimensions of the mask
+          this.$.redMain.style.width = `${r}px`;
+          this.$.redMain.style.height = `${r}px`;
+          // place the center of the mask at the tap event source
+          this.$.redMain.style.top = `${y}px`;
+          this.$.redMain.style.left = `${x}px`;
+          // position the card back at the center of the screen
+          // it must be placed inside the mask element for the effect to work
+          // but then it's neccesary to calculate back to the center of the screen
+          // half of the mask dimension minus the difference between the touch event source
+          // and the midpoint of the screen
+          const height = this.offsetHeight ? (this.offsetHeight / 2) : 0;
+          const width = this.offsetWidth ? (this.offsetWidth / 2) : 0;
+          const top = r ? (y - height) : 0;
+          const left = r ? (x - width) : 0;
+          this.$.redLogin.style.top = `-webkit-calc(50% - ${top}px)`;
+          this.$.redLogin.style.top = `calc(50% - ${top}px)`;
+          this.$.redLogin.style.left = `-webkit-calc(50% - ${left}px)`;
+          this.$.redLogin.style.left = `calc(50% - ${left}px)`;
+          this.$.hero.style.top = `-webkit-calc(50% - ${top}px)`;
+          this.$.hero.style.top = `calc(50% - ${top}px)`;
+          this.$.hero.style.left = `-webkit-calc(50% - ${left}px)`;
+          this.$.hero.style.left = `calc(50% - ${left}px)`;
+        },
+
+        _setAnimationConfigByType(type) {
+          // change animationConfig according to type being 'Log In' or 'Sign Up'
+          if (type === 'Sign Up') {
+            this.animationConfig.entry = [{
+              name: 'slide-from-right-animation',
+              node: this.$.password,
+              timing: {duration: 350, easing: 'ease-in-out'}
+            }, {
+              name: 'fade-in-animation',
+              node: this.$.password,
+              timing: {delay: 100, easing: 'ease-in-out'}
+            }, {
+              name: 'slide-from-right-animation',
+              node: this.$.email,
+              timing: {duration: 350, delay: 50, easing: 'ease-in-out'}
+            }, {
+              name: 'fade-in-animation',
+              node: this.$.email,
+              timing: {delay: 150, easing: 'ease-in-out'}
+            }];
+          } else {
+            this.animationConfig.entry = [{
+              name: 'slide-from-left-animation',
+              node: this.$.password,
+              timing: {duration: 350, easing: 'ease-in-out'}
+            }, {
+              name: 'fade-in-animation',
+              node: this.$.password,
+              timing: {delay: 100, easing: 'ease-in-out'}
+            }, {
+              name: 'slide-from-left-animation',
+              node: this.$.email,
+              timing: {duration: 350, delay: 50, easing: 'ease-in-out'}
+            }, {
+              name: 'fade-in-animation',
+              node: this.$.email,
+              timing: {delay: 150, easing: 'ease-in-out'}
+            }];
+          }
+        },
+
+        _selectedChanged(selected) {
+          // if on this page
+          if (selected === 2) {
+            // reset exit config to hero in case it was set to fade-out by this._cancel
+            this.animationConfig.exit = {
+              name: 'hero-animation',
+              id: 'hero',
+              fromPage: this,
+              timing: {easing: 'ease-in-out'}
+            };
+            // hide the hero dummy div
+            this.$.hero.style.opacity = 0;
+            this.set('heroHidden', true);
+          	// raise the card
+          	this.set('cardElevation', 3);
+            // animate the buttons depending on the direction of the ripple
+            // based on user selection between Log In or Sign Up
+            if (this.type === 'Sign Up') {
+              // show button closest to ripple origin first
+              this.async(() => {
+                this.$.cancelButton.style.opacity = 1;
+              }, 50);
+              // other button next
+              this.async(() => {
+                this.$.loginButton.style.opacity = 1;
+              }, 100);
+              // then raise the buttons off of the card
+              this.async(() => {
+                this.set('cancelElevation', 5);
+              }, 300);
+              this.async(() => {
+                this.set('loginElevation', 5);
+              }, 350);
+            } else {
+              // show button closest to ripple origin first
+            	this.async(() => {
+                this.$.loginButton.style.opacity = 1;
+            	}, 50);
+            	// other button next
+              this.async(() => {
+                this.$.cancelButton.style.opacity = 1;
+              }, 100);
+              // then raise the buttons off of the card
+              this.async(() => {
+            		this.set('loginElevation', 5);
+              }, 300);
+              this.async(() => {
+                this.set('cancelElevation', 5);
+              }, 350);
+            }
+          } else {
+            // reset for animation
+            this.$.redMain.style.opacity = 0;
+            this.$.redMain.style.zIndex = 0;
+            this.set('hidden', false);
+            this.set('cardElevation', 0);
+            this.set('loginElevation', 0);
+            this.set('cancelElevation', 0);
+            this.$.loginButton.style.opacity = 0;
+            this.$.cancelButton.style.opacity = 0;
+            this.$.redLoginButton.style.opacity = 1;
+            this.$.redCancelButton.style.opacity = 1;
+          }
+        },
+        // called from login button
+        _login(event) {
+          // the red card is set with 0 opacity and is layered on top of the white card
+          // redMain is revieled with a clip-path transition
+          let x, y;
+          // get the exact tap center to start the ripple off at if user tapped the button
+          if (event.detail.sourceEvent !== undefined && event.detail.sourceEvent !== null) {
+            const source = event.detail.sourceEvent;
+            x = source.x || source.pageX;
+            y = source.y || source.pageY;
+          // get the center of the login button in case user hits enter key for the ripple
+          } else {
+
+            const getButtonCenterCoords = ({width, height, top, left}) => {
+              return {
+                // top left corner pos plus half the total width or height 
+                x: left + (width / 2),
+                y: top + (height / 2)
+              };
+            };
+            
+            const measurements = this.$.loginButton.getBoundingClientRect();
+            const coords = getButtonCenterCoords(measurements);
+            x = coords.x;
+            y = coords.y;
+          }
+          // set the starting point of the ripple with zero radius
+          // raise the redMain element above the white one before the animation begins
+          this._setMask(x, y, 0);
+          // delay to allow styles to take effect
+          this.async(() => {
+            // give the clip-path circle transition timing and a radius larger than the card
+            this._setMask(x, y, 800);
+            this.$.redMain.style.opacity = 1;
+            this.$.redMain.style.zIndex = 1;
+          }, 1);
+          // play the hide animations for the inputs
+          this.async(() => {
+            this.playAnimation('preExit');
+          }, 100);
+          // lower the red login button first
+          this.async(() => {
+            this.set('loginElevation', 0);
+          }, 200);
+          // other button next
+          this.async(() => {
+            this.set('cancelElevation', 0);
+          }, 250);
+          // hide the login button
+          this.async(() => {
+            this.$.redLoginButton.style.opacity = 0;
+          }, 300);
+          // hide the cancel button unhide the hero element
+          this.async(() => {
+            this.$.redCancelButton.style.opacity = 0;
+            this.set('heroHidden', false);
+          }, 350);
+          // reveal hero element
+          this.async(() => {
+            this.$.hero.style.opacity = 1;
+          }, 400);
+          // hide both cards then fire the login event up to app-security.html
+          this.async(() => {
+            this.set('hidden', true);
+            this._fireEvent();
+            this._setMask(x, y, 0);
+          }, 700);
+        },
+        // custom event wont fire from inside an async function
+        // fired up to app-security.html
+        _fireEvent() {
+          if (this.type === 'Sign Up') {
+            this.fire('signup');
+          } else {
+            this.fire('login');
+          }
+        },
+        // called from cancel button
+        _cancel() {
+
+          // 2 OUTSTANDING POLYMER BUGS!!!!! as of 3/25/2016
+          // paper-ripple holdDown attr being changed somehow
+          // and paper-ripple fires transitionend event twice per tap
+          
+          // only using debounce because transitionend ha a bug 
+          // where it always fires twice after ripple animation
+          this.debounce('closeDebounce', () => {
+            // set a new exit config to fade-out to logo-screen.html
+            this.animationConfig.exit = {
+              name: 'fade-out-animation',
+              node: this,
+              timing: {easing: 'ease-in-out'}
+            };
+            // fire cancel event up to app-security.html
+            this.fire('cancel');
+          }, 1);
+        },
+
+        _localStorageError(error) {
+          console.log('login localstorage error: ', error);
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

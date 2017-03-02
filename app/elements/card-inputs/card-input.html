@@ -1,0 +1,131 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+
+<dom-module id="card-input">
+  <template>
+    <style>
+    
+      :host {
+        display: block;
+        height: 60px;
+        background-color: white;
+      }
+
+      .tallies {
+        display: inline-flex;
+        padding-right: 16px;
+        opacity: 0;
+        transition: opacity 0.2s ease-in;
+      }
+
+      .showTallies {
+        opacity: 1;
+      }
+
+      paper-input {
+        --paper-input-container-focus-color: var(--dark-primary-color);
+        --paper-input-container-underline-focus: {
+          background-color: var(--dark-primary-color);
+        };
+      }
+
+      .tally {
+        display: inline-block;
+        width: calc(25% - 16px);
+        margin-left: 16px;
+      }
+
+    </style>
+
+    <div id="tallies" class="tallies">
+      <paper-input 
+        class="tally"
+        type="tel" min="0"
+        on-input="_userInput"
+        value="{{rows.tally0}}"
+        allowed-pattern="[0-9]"
+        prevent-invalid-input>
+      </paper-input>
+      <paper-input 
+        class="tally"
+        type="tel" min="0"
+        on-input="_userInput" 
+        value="{{rows.tally1}}"
+        allowed-pattern="[0-9]"
+        prevent-invalid-input>
+      </paper-input>
+      <paper-input 
+        class="tally"
+        type="tel" min="0"
+        on-input="_userInput"
+        value="{{rows.tally2}}"
+        allowed-pattern="[0-9]"
+        prevent-invalid-input>
+      </paper-input>
+      <paper-input 
+        class="tally"
+        type="tel" min="0"
+        on-input="_userInput" 
+        value="{{rows.tally3}}"
+        allowed-pattern="[0-9]"
+        prevent-invalid-input>
+      </paper-input>
+    </div>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'card-input',
+
+        properties: {
+        	// object used to carry input data
+        	rows: Object,
+        },
+
+        attached() {
+          this.async(() => {
+            Polymer.dom(this.$.tallies).classList.add('showTallies');
+          }, 1);
+        },
+        // helper function for _userInput()
+        _anyInputChanged(obj) {
+          if (typeof obj === 'object' && obj !== null) {
+            // const {tally0 = 0, tally1 = 0, tally2 = 0, tally3 = 0} = obj; // jshint ignore:line
+            let {tally0, tally1, tally2, tally3} = obj; // jshint ignore:line
+            tally0 = tally0 ? tally0.trim() : 0;
+            tally1 = tally1 ? tally1.trim() : 0;
+            tally2 = tally2 ? tally2.trim() : 0;
+            tally3 = tally3 ? tally3.trim() : 0;
+            const sum = Number(tally0) + Number(tally1) + Number(tally2) + Number(tally3);
+
+            return sum;
+          }
+        },
+        // fired from paper-inputs
+        _userInput(event) {
+          this.debounce('inputDebounce', () => {
+            const str = Polymer.dom(event).rootTarget.value;
+            if (typeof str === 'string') {
+              const sum = this._anyInputChanged(this.rows);
+              // send out a custom event up to parent inputs-repeater.html
+              this.fire('card-input-tally-summed', {sum});
+            }
+          }, 50);
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

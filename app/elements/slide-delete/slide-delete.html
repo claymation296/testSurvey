@@ -1,0 +1,317 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+
+<!-- slide-delete api requires passing in info about the template its in: 
+      <slide-delete
+        template-id="id of the template dom-repeat"
+        template-item-class-name="class name of the repeated elements"
+        index="[[index]]">
+
+        content goes here
+
+      </slide-delete>
+
+      fires custom event 'slide-delete-animation-done' once slide up animations complete
+
+      fires custom event 'slide-delete-element-deleted' on element delete
+
+      fires custom event 'slide-delete-last-element-deleted' on last repeated element delete
+
+      also requires the template's items data to be two way bound ie. {{}} instead of [[]] -->
+
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+<link rel="import" href="../redaap-behaviors/slide-left-to-delete-behavior.html">
+
+
+<dom-module id="slide-delete">
+  <template>
+    <style>
+
+      :host {
+      	display: block;
+      }
+
+      #content {
+        position: relative;
+      }
+
+      .delete {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 64px;
+        height: calc(100% - 2px);
+        position: absolute;
+        top: 1px;
+        right: 1px;
+        border-radius: 0px 3px 3px 0px;
+        color: white;
+        background-color: var(--default-primary-color);
+      }
+
+      #slider {
+        position: relative;
+      }
+      /*slide left to delete*/
+      .sliderTransition {
+        -webkit-transition: transform 0.2s ease-out;
+                transition: transform 0.2s ease-out;
+      }
+
+      .deleteOpen {
+      	position: relative;
+        left: -63px;
+      }
+
+    </style>
+
+    <div id="content">
+      <div id="deleteButton" class="delete" on-tap="_deleteTapped">
+        <iron-icon icon="custom-icons:delete"></iron-icon>
+      </div> 
+
+      <div id="slider" on-track="_sliderTracked">
+      	<content></content>
+      </div>
+    </div>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'slide-delete',
+
+        behaviors: [
+          window.Redaap.Behaviors.Utilities,               
+        	window.Redaap.Behaviors.OnTapBehavior,           
+          window.Redaap.Behaviors.SlideLeftToDeleteBehavior
+        ],
+
+        properties: {
+        	// ref to the dom-repeat parent template
+        	repeater: Object,
+          // ref to repeater parentNode, used to for querySelectorAll to dynamically find siblings
+          repeaterParent: Object,
+          // id of the template dom-repeater
+          templateId: String,
+        	// class name string of the repeated elements
+        	templateItemClassName: String,
+          // dom-repeater index of this instance 
+        	index: Number,
+          // set on host
+          // 'last-element-deleted' event fired if true
+          disableLastElementDelete: Boolean,
+          // set true on first dom-change event in order to ignore any other events in 
+          // the same burst
+          domChangeLatch: Boolean,
+          // applied to the deleted element
+          transformString: {
+            type: String,
+            value: 'scale(0, 0)'
+          },
+          // applied to the deleted and remaining elements animations
+          transitionString: {
+            type: String,
+            value: 'transform 0.3s ease-out, opacity 0.1s ease-in'
+          }
+        },
+
+
+        attached() {
+          this.async(() => {
+            this.repeater = this._findRepeater(Polymer.dom(this).node.domHost); 
+            // find the parent of the template dom-repeat
+            // so we can use querySelectors to find the other repeated
+            // sibling elements in order to slide them up after the delete is made
+            this.repeaterParent = Polymer.dom(this.repeater).parentNode;
+            // bug! ####################################
+            // for some reason Chrome and Android ignore the
+            // css touch-action: pan-y style but it works when
+            // set imperitively
+            this.setScrollDirection('y', this.$.slider);
+          });
+        },
+
+        // paper-card on-track listener func
+        _sliderTracked(event) {
+          // slide-left-to-delete redaap behavior
+          // this method takes the track event, transition class, open state class
+          // and the slide travel which is the max distance in pixels that the slider 
+          // can travel in the x direction
+          this.slElementTrack(event, 'sliderTransition', 'deleteOpen', 63);
+        },
+        // not using ecClassesSlideRemainingCards REDAAP_behavior since
+        // this elements acts on elements outside the local dom
+        _slideRemainingElements(remainingElements, newY, transition) {
+
+          const addTransition = () => {
+            remainingElements.forEach(element => {
+              let removeListener;
+
+              const cleanUp = event => {
+                if (event.propertyName === 'transform') {
+                  removeListener();
+                  element.style.transition = '';
+                  const lastElement = (element === remainingElements[remainingElements.length - 1]);
+                  if (lastElement) {
+                    // fired event must come from an element that still exists (hasnt been deleted)
+                    if (element.fire) {
+                      element.fire('slide-delete-animation-done');
+                    }
+                  }
+                }          
+              };
+              // cannot move function definitions outside of forEach because it breaks
+              // the removeEventListener method 1/24/2017
+              removeListener = () => {
+                element.removeEventListener('transitionend', cleanUp, false);
+              };
+
+              element.addEventListener('transitionend', cleanUp, false);
+              element.style.transition = transition;
+              element.style.transform = '';
+            });
+          }; 
+          
+          remainingElements.forEach(element => {
+            element.style.transition = '';
+            element.style.transform  = `translateY(${newY}px)`;
+          });
+
+          this.schedule(addTransition);
+        },
+
+        // repeater dom-change event cb for delete method
+        _repeaterDomChanged(remainingElements, newY, transition) {
+          if (this.domChangeLatch) { return; }
+          // ignore subsequent events
+          this.domChangeLatch = true;
+
+          this.repeater.removeEventListener(
+            'dom-change', 
+            this._repeaterDomChanged(remainingElements, newY, transition),
+            false
+          );
+
+          this._slideRemainingElements(remainingElements, newY, transition);
+        },
+        // walk up dom via domHosts looking for the template repeater with 
+        // the given id (this.templateId databound from parent)
+        _findRepeater(node) {
+          const nodeChildByID = node.$[this.templateId];
+
+          if (nodeChildByID) {
+            return nodeChildByID;
+          }
+
+          return this._findRepeater(Polymer.dom(node).node.domHost);
+        },
+
+
+        _applyDeleteStyles(element) {
+          element.style.transition = this.transitionString;
+          element.style.transform  = this.transformString;
+          element.style.opacity    = '0';
+        },
+
+
+        _repeaterCallback(remainingElements, newY) {
+          // listen to the 'dom-change' event from the template repeater
+          // so animations can be fired once the element is removed
+          this.repeater.addEventListener(
+            'dom-change', 
+            this._repeaterDomChanged(remainingElements, newY, this.transitionString),
+            false
+          );
+          this.domChangeLatch = false;
+        },
+
+        // used locally as well as by replacements-repeater.html
+        deleteElement() {
+          // use querySelectors to find the other repeated sibling 
+          // elements in order to slide them up after the delete is made
+          const allElements = Polymer.dom(this.repeaterParent).
+                                querySelectorAll(`.${this.templateItemClassName}`);
+          // need to ref the containing element to measure its height
+          const thisElement = allElements[this.index];
+          // used to remove the deleted element from the zeroQuantityDreding list
+          // in area-edit.html
+          const deletedItem = this.repeater.items[this.index];
+          // pull bound function out for proper removal of event listener for the deleteDone
+          // function
+          let boundDeleteDone;
+
+          // transitionend event listnener cb
+          const deleteDone = (cb, event) => {
+            if (event.propertyName === 'transform') {
+              thisElement.removeEventListener('transitionend', boundDeleteDone, false);
+              thisElement.style.transition = '';
+              thisElement.style.transform  = '';
+              thisElement.style.opacity    = '';
+              // splice instead of this.arrayDelete
+              // cannot just remove 'this' from the document since it will not be reflected
+              // in the model data which the template relies on to stamp
+              this.repeater.splice('items', this.index, 1);
+              this.fire('slide-delete-element-deleted', {index: this.index, deletedItem});
+
+              if (cb && typeof cb === 'function') {
+                cb();
+              }
+            }
+          };
+
+          const setupEventListener = cb => {
+            // used to properly remove the event listener since bind is used
+            boundDeleteDone = deleteDone.bind(this, cb);
+
+            this._applyDeleteStyles(thisElement);
+            thisElement.addEventListener('transitionend', boundDeleteDone, false);
+          };
+
+          if (allElements.length === 1) {
+            if (this.disableLastElementDelete) {
+              // inform parent there are no more remaining elements to delete
+              this.fire('slide-delete-last-element-deleted', {index: this.index, deletedItem});
+              return;
+            }
+            // no remaining elements left so dont setup to animate them
+            setupEventListener();
+          } else {
+            // setup any elements below the current element to slide up
+            const remainingElements = allElements.slice(this.index + 1);
+
+            if (remainingElements.length === 0) {
+              // no other elements below current one so skip remaining elements setup
+              setupEventListener();
+            } else {
+              // measure the distance the remaining elements will be slid up
+              const newY = thisElement.getBoundingClientRect().height;
+              // listen for repeater dom-change event for remaining elements animation timing
+              setupEventListener(this._repeaterCallback.bind(this, remainingElements, newY));
+            }
+          }          
+        },
+        // trash icon button beneath paper-card
+        _deleteTapped() {
+          if (this._slFinalState !== 'open') { return; }
+         
+          this.onTap = this.deleteElement.bind(this);
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

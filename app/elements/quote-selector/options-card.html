@@ -1,0 +1,181 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<dom-module id="options-card">
+  <template>
+  	<style include="shared-styles"></style>
+    <style>
+
+      :host {
+        display: block;
+        width: 100%;
+        max-width: 460px;
+      }
+
+      #options {
+        height: 260px;
+        margin-bottom: 80px;
+      }
+
+      .loading {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        background-color: rgba(255, 255, 255, 0.8);
+        z-index: 51;
+      }
+
+      .pricing {
+        padding: 16px;
+        overflow: hidden;
+      }
+
+    </style>
+
+    <paper-card id="options" heading="Pricing Options">
+      <div id="loading" class="loading">
+        <paper-spinner-lite alt="Fetching prices..." active="[[showSpinner]]"></paper-spinner-lite>
+      </div>
+      <div id="content" class="card-content pricing">
+        <paper-listbox class="centerText" selected="{{planIndex}}" on-tap="_listboxTapped">
+          <paper-item id="months12" class="dialogTitle inline" hidden$="[[!displayedPrices.60]]">
+            <paper-item-body two-line>
+              <div>$[[displayedPrices.60]]</div>
+              <div secondary>60 mo</div>
+            </paper-item-body>
+          </paper-item>
+          <paper-item id="months36" class="dialogTitle inline" hidden$="[[!displayedPrices.36]]">
+            <paper-item-body two-line>
+              <div>$[[displayedPrices.36]]</div>
+              <div secondary>36 mo</div>
+            </paper-item-body>
+          </paper-item>
+          <paper-item id="months60" class="dialogTitle inline" hidden$="[[!displayedPrices.12]]">
+            <paper-item-body two-line>
+              <div>$[[displayedPrices.12]]</div>
+              <div secondary>12 mo</div>
+            </paper-item-body>
+          </paper-item>
+          <paper-item id="cash" class="dialogTitle inline" hidden$="[[!displayedPrices.0]]">
+            <paper-item-body two-line>
+              <div>$[[displayedPrices.0]]</div>
+              <div secondary>cash</div>
+            </paper-item-body>
+          </paper-item>
+          <paper-item id="noInstall" class="dialogTitle inline" hidden$="[[!displayedPrices.-1]]">
+            <paper-item-body two-line>
+              <div>$[[displayedPrices.-1]]</div>
+              <div secondary>cash no install</div>
+            </paper-item-body>
+          </paper-item>
+        </paper-listbox>
+      </div>
+    </paper-card>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'options-card',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior,
+          Polymer.NeonAnimationRunnerBehavior
+        ],
+
+        properties: {
+
+        	animationConfig: {
+        		value() {
+        			return {
+                'spinnerEntry': {
+                  name: 'fade-in-animation',
+                  node: this.$.loading,
+                  timing: {easing: 'ease-in-out'}    
+                },
+                'spinnerExit': {
+                  name: 'fade-out-animation',
+                  node: this.$.loading,
+                  timing: {easing: 'ease-in-out'}    
+                },
+        				'pricesEntry': [{
+                  name: 'cascaded-animation',
+                  animation: 'slide-from-bottom-animation',
+                  nodes: [this.$.months12, this.$.months36, this.$.months60, this.$.cash, this.$.noInstall],
+                  timing: {easing: 'ease-in-out'}                  
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'fade-in-animation',
+                  nodes: [this.$.months12, this.$.months36, this.$.months60, this.$.cash, this.$.noInstall],
+                  timing: {delay: 150, easing: 'ease-in-out'} 
+        				}]
+        			};
+        		}
+        	},
+          // paper-listbox selected attr
+        	planIndex: {
+        		type: Number,
+        		notify: true
+        	},
+          // from quote-selector
+        	displayedPrices: Object
+        },
+
+
+        listeners: {
+          // local animation cb
+          'neon-animation-finish': '_animationFinished'
+        },
+
+        // ran by main-page
+        showQuoteSpinner(bool) {
+          this.showSpinner = bool;
+          this.cancelAnimation();
+          if (bool) {
+            this.$.loading.style.display = 'flex';
+            this.$.content.style.opacity = '0';
+            this.playAnimation('spinnerEntry', 'spinnerEntry');
+            return;
+          }
+          this.playAnimation('spinnerExit', 'spinnerExit');
+        },
+
+        // hide spinner and animate prices
+        _animationFinished(_, animationType) {
+          if (animationType === 'spinnerExit') {
+            this.$.loading.style.display = 'none';
+            this.$.content.style.opacity = '1';
+            this.playAnimation('pricesEntry');
+          }
+        },
+        
+        // send tap coordinates to quote-page for ripple animation
+        _listboxTapped(event) {
+          const source = event.detail.sourceEvent;
+          const obj = {
+            x: source.clientX || source.pageX,
+            y: source.clientY || source.pageY
+          };
+          // call quote-page method
+          window.Redaap.quotePage.setTapCoords(obj);
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

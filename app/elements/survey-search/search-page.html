@@ -1,0 +1,753 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+<link rel="import" href="saved-view.html">
+<link rel="import" href="review-view.html">
+<link rel="import" href="sent-view.html">
+
+
+<dom-module id="search-page">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        display: block;
+        width: 100%;
+		    height: 100vh;
+		    background-color: var(--dark-primary-color);
+      }
+
+      paper-toolbar {
+      	background-color: var(--default-primary-color);
+      }
+
+      paper-menu-button {
+        padding: 0px;
+      }
+
+      #svgButton {
+        min-width: 24px;
+        width: 40px;
+        height: 40px;
+        margin: 0px;
+        padding: 8px;
+      }
+
+      #svg {
+        width: 24px;
+        height: 24px;
+        fill: white;
+      }
+
+      paper-toggle-button {
+        --paper-toggle-button-checked-bar-color: var(--dark-primary-color);
+        --paper-toggle-button-checked-button-color: var(--dark-primary-color);
+        --paper-toggle-button-checked-ink-color: var(--dark-primary-color);
+        --paper-toggle-button-label-color: var(--disabled-text-color);
+      }
+
+      .checked {
+        --paper-toggle-button-label-color: white;
+      }
+
+      paper-input {
+        position: relative;
+        top: -8px;
+        --paper-input-container-color: white;
+        --paper-input-container-focus-color: white;
+        --paper-input-container-invalid-color: white;
+        --paper-input-container-input-color: white;
+        --paper-input-container-label: {
+          font-size: 20px;
+        };
+        --paper-input-container-label-floating: {
+          font-size: 12px;
+        };
+        --paper-input-container-underline: {
+          display: none;
+        };
+        --paper-input-container-underline-focus: {
+          -webkit-transition: all 0.3s ease-in-out;
+                  transition: all 0.3s ease-in-out;
+        };
+      }
+
+      #spinner {
+        width: 100%;
+        height: calc(100% - 168px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        bottom: 0px;
+        left: 0px;
+        background-color: rgba(255, 255, 255, 0.8);
+        -webkit-transition: opacity 0.3s ease-in-out;
+                transition: opacity 0.3s ease-in-out;
+      }
+
+      /* Tablet+ */
+      @media (min-width: 601px) {
+
+        #spinner {
+          height: calc(100% - 192px);
+        }
+        
+      }
+
+    </style>
+
+
+    <paper-scroll-header-panel id="panel" fixed>
+
+    	<paper-toolbar id="toolbar" class="tall">
+        <paper-menu-button>
+          <paper-button id="svgButton" class="dropdown-trigger">
+            <svg id="svg" 
+                 version="1.1"
+                 xmlns="http://www.w3.org/2000/svg" 
+                 xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" 
+                 viewBox="0 0 24 24" enable-background="new 0 0 792 129.6" xml:space="preserve">
+              <g>
+                <rect id="top" x="3" y="6" width="18" height="2"/>
+                <rect id="middle" x="6" y="11" width="12" height="2"/>
+                <rect id="bottom" x="10" y="16" width="4" height="2"/>
+              </g>
+            </svg>
+          </paper-button>
+          <paper-menu class="dropdown-content" selected-item="{{selectedItem}}">
+            <paper-item>Client</paper-item>
+            <paper-item>Rep</paper-item>
+            <paper-item>Project</paper-item>
+            <paper-item hidden$="[[_computeHideSalesOrder(selectedSearchTab)]]">Sales Order</paper-item>
+            <paper-item>No Filter</paper-item>
+          </paper-menu>
+        </paper-menu-button>
+        <paper-input id="searchInput"
+                     label="Search [[filterByString]]" 
+                     value="{{string}}" 
+                     type="text"
+                     allowed-pattern="[0-9a-zA-Z\s]" 
+                     prevent-invalid-input>
+        </paper-input>
+        <span class="flex"></span>
+        <paper-icon-button id="close" 
+                           on-tap="_closeButtonTapped" 
+                           icon="custom-icons:close">
+        </paper-icon-button>
+
+        <span class="flex middle"></span>
+        <paper-toggle-button id="toggle" class$="middle [[checked]] noSelect"
+          checked="{{userSurveys}}">My quotes
+        </paper-toggle-button>
+        <span class="flex middle"></span>
+
+        <paper-tabs id="tabs" 
+                    class="bottom" 
+                    selected="{{selectedSearchTab}}" 
+                    attr-for-selected="tabname"
+                    selected-class="selectedTab">
+          <span class="flex"></span>
+          <paper-tab id="savedTab" tabname="saved">
+            <iron-icon icon="custom-icons:save"></iron-icon>
+            <span class="tabLabel">Saved</span>
+          </paper-tab>
+          <span class="flex"></span>
+          <paper-tab id="reviewTab" tabname="review">
+            <iron-icon icon="custom-icons:assignment-turned-in"></iron-icon>
+            <span class="tabLabel">Reviewed</span>
+          </paper-tab>
+          <span class="flex"></span>
+          <paper-tab id="sentTab" tabname="sent">
+            <iron-icon icon="custom-icons:send"></iron-icon>
+            <span class="tabLabel">Sent</span>
+          </paper-tab>
+          <span class="flex"></span>
+        </paper-tabs>
+
+    	</paper-toolbar>
+      
+      <div id="spinner" hidden$="[[!showSpinner]]">
+        <paper-spinner-lite alt="Searching..." active="[[showSpinner]]"></paper-spinner-lite>
+      </div>
+
+      <neon-animated-pages id="neon" 
+                           selected="[[computedSearchTab]]" 
+                           attr-for-selected="id">
+
+
+        <saved-view id="saved" 
+                    surveys="[[surveys]]"
+                    run-card-animation="[[runCardAnimation]]" 
+                    reverse-animation="[[reverseAnimation]]">
+        </saved-view> 
+        
+        <review-view id="review" 
+                     surveys="[[surveys]]"
+                     run-card-animation="[[runCardAnimation]]" 
+                     reverse-animation="[[reverseAnimation]]">
+        </review-view> 
+
+        <sent-view id="sent" 
+                   surveys="[[surveys]]"
+                   run-card-animation="[[runCardAnimation]]" 
+                   reverse-animation="[[reverseAnimation]]">
+        </sent-view>
+
+
+      </neon-animated-pages>
+  	</paper-scroll-header-panel>
+
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'search-page',
+
+        behaviors: [
+          Polymer.NeonAnimationRunnerBehavior,
+          Polymer.NeonAnimatableBehavior,
+          window.Redaap.Behaviors.Utilities,
+          window.Redaap.Behaviors.OnTapBehavior
+        ],
+
+        properties: {
+
+          animationConfig: {
+            value() {
+              return {
+                'entry': [{
+                  name: 'fade-in-animation',
+                  node: this.$.tabs,
+                  timing: {duration: 200, delay: 700, easing: 'ease-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.svg,
+                  transformFrom: 'rotate(180deg)',
+                  transformTo: 'rotate(360deg)',
+                  timing: {delay: 700, easing: 'ease-in-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.top,
+                  transformOrigin: '12px 12px',
+                  transformFrom: 'translate(-0.25px, 0.25px) rotate(45deg) scale(.63, 1)',
+                  transformTo: 'translate(0px, 0px) rotate(0deg) scale(1, 1)',
+                  timing: {delay: 700, easing: 'ease-in-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.middle,
+                  transformFrom: 'translate(-3.25px, 0px) scale(1.2, 1)',
+                  transformTo: 'translate(0px, 0px) scale(1, 1)',
+                  timing: {delay: 700, easing: 'ease-in-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.bottom,
+                  transformOrigin: '12px 12px',
+                  transformFrom: 'translate(-0.25px, -0.25px) rotate(-45deg) scale(2.85, 1)',
+                  transformTo: 'translate(0px, 0px) rotate(0deg) scale(1, 1)',
+                  timing: {delay: 700, easing: 'ease-in-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'slide-from-top-animation',
+                  nodes:  [
+                    this.$.searchInput, 
+                    this.$.toggle, 
+                    this.$.savedTab, 
+                    this.$.reviewTab, 
+                    this.$.sentTab
+                  ],
+                  timing: {duration: 300, delay: 750, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'fade-in-animation',
+                  nodes:  [
+                    this.$.searchInput, 
+                    this.$.toggle, 
+                    this.$.savedTab, 
+                    this.$.reviewTab, 
+                    this.$.sentTab
+                  ],
+                  timing: {duration: 200, delay: 950, easing: 'ease-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.close,
+                  transformTo: 'rotate(90deg)',
+                  timing: {delay: 1050, easing: 'ease-out'}
+                }],
+                'previewEntry': [{
+                  name: 'transform-animation',
+                  node: this.$.svg,
+                  transformTo: 'rotate(180deg)',
+                  timing: {easing: 'ease-in-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.top,
+                  transformOrigin: '12px 12px',
+                  transformTo: 'translate(-0.25px, 0.25px) rotate(45deg) scale(.63, 1)',
+                  timing: {easing: 'ease-in-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.middle,
+                  transformTo: 'translate(-3.25px, 0px) scale(1.2, 1)',
+                  timing: {easing: 'ease-in-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.bottom,
+                  transformOrigin: '12px 12px',
+                  transformTo: 'translate(-0.25px, -0.25px) rotate(-45deg) scale(2.85, 1)',
+                  timing: {easing: 'ease-in-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'slide-up-animation',
+                  nodes:  [
+                    this.$.searchInput, 
+                    this.$.toggle, 
+                    this.$.savedTab, 
+                    this.$.reviewTab, 
+                    this.$.sentTab
+                  ],
+                  timing: {duration: 300, delay: 50, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'fade-out-animation',
+                  nodes:  [
+                    this.$.searchInput, 
+                    this.$.toggle, 
+                    this.$.savedTab, 
+                    this.$.reviewTab, 
+                    this.$.sentTab
+                  ],
+                  timing: {duration: 200, easing: 'ease-out'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this.$.tabs,
+                  timing: {duration: 200, delay: 150, easing: 'ease-in'}
+                }]
+              };
+            }
+          },
+          // from neon-animated-pages selected attr
+          // to fix bug between neon-animated-pages and paper-scroll-header-panel
+          selected: {
+            type: Number,
+            observer: '_selectedPageChanged'
+          },
+          // sets page to be rendered
+          selectedSearchTab: {
+            type: String,
+            value: 'saved',
+            observer: '_tabIndexChanged'
+          },
+          // search status tabs value cached in survey-search
+          computedSearchTab: {
+            type: String,
+            notify: true
+          },
+          // animation timing trigger from parent neon-animated-pages
+          pageAnimationDone: {
+            type: Boolean,
+            observer: '_pageAnimationDoneChanged'
+          },
+          // used to send template dom-repeat model data through animations to the 
+          // 'surveyPreview' custom event
+          previewAnimationPayload: Object,
+          // spinner dom element ref
+          spinner: Object,
+          // controls state of spinner overlay
+          showSpinner: {
+            type: Boolean,
+            value: false
+          },
+          // used to determine tab animation direction
+          reverseAnimation: Boolean,
+          // used in conjunction with child card animations
+          runCardAnimation: Boolean,
+          // represents state of "my surveys" toggle
+          // shared with parent (survey-search) to "cache" its state since it is inside
+          // a 'dom-if restamp'
+          // sent to Parse to restrict search to only surveys generated by the user
+          userSurveys: {
+            type: Boolean,
+            notify: true,
+            observer: '_computeChecked'
+          },
+          // toggle button label color state
+          checked: String,
+          // displayed in filter paper-input field label
+          filterByString: {
+            type: String,
+            computed: '_computeFilterString(selectedItem)',
+            observer: '_filterByStringChanged'
+          },
+          // the column label string coresponding to the Parse SurveyData Class table
+          column: {
+            type: String,
+            value: 'companyName',
+            computed: '_computeColumn(filterByString)'
+          },
+          // user input search param
+          string: {
+            type: String,
+            notify: true
+          },
+          // object passed to Parse Cloud func as search params
+          query: {
+            type: Object,
+            value: () => ({}),
+            computed: '_computeQuery(userSurveys, column, string)',
+            observer: '_filterQueryChanged'
+          },
+          // used by dom-repeat template to create cards for each returned survey
+          surveys: Object,
+          // cached in survey-search
+          response: {
+            type: Object,
+            notify: true,
+          },
+
+          searchScrollerCache: Number
+        },
+
+
+        listeners: {
+          'neon-animation-finish': '_animationFinished',
+        },
+
+
+        ready() {
+          this.spinner = this.$$('#spinner');
+        },
+
+        // _tabIndexChanged helper func
+        _getTabNumber(tab) {
+          switch (tab) {
+            case 'saved':
+              return 0;
+            case 'review':
+              return 1;
+            case 'sent':
+              return 2;
+            default:
+              return;
+          }
+        },
+
+        // observe selectedSearchTab
+        _tabIndexChanged(newTab, oldTab) {
+          this.$.neon.cancelAnimation();
+          const newTabNum = this._getTabNumber(newTab);
+          const oldTabNum = this._getTabNumber(oldTab);
+          const reverse   = (newTabNum < oldTabNum) ? true : false;
+          // this.reverseAnimation found in redaap-behaviors/tab-page-animation-behavior.html
+          this.reverseAnimation = reverse;
+          // must intercept selectionTab so the correct animation direction
+          // can be set before triggering neon-animated-pages
+          // using set in order to cache value in survey-search
+          this.set('computedSearchTab', this.selectedSearchTab);
+        },
+
+        // trigger from parent neon-animated-pages on animation finish
+        playCustomSVGAnimation() {
+          // search page entry animation in parent is done
+          if (this.selected === 0) {
+            this.$.svg.style.transform = 'rotate(0deg)';
+            this.$.top.style.transform = 'translate(0px, 0px) rotate(0deg) scale(1, 1)';
+            this.$.middle.style.transform = 'translate(0px, 0px) scale(1, 1)';
+            this.$.bottom.style.transform = 'translate(0px, 0px) rotate(0deg) scale(1, 1)';
+            this.$.searchInput.style.opacity = '1';
+            this.$.toggle.style.opacity = '1';
+          // preview page entry animation in parent is done
+          } else if (this.selected === 1) {
+            this.$.svg.style.transform = 'rotate(180deg)';
+            this.$.top.style.transform = 'translate(-0.25px, 0.25px) rotate(45deg) scale(.63, 1)';
+            this.$.middle.style.transform = 'translate(-3.25px, 0px) scale(1.2, 1)';
+            this.$.bottom.style.transform = 'translate(-0.25px, -0.25px) rotate(-45deg) scale(2.85, 1)';
+            this.$.searchInput.style.opacity = '0';
+            this.$.toggle.style.opacity = '0';
+          }
+        },
+
+        // called by survey-search after dom-if stamps
+        headerPanelBugFix() {
+          // paper-scroll-header-panel inside neon-animated-pages bug fix
+          // where the panel wont scroll and covers the top portion of its content
+          // bug in paper-toolbar imperitively created "mainContainer" style="top: 0px;"
+          // must invoke measuredHeaderHeight() anytime the panel is resized
+          this.$.panel.measureHeaderHeight();
+        },
+
+        // called by survey-search on open
+        fetchSurveys(str, cachedPos, cachedTab) {
+          // set cached tab and scroll position values
+          this.$.panel.scroll(cachedPos, true);
+          this.selectedSearchTab = cachedTab;
+          // prepare for card entry animations if on this page
+          this.$.neon.style.webkitTransition = 'none';
+          this.$.neon.style.transition = 'none';
+          this.$.neon.style.opacity = '0';
+          // fresh search on first open
+          if (str === 'search') {
+            this.runCardAnimation = true;
+            this._search();
+          // load last response if search-page has been opened before
+          } else if (str === 'load') {
+            this.runCardAnimation = false;
+            this._loadSurveys(this.response);
+          }
+        },
+
+        _computeHideSalesOrder: tab => tab === 'saved',
+        // this.userSurveys observer
+        // set the color of the toggle button label
+        _computeChecked() {
+          this.checked = this.userSurveys ? 'checked' : '';
+          this.updateStyles();
+        },
+        // display filterby string in paper-input label
+        // get only the string out of the selected dom element
+        _computeFilterString(selected) {
+          if (selected) {
+            const selectedString = selected.textContent.trim();
+            if (selectedString === 'No Filter') {
+              this.string = '';
+              return '';
+            }
+            return `by ${selectedString}`;
+          }
+          return;
+        },
+
+        // set 'My quotes' toggle to off if user is searching by Rep
+        _filterByStringChanged(str) {
+          if (str === 'by Rep') {
+            this.set('userSurveys', false);
+          }
+        },
+
+        // generate the exact column label string from the user selected element
+        _computeColumn(str) {         
+          // substitute the filterBy string with the exact 
+          // Parse SurveyData Class column label for this.query obj
+          switch (str) {
+            case 'by Client':
+              return 'clientName';
+            case 'by Rep':
+              return 'repFirstName';
+            case 'by Project':
+              return 'projectName';
+            case 'by Project City':
+              return 'projectCity';
+            case 'by Project State':
+              return 'projectState';
+            case 'by Sales Order':
+              return 'orderNum';
+            default:
+              return 'companyName';
+          }
+        },
+
+        // build an object to pass as params to Parse Cloud
+        _computeQuery: (userSurveys, col, str) => ({userSurveys, col, str}),
+
+        // run the search anytime the user selects "my surveys" or changes the filter
+        _filterQueryChanged(obj) {
+          // dont search for order number entries other than 6 digits long, will need to change
+          // in the distant future
+          if (obj.col === 'orderNum' && typeof obj.str === 'string' && obj.str.length !== 6) {
+            return;
+          }
+          // dont search by anything except 'companyName' unless the input string is populated
+          if (obj.col !== 'companyName' && !obj.str) {
+            return;
+          }
+          // restrict this function to only run after survey search has been opened
+          // otherwise it will run on element initialization after page load
+          // this.response should be truthy after the first call to the _search function
+          // is made upon first opening of this element 
+          if (this.response) {
+            this.debounce('filterDebounce', () => {
+              this._search();
+            }, 500);
+          }
+        },
+
+        // paper-scroll-header-panel inside neon-animated-pages bug fix
+        _selectedPageChanged(num) {
+          if (num === 0) {
+            // bug in paper-toolbar imperitively created "mainContainer" style="top: 0px;"
+            // must invoke measuredHeaderHeight() anytime the panel is resized
+            this.async(() => {
+              this.headerPanelBugFix();
+            });
+          }
+        },
+
+        // called from close icon button in top toolbar of this element
+        _closeButtonTapped() {
+          // fire up to parent
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = this.fire.bind(this, 'close');
+        },
+
+        // loading spinner control
+        _showSpinner() {
+          this.spinner.style.webkitTransition = 'opacity 0.3s ease-in-out';
+          this.spinner.style.transition = 'opacity 0.3s ease-in-out';
+          this.spinner.style.opacity = '0';
+          this.$.neon.style.webkitTransition = 'opacity 0.3s ease-in-out';
+          this.$.neon.style.transition = 'opacity 0.3s ease-in-out';
+          this.set('showSpinner', true);
+          // must wait 50ms and use $$ on dynamically created dom from conditional template
+          // cannot use Polymer.dom.flush() because it clears the imperitively set opacity styling
+          // so fade-in functionality is lost
+          this.async(() => {
+            this.$.neon.style.opacity = '0';
+            this.spinner.style.opacity = '1'; 
+          }, 50);        
+        },
+
+
+        _hideSpinnerTransitionDone() {
+          this.unlisten(this.spinner, 'transitionend', '_hideSpinnerTransitionDone');
+          this.set('showSpinner', false);
+        },
+        // loading spinner control
+        // also called by children tab elements
+        hideSpinner() {
+          this.$.neon.style.opacity = '1';
+          this.spinner.style.opacity = '0'; 
+          this.listen(this.spinner, 'transitionend', '_hideSpinnerTransitionDone');
+        },
+
+        // display cards with survey info
+        _loadSurveys(response) {
+          // create paper-cards by making a new array to use 
+          // for the dom-repeat template
+          const keys = Object.keys(response);
+
+          const pluckCardData = el => {
+            const data = el.attr;
+
+            return {
+              // id used to sync data from template model.item in child to the 
+              // response array to pass full data to preview and to app
+              id:                 el.id,
+              company:            data.companyName,
+              client:             data.clientName,
+              payment:            data.monthly,
+              // contact:            data.projectContact,
+              // quantity:           data.quantity,
+              // term:               data.term,
+              // salesOrder:         data.orderNum,
+              createdAt:          data.createdAt.toLocaleDateString(),
+              repFirstName:       data.repFirstName,
+              repLastName:        data.repLastName,
+              // project:            data.projectName,
+              // projectAddress:     data.projectAddress,
+              // projectCity:        data.projectCity,
+              // projectState:       data.projectState,
+              // projectDescription: data.projectDescription,
+              surveyVersion:      data.surveyVersion || 0 
+            };
+          };
+
+          const makeCardDataObject = (prev, curr) => {
+            prev[curr] = response[curr].map(pluckCardData);
+            return prev;
+          };
+
+          const surveys = keys.reduce(makeCardDataObject, {});
+          // set surveys property to newly created search array
+          this.set('surveys', surveys);
+        },
+
+        // called on first open and changes to "my surveys" and filter
+        _search() {
+          this._showSpinner();
+          // runs 'search' cloud code func that searches previously generated surveys 
+          // found in the SurveyData Class
+          // user can optionally narrow the search with params passed 
+          // in via this.query object
+          window.Redaap.webWorker.surveySearch(this.query).
+            then(response => {
+              // save the entire response array so the user can choose
+              // which survey they want to edit
+              this.set('response', response);
+              this._loadSurveys(response);
+            }).
+            catch(error => {
+              console.log(error);
+              this.set('response', {});
+              this.hideSpinner();
+
+              if (window.navigator.onLine) {
+                this.warn('An error occured while searching for your surveys. Please try again.');
+              } else {
+                this.warn('Please reconnect to the internet to search archived surveys');
+              }
+            });
+        },
+
+        // called by search-card descendant on user selection
+        getCardData(status, type, index, cb) {
+          const data = this.response[status][index].attr;
+          data.createdDate = data.createdAt.toLocaleDateString();
+
+          if (type === 'selected') {
+            this.fire('surveySelected', {data});
+          } else if (type === 'preview') {
+            this.playAnimation('previewEntry', {name: 'previewEntry', data, cb});
+          }
+        },
+
+        // local animation complete event
+        _animationFinished(_, animationType) {
+          // object send as animationType arg in this._surveyPreviewButtonTapped() func
+          if (animationType.name) {
+            if (animationType.name === 'previewEntry') {
+              this.$.svg.style.transform = 'rotate(180deg)';
+              this.$.top.style.transform = 'translate(-0.25px, 0.25px) rotate(45deg) scale(.63, 1)';
+              this.$.middle.style.transform = 'translate(-3.25px, 0px) scale(1.2, 1)';
+              this.$.bottom.style.transform = 'translate(-0.25px, -0.25px) rotate(-45deg) scale(2.85, 1)';
+              this.$.searchInput.style.opacity = '0';
+              this.$.toggle.style.opacity = '0';
+              // reset cards from fullscreen back to normal card
+              animationType.cb();
+              // listened for in survey-search
+              this.fire('surveyPreview', {data: animationType.data});
+            }
+          }
+        },
+        // called by child custom element on card animation
+        // top is current card css top value
+        scrollCardToTop(top) {
+          const toolbarHeight = this.$.toolbar.getBoundingClientRect().height;
+          const currentScrollerPosition = this.getScrollerPos();
+          const computedTop = (currentScrollerPosition + top) - toolbarHeight;
+
+          this.$.panel.scroll(computedTop, true);
+        },
+
+        // called by survey-search to cache current scroll postion
+        getScrollerPos() {
+          return this.$.panel.scroller.scrollTop;
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

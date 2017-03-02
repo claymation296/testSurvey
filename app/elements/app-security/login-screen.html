@@ -1,0 +1,178 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="redaap-logo.html">
+
+<dom-module id="login-screen">
+  <template>
+    <style>
+
+      :host {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        background-color: var(--default-primary-color);
+      }
+
+      #ripple {
+        position: absolute;
+        top: 0px;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
+        background-color: var(--dark-primary-color);
+      }
+
+      .mask {
+        position: absolute;
+        top: 0px;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
+        background-color: var(--dark-primary-color);
+        transition: all 0.3s ease-out;
+      }
+
+      paper-card {
+        width: 214px;
+        height: 275px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        -webkit-transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%);
+      }
+
+    </style>
+
+    <redaap-logo></redaap-logo>
+    <!-- hero animation from logo-screen to this page -->
+    <div id="ripple"></div>
+    <!-- dummy card for anti-ripple animation -->
+    <div id="mask" class="mask">
+      <paper-card id="login" heading="[[type]]" elevation="0"></paper-card> 
+    </div>
+
+
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'login-screen',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior
+        ],
+
+        properties: {
+          // animation config set imperitively
+          sharedElements: {
+            value() {
+              return {
+                'ripple': this.$.ripple
+              };
+            }
+          },
+          // from neon-animated-pages in app-security.html
+          selected: {
+            type: Number,
+            observer: '_selectedChanged'
+          },
+          // login or signup
+          type: String,
+          // from app-security.html
+          error: {
+            type: Boolean,
+            observer: '_errorAnimation'
+          },
+          // from logo-screen.html pointer pos
+          x: {
+            type: Number,
+            value: 0
+          },
+          // from logo-screen.html pointer pos
+          y: {
+            type: Number,
+            value: 0
+          }
+        },
+
+        _setMaskOrigin(x, y) {
+          // place the center of the mask at the tap event source
+          this.$.mask.style.willChange = 'clip-path, -webkit-clip-path';
+          this.$.mask.style.webkitClipPath = `circle(0px at ${x}px ${y}px)`;
+          this.$.mask.style.clipPath = `circle(0px at ${x}px ${y}px)`;
+        },
+
+        _revealAnimationDone(event) {
+          if (event.propertyName === 'clip-path' || event.propertyName === '-webkit-clip-path') {
+            this.unlisten(this.$.mask, 'transitionend', '_revealAnimationDone');
+            this.$.mask.style.willChange = 'auto';
+          }
+        }, 
+
+        _revealCard(x, y) {
+          this.$.mask.style.webkitClipPath = `circle(750px at ${x}px ${y}px)`;
+          this.$.mask.style.clipPath = `circle(750px at ${x}px ${y}px)`;
+          this.listen(this.$.mask, 'transitionend', '_revealAnimationDone');
+        },
+
+        _selectedChanged(selected) {
+          // if on this page
+          if (selected === 1) {
+            // create an anti-ripple reveal effect after the first ripple finishes
+            this._setMaskOrigin(this.x, this.y);
+            // start the ripple
+            this.async(() => {
+              // give the mask circle transition timing and a radius larger than the card
+              this._revealCard(this.x, this.y);
+            }, 250);
+          }
+        },
+        // set a new animation config if there was an error loggin in or signing up
+        _errorAnimation(error) {
+          if (error) {
+            this.animationConfig = {
+              entry: {
+                name: 'fade-in-animation',
+                node: this.$.login,
+                timing: {easing: 'ease-in-out'}
+              }, 
+              exit: {
+                name: 'fade-out-animation',
+                node: this,
+                timing: {easing: 'ease-in-out'}
+              }
+            };
+          } else {
+            this.animationConfig = {
+              entry: {
+                name: 'ripple-animation',
+                id: 'ripple',
+                toPage: this,
+                timing: {easing: 'ease-in-out'}
+              }, 
+              exit: {
+                name: 'fade-out-animation',
+                node: this,
+                timing: {easing: 'ease-in-out'}
+              }
+            };
+          }
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

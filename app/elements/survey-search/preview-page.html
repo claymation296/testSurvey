@@ -1,0 +1,393 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../pricing-table/pricing-table.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="preview-page">
+  <template>
+  	<style include="shared-styles"></style>
+    <style>
+
+      :host {
+        display: block;
+        width: 100%;
+		    height: 100vh;
+		    background-color: white;
+      }
+
+      #fab {
+        --paper-fab: {
+          position: fixed;
+          bottom: 16px;
+          right: 16px;
+          z-index: 2;
+        };
+        --paper-fab-background: transparent;
+      	--paper-fab-keyboard-focus-background: transparent;
+      }
+
+      #iconMask {
+        position: fixed;
+        bottom: 16px;
+        right: 16px;
+        width: 56px;
+        height: 56px;
+        border-radius: 100%;
+        overflow: hidden;
+        background-color: var(--accent-color);
+        z-index: 1;
+      }
+
+      #slide {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        width: 24px;
+        height: 24px;
+      }
+
+      #icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        -webkit-transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%);
+      }
+
+      paper-toolbar {
+        --paper-toolbar: {
+          box-shadow: none;
+        };
+      	background-color: var(--default-primary-color);
+      }
+
+      .fakeToolbar {
+        width: 100%;
+        height: 56px;
+        position: absolute;
+        top: 56px;
+        left: 0px;
+        background-color: var(--default-primary-color);
+        box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.14),
+                    0px 1px 5px 0px rgba(0, 0, 0, 0.12),
+                    0px 3px 1px -2px rgba(0, 0, 0, 0.2);
+        z-index: -1;
+      }
+
+      .raiseFakeToolbar {
+        top: 0px;
+      }
+
+      .stats {
+        --paper-item-disabled-color: white;
+      }
+
+      .statsBody {
+        --paper-item-body-secondary-color: white;
+      }
+
+      /* Tablet+ */
+      @media (min-width: 601px) {
+
+        .fakeToolbar {
+          height: 64px;
+        }
+      }
+
+    </style>
+
+    
+    <paper-fab id="fab" on-tap="_loadFabTapped"></paper-fab>
+    
+    <div id="iconMask">
+      <div id="slide">
+        <iron-icon id="icon" icon="custom-icons:file-download"></iron-icon>
+      </div>
+    </div>
+
+    <paper-scroll-header-panel id="panel" fixed>
+    	<paper-toolbar class="medium-tall">
+    		<paper-icon-button on-tap="_backButtonTapped" 
+                           icon="custom-icons:arrow-back">
+        </paper-icon-button>
+    		<span id="title" class="title">Preview</span>
+        <paper-icon-button id="close" 
+                           on-tap="_closeButtonTapped" 
+                           icon="custom-icons:close">
+        </paper-icon-button>
+
+        <span class="flex bottom"></span>
+
+        <div id="mainStats" class="bottom centerText noSelect">
+          <paper-item id="term" 
+                      class="dialogTitle inline stats" 
+                      disabled>
+            <paper-item-body class="statsBody" two-line>
+              <div>[[pricing.term]]</div>
+              <div secondary>term</div>
+            </paper-item-body>
+          </paper-item>
+          <paper-item id="payment" 
+                      class="dialogTitle inline stats" 
+                      disabled>
+            <paper-item-body class="statsBody" two-line>
+              <div>$[[pricing.grandMonthly]]</div>
+              <div secondary>service fee</div>
+            </paper-item-body>
+          </paper-item>
+          <paper-item id="qty" 
+                      class="dialogTitle inline stats" 
+                      disabled>
+            <paper-item-body class="statsBody" two-line>
+              <div>[[pricing.totalQuantity]]</div>
+              <div secondary>count</div>
+            </paper-item-body>
+          </paper-item>
+        </div>
+
+        <span class="flex bottom"></span>
+
+        <div id="fakeToolbar" class="fakeToolbar bottom"></div>
+
+    	</paper-toolbar>
+
+
+      <div id="container" class="container noSelect">
+
+        <pricing-table client="[[survey]]" 
+                       date="[[survey.createdDate]]" 
+                       version="[[survey.surveyVersion]]" 
+                       pricing="[[pricing]]">
+        </pricing-table>
+
+      </div>
+
+  	</paper-scroll-header-panel>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'preview-page',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior,
+          window.Redaap.Behaviors.OnTapBehavior 
+        ],
+
+        properties: {
+
+          animationConfig: {
+            value() {
+              return {
+                'entry': [{
+                  name: 'slide-up-animation',
+                  node: this.$.fakeToolbar,
+                  timing: {duration: 300, easing: 'ease-in-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'slide-from-top-animation',
+                  nodes:  [
+                    this.$.title,
+                    this.$.term,
+                    this.$.payment, 
+                    this.$.qty
+                  ],
+                  timing: {duration: 300, delay: 50, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'fade-in-animation',
+                  nodes:  [
+                    this.$.title,
+                    this.$.term,
+                    this.$.payment, 
+                    this.$.qty
+                  ],
+                  timing: {duration: 200, delay: 250, easing: 'ease-out'}
+                }, {
+                  name: 'slide-from-bottom-animation',
+                  node: this.$.container,
+                  timing: {duration: 300, delay: 150, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this.$.container,
+                  timing: {duration: 200, delay: 200, easing: 'ease-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.close,
+                  transformTo: 'rotate(90deg)',
+                  timing: {delay: 400, easing: 'ease-out'}
+                }, {
+                  name: 'slide-from-bottom-animation',
+                  node: this.$.fab,
+                  timing: {delay: 400, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this.$.fab,
+                  timing: {delay: 400, easing: 'ease-out'}
+                }, {
+                  name: 'slide-from-bottom-animation',
+                  node: this.$.iconMask,
+                  timing: {delay: 400, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this.$.iconMask,
+                  timing: {delay: 400, easing: 'ease-out'}
+                }, {
+                  name: 'slide-from-bottom-animation',
+                  node: this.$.slide,
+                  timing: {delay: 500, easing: 'ease-out'}
+                }],
+                'exit': [{
+                  name: 'cascaded-animation',
+                  animation: 'slide-up-animation',
+                  nodes:  [
+                    this.$.title,
+                    this.$.term,
+                    this.$.payment, 
+                    this.$.qty
+                  ],
+                  timing: {duration: 300, delay: 50, easing: 'ease-in'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'fade-out-animation',
+                  nodes:  [
+                    this.$.title,
+                    this.$.term,
+                    this.$.payment, 
+                    this.$.qty
+                  ],
+                  timing: {duration: 200, easing: 'ease-out'}
+                }, {
+                  name: 'slide-down-animation',
+                  node: this.$.fab,
+                  timing: {duration: 300, delay: 350, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this.$.fab,
+                  timing: {duration: 300, delay: 350, easing: 'ease-in'}
+                }, {
+                  name: 'slide-down-animation',
+                  node: this.$.iconMask,
+                  timing: {duration: 300, delay: 350, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this.$.iconMask,
+                  timing: {duration: 300, delay: 350, easing: 'ease-in'}
+                }, {
+                  name: 'slide-down-animation',
+                  node: this.$.fakeToolbar,
+                  timing: {duration: 300, delay: 400, easing: 'ease-in-out'}
+                }, {
+                  name: 'slide-down-animation',
+                  node: this.$.container,
+                  timing: {duration: 400, delay: 450, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this,
+                  timing: {duration: 400, delay: 500, easing: 'ease-in'}
+                }]
+              };
+            }
+          },
+        	// from neon-animated-pages selected attr
+        	// to fix bug between neon-animated-pages and paper-scroll-header-panel
+        	selected: {
+        		type: Number,
+        		observer: '_selectedPageChanged'
+        	},
+        	// databound from survey-search
+        	survey: Object,
+          // pricing obj from Parse 'finance' cloud code
+        	pricing: {
+        		type: Object,
+        		computed: '_computePricing(survey)'
+        	},
+          // bound from survey-search used to rememeber scroll position on reopen
+          previewScrollerCache: Number
+        },
+
+        // called by survey-search on neon-animated-pages animation finish
+        parentPageAnimationFinished(type) {
+          if (type === 'entry') {
+            Polymer.dom(this.$.fakeToolbar).classList.add('raiseFakeToolbar');
+          } else if (type === 'exit') {
+            Polymer.dom(this.$.fakeToolbar).classList.remove('raiseFakeToolbar');
+          }
+        },
+
+        // called by survey-search after dom is completely stamped
+        headerPanelBugFix() {
+          // paper-scroll-header-panel inside neon-animated-pages bug fix
+          // where the panel wont scroll and covers the top portion of its content
+          // bug in paper-toolbar imperitively created "mainContainer" style="top: 0px;"
+          // must invoke measuredHeaderHeight() anytime the panel is resized
+          this.$.panel.measureHeaderHeight();
+        },
+        // ran when user leaves search from this page and enters back in
+        // otherwise the fake toolbar will be shown on reentry
+        collapseFakeToolbar() {
+          Polymer.dom(this.$.fakeToolbar).classList.add('raiseFakeToolbar');
+        },
+
+        // called by survey-search after entry animation
+        setCachedScrollPos(cachedPos) {
+          this.$.panel.scroll(cachedPos, true);
+        },
+
+        // pricing out of survey obj
+        _computePricing(obj) {
+          if (obj && obj.pricing) {
+            return obj.pricing;
+          }
+          return;
+        },
+
+        // paper-scroll-header-panel inside neon-animated-pages bug fix
+        _selectedPageChanged(num) {
+        	if (num === 1) {
+	      		// bug in paper-toolbar imperitively created "mainContainer" style="top: 0px;"
+	      		// must invoke measuredHeaderHeight() anytime the panel is resized
+	        	this.async(() => {
+	        		this.headerPanelBugFix();
+	        	});
+        	}
+        },
+
+        // invoked by back-arrow button
+        _backButtonTapped() {
+          this.onTap = this.fire.bind(this, 'back');
+        },
+
+        // called from close icon button in top toolbar of this element
+        _closeButtonTapped() {
+          this.onTap = this.fire.bind(this, 'close');
+        },
+
+        // called from fab
+        _loadFabTapped() {
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = this.fire.bind(this, 'loadSurvey');
+        },
+        
+        // called by survey-search to cache current scroll postion
+        getScrollerPos() {
+          return this.$.panel.scroller.scrollTop;
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

@@ -1,0 +1,126 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../ripple-origin/ripple-origin.html">
+<link rel="import" href="solution-view.html">
+
+
+<dom-module id="solution-page">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        @apply(--fullscreen-elements);
+		    background-color: transparent;
+      }
+
+    </style>
+
+    <neon-animated-pages selected="[[selected]]"
+                         on-neon-animation-finish="_animationComplete">
+
+      <ripple-origin tap-coords="[[tapCoords]]"
+                     prepare-shared-element-animation="[[prepareSharedElementAnimation]]">
+      </ripple-origin>
+      
+      <solution-view id="solutionView"
+                     selected="[[selected]]"
+                     selection-index="{{selectionIndex}}"
+                     area-name="[[areaName]]" 
+                     existing-fixture="[[existingFixture]]"
+                     prepare-shared-element-animation="{{prepareSharedElementAnimation}}">
+      </solution-view>
+
+    </neon-animated-pages>
+    
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'solution-page',
+
+        properties: {
+          // neon-animated-pages index
+          selected: {
+            type: Number,
+            value: 0
+          },
+          // set by openSolutions method called by light-selector.html to maintain 
+          // proper indexes over both fixture and solution arrays
+        	selectionIndex: Number,
+          // displayed in header and used to find the correct userSelectedArray index
+          // for captured data
+          existingFixture: Object
+        },
+
+        // fire up to fixture-list when animation is completed
+        listeners: {
+          'close': '_close',
+          'closeAll': '_closeAll'
+        },
+
+        // called by light-selector when user taps an element
+        setTapCoords(obj) {
+          this.tapCoords = obj;
+        },
+
+        // called by light-selector with selectionIndex passed in as param
+        openSolutions(index, areaName, fixture) {
+          // set selectionIndex from light-selector and areaName from area-tab
+          this.selectionIndex  = index;
+          this.areaName        = areaName;
+          this.existingFixture = fixture;
+          this.style.display   = 'block';
+          this.style.zIndex    = '50';
+          this.style.opacity   = '1';
+          // wait for stlyes
+          this.async(() => {
+            this.selected = 1;
+          });
+        },
+
+        // reset state and clear data
+        _reset() {
+          this.style.display = 'none';
+          this.style.opacity = '0';
+          this.style.zIndex  = '-1';
+          // trigger solution-view to send its data after animation
+          this.$.solutionView.sendDataAndClear();
+        },
+        // trigger solutions-view to animate its contents after the 
+        // main ripple animation completes
+        _animationComplete() {
+          if (this.selected) {
+            // trigger toolbar and item animations
+            this.$.solutionView.animateItems();
+          } else {
+            this._reset();
+          }
+        },
+
+        // custom event fired from solution-view when user taps back button
+        _close() {
+          this.selected = 0;
+        },
+
+        // fired from solution-view if user taps close button
+        _closeAll() {
+          // close light-selector first then animate solution-view closed
+          window.Redaap.lightSelector.closeAll();
+          this.selected = 0;
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

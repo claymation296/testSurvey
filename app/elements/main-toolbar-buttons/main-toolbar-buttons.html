@@ -1,0 +1,480 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="main-toolbar-buttons">
+  <template>
+    <style>
+
+      :host {
+      	display: inline-flex;
+        align-items: center;
+      }
+
+		  #svgIconButton {
+		    --paper-icon-button: {
+		      min-width: 24px;
+		      width: 40px;
+		      height: 40px;
+		      position: absolute;
+		      top: 8px;
+		      right: 8px;
+		      margin: 0px;
+		      padding: 8px;
+		      z-index: 1;
+		    };
+		  }
+
+		  .svgIcon {
+		    width: 24px;
+		    height: 24px;
+		    fill: white;
+		    overflow: visible;
+		    transform-origin: 50% 50%;
+		    transform: rotate(180deg);
+		  }
+
+		  .topCir {
+		    transform-origin: 50% 50%;
+		    transform: translate(-2.55px, 4.7px) rotate(-45deg);
+		  }
+
+		  .middleCir {
+		    transform-origin: 50% 50%;
+		    transform: scale(0.5) translate(-5px, 0px);
+		  }
+
+		  .bottomCir {
+		    transform-origin: 50% 50%;
+		    transform: translate(-2.55px, -2.7px) rotate(45deg);
+		  }
+
+      .slideArrowRight {
+        transition: transform 0.2s ease-in;
+        transform: translate(-100px, 0px);
+      }
+
+      .slideLogoutButtonRight {
+        transition: transform 0.2s ease-in 0.3s;
+        transform: translate(220px, 0px);
+      }
+
+      .slideClearButtonRight {
+        transition: transform 0.2s ease-in 0.4s;
+        transform: translate(220px, 0px);
+      }
+
+      .slideSearchButtonRight {
+        transition: transform 0.4s ease-in-out 0.5s;
+        transform: translate(128px, 0px);
+      }
+
+      .resetSVGRotation {
+        transition: none;
+        transform: rotate(0deg);
+      }
+
+      .prepareForSlideDown {
+        transition: none;
+        transform: translate(0px, -40px);
+      }
+
+      .slideBottomCirDown {
+        transition: transform 0.3s ease-out;
+        transform: translate(0px, 0px);
+      }
+
+      .slideMiddleCirDown {
+        transition: transform 0.3s ease-out 0.1s;
+        transform: translate(0px, 0px);
+      }
+
+      .slideTopCirDown {
+        transition: transform 0.3s ease-out 0.2s;
+        transform: translate(0px, 0px);
+      }
+
+      .slideTopCirUp {
+        transition: transform 0.2s ease-in;
+        transform: translate(0px, -40px);
+      }
+
+      .slideMiddleCirUp {
+        transition: transform 0.2s ease-in 0.1s;
+        transform: translate(0px, -40px);
+      }
+
+      .slideBottomCirUp {
+        transition: transform 0.2s ease-in 0.2s;
+        transform: translate(0px, -40px);
+      }
+
+      .slideSearchButtonLeft {
+        transition: transform 0.3s ease-in-out 0.4s;
+        transform: translate(0px, 0px);
+      }
+
+      .slideClearButtonLeft {
+        transition: transform 0.3s ease-out 0.5s;
+        transform: translate(0px, 0px);
+      }
+
+      .slideLogoutButtonLeft {
+        transition: transform 0.3s ease-out 0.6s;
+        transform: translate(0px, 0px);
+      }
+
+      .morphTopCirToArrow {
+        transition: all 0.3s ease-out;
+        transform: translate(-2.55px, 4.7px) rotate(-45deg);
+      }
+
+      .morphMiddleCirToArrow {
+        transition: all 0.3s ease-out;
+        transform: scale(0.5) translate(-5px, 0px);
+      }
+
+      .morphBottomCirToArrow {
+        transition: all 0.3s ease-out;
+        transform: translate(-2.55px, -2.7px) rotate(45deg);
+      }
+
+      .rotateSVG {
+        transition: transform 0.3s ease-out;
+        transform: rotate(180deg);
+      }
+
+    </style>
+
+    
+    <!-- listened to in survey-search.html -->
+    <paper-icon-button id="searchButton" 
+                       on-tap="_searchButtonTapped" 
+                       icon="custom-icons:search">
+    </paper-icon-button>
+    <!-- listened to in main-page.html -->        
+    <paper-icon-button id="trashButton"
+                       on-tap="_clearSurveyIconButtonTapped" 
+                       icon="custom-icons:note-add">
+    </paper-icon-button>
+    <!-- listened to in app-security.html -->
+    <paper-button id="logoutButton" on-tap="_logoutButtonTapped">Log out</paper-button>
+
+
+    <!-- svgIconButton transitionend event listened for by main-page -->
+    <paper-icon-button id="svgIconButton" on-tap="_moreButtonTapped"></paper-icon-button>
+
+    <svg id="svgIcon"
+         class="svgIcon" 
+         version="1.1" 
+         xmlns="http://www.w3.org/2000/svg" 
+         xmlns:xlink="http://www.w3.org/1999/xlink" 
+         x="0px" 
+         y="0px" 
+         viewBox="0 0 24 24" 
+         enable-background="new 0 0 24 24" 
+         xml:space="preserve">
+
+      <rect id="topCir" 
+            class="topCir"
+            x="10" 
+            y="4" 
+            rx$="[[svgRadius]]" 
+            ry$="[[svgRadius]]" 
+            width$="[[svgWidth]]" 
+            height$="[[svgHeight]]"/>
+
+      <circle id="middleCir" 
+              class="middleCir"
+              cx="12" 
+              cy="12" 
+              r="2"/>
+
+      <rect id="bottomCir"
+            class="bottomCir" 
+            x="10" y="16" 
+            rx$="[[svgRadius]]" 
+            ry$="[[svgRadius]]"
+            width$="[[svgWidth]]" 
+            height$="[[svgHeight]]"/>
+    </svg>
+
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'main-toolbar-buttons',
+
+        behaviors: [ window.Redaap.Behaviors.OnTapBehavior ],
+
+        properties: {
+        	// for toggling the toolbar icon button animation
+          toolbarMoreButtonsToggle: {
+            type: Boolean,
+            value: true
+          },
+          // array of svg sub elements
+          arrowRight: Array,
+          // bound to 'more'/'chevron-right'
+          svgRadius: {
+            type: Number,
+            value: 0
+          },
+          // bound to 'more'/'chevron-right'
+          svgWidth: {
+            type: Number,
+            value: 8.5
+          },
+          // bound to 'more'/'chevron-right'
+          svgHeight: {
+            type: Number,
+            value: 2
+          },
+          // dont allow the 'more' button animation to start until the previous one is finished
+          moreButtonsAnimationShunt: {
+            type: Boolean,
+            value: true
+          }
+        },
+
+
+        attached() {
+        	this.async(() => {
+            // bug fix: force the backdrop to close
+            window.Redaap.clearDialog.addEventListener('iron-overlay-closed', () => {
+              window.Redaap.clearDialog.backdropElement.complete();
+            }, false);
+
+            this.arrowRight = [this.$.topCir, this.$.middleCir, this.$.bottomCir];
+        	});
+					// wait to hide extra toolbar buttons to hint to new users
+          this.async(() => {
+            this._hideToolbarButtonsAnimation();
+          }, 1500);
+        },
+
+
+        detached() {
+          // bug fix: force the backdrop to close
+          window.Redaap.clearDialog.removeEventListener('iron-overlay-closed', () => {
+            window.Redaap.clearDialog.backdropElement.complete();
+          }, false);
+        },
+
+        // delay and debounce the animation that hides the extra toolbar buttons
+        _delayedHideToolbarButtonsAnimation() {
+          this.debounce('toolbarAnimationsDebounce', () => {
+            this._hideToolbarButtonsAnimation();
+          }, 500);
+        },
+
+        // called by survey-page _openSearch() method
+        _searchButtonTapped() {
+
+        	const openSearch = () => {
+        		if (this.toolbarMoreButtonsToggle) {
+	            this._delayedHideToolbarButtonsAnimation();
+	          }
+	          this.listen(this.$.searchButton, 'transitionend', '_searchButtonAnimationFinished');
+	          window.Redaap.surveySearch.openSearch();
+        	};
+          
+        	this.onTab = openSearch();
+        },
+
+        // called by app-security _logOutUser() and _cancelLogOut() methods
+        userLoggedOut() {
+          this._delayedHideToolbarButtonsAnimation();
+        },
+
+        // remove the animation shunt after last dot animation completes
+        _defeatMoreButtonsAnimationShunt() {
+          this.unlisten(this.$.topCir, 'transitionend', '_defeatMoreButtonsAnimationShunt');
+          this.moreButtonsAnimationShunt = true;
+        },
+
+
+        _prepareToHideButtons() {
+          Polymer.dom(this.$.svgIcon).classList.remove('rotateSVG');
+          Polymer.dom(this.$.topCir).classList.remove('slideTopCirDown', 'morphTopCirToArrow');
+          Polymer.dom(this.$.middleCir).classList.remove('slideMiddleCirDown', 'morphMiddleCirToArrow');
+          Polymer.dom(this.$.bottomCir).classList.remove('slideBottomCirDown', 'morphBottomCirToArrow');
+          Polymer.dom(this.$.searchButton).classList.remove('slideSearchButtonLeft');
+          Polymer.dom(this.$.trashButton).classList.remove('slideClearButtonLeft');
+          Polymer.dom(this.$.logoutButton).classList.remove('slideLogoutButtonLeft');
+        },
+
+
+        _slideArrowRight() {
+          this.arrowRight.forEach(el => {
+            Polymer.dom(el).classList.add('slideArrowRight');
+          });
+        },
+
+
+        _slideButtonsRight() {
+          this.listen(this.$.searchButton, 'transitionend', '_searchButtonAnimationFinished');
+          Polymer.dom(this.$.logoutButton).classList.add('slideLogoutButtonRight');
+          Polymer.dom(this.$.trashButton).classList.add('slideClearButtonRight');
+          Polymer.dom(this.$.searchButton).classList.add('slideSearchButtonRight');
+        },
+
+
+        _prepareToShowButtons() {
+          Polymer.dom(this.$.bottomCir).classList.remove('slideBottomCirDown');
+          Polymer.dom(this.$.middleCir).classList.remove('slideMiddleCirDown');
+          Polymer.dom(this.$.topCir).classList.remove('slideTopCirDown');
+          Polymer.dom(this.$.logoutButton).classList.remove('slideLogoutButtonRight');
+          Polymer.dom(this.$.trashButton).classList.remove('slideClearButtonRight');
+          Polymer.dom(this.$.searchButton).classList.remove('slideSearchButtonRight');
+        },
+
+
+        _slideDotsUp() {
+          Polymer.dom(this.$.topCir).classList.add('slideTopCirUp');
+          Polymer.dom(this.$.middleCir).classList.add('slideMiddleCirUp');
+          Polymer.dom(this.$.bottomCir).classList.add('slideBottomCirUp');
+        },
+
+
+        _slideButtonsLeft() {
+          this.listen(this.$.searchButton, 'transitionend', '_searchButtonAnimationFinished');
+          Polymer.dom(this.$.searchButton).classList.add('slideSearchButtonLeft');
+          Polymer.dom(this.$.trashButton).classList.add('slideClearButtonLeft');
+          Polymer.dom(this.$.logoutButton).classList.add('slideLogoutButtonLeft');
+        },
+
+
+        _morphDotsToArrow() {
+          this.svgRadius = 0;
+          this.svgWidth = 8.5;
+          this.svgHeight = 2;
+          Polymer.dom(this.$.topCir).classList.add('morphTopCirToArrow');
+          Polymer.dom(this.$.middleCir).classList.add('morphMiddleCirToArrow');
+          Polymer.dom(this.$.bottomCir).classList.add('morphBottomCirToArrow');
+          Polymer.dom(this.$.svgIcon).classList.remove('resetSVGRotation');
+          Polymer.dom(this.$.svgIcon).classList.add('rotateSVG');
+        },
+
+        // place the circles offscreen above their resting pos
+        _offScreenArrowToDots() {
+          // change arrow bars into three dots
+          this.svgRadius = 2;
+          this.svgWidth = 4;
+          this.svgHeight = 4;
+          // set rotation to 0deg
+          Polymer.dom(this.$.svgIcon).classList.add('resetSVGRotation');
+          Polymer.dom(this.$.topCir).classList.remove('slideTopCirUp');
+          Polymer.dom(this.$.middleCir).classList.remove('slideMiddleCirUp');
+          Polymer.dom(this.$.bottomCir).classList.remove('slideBottomCirUp');
+          // move dots from right of screen to 40px above screen
+          this.arrowRight.forEach(el => {
+            Polymer.dom(el).classList.remove('slideArrowRight');
+            Polymer.dom(el).classList.add('prepareForSlideDown');
+          });
+        },
+
+
+        _slideDotsDown() {
+          this.arrowRight.forEach(el => {
+            Polymer.dom(el).classList.remove('prepareForSlideDown');
+          });
+          Polymer.dom(this.$.bottomCir).classList.add('slideBottomCirDown');
+          Polymer.dom(this.$.middleCir).classList.add('slideMiddleCirDown');
+          Polymer.dom(this.$.topCir).classList.add('slideTopCirDown');
+          // remove animation shunt on animation finish
+          this.listen(this.$.topCir, 'transitionend', '_defeatMoreButtonsAnimationShunt');
+        },
+
+        // move the trash and log out buttons off screen
+        _hideToolbarButtonsAnimation() {
+          this._prepareToHideButtons();          
+          this._slideArrowRight();
+          this._slideButtonsRight();
+        },
+
+        // bring the trash and log out buttons into view in the main toolbar
+        _showToolbarButtonsAnimation() {
+          this._prepareToShowButtons();
+          this._slideDotsUp();
+          this._slideButtonsLeft();
+        },
+
+        // return 'more' icon to original position
+        _searchButtonAnimationFinished(event) {
+          if (event.propertyName === 'transform') {
+            // remove listener
+          	this.unlisten(this.$.searchButton, 'transitionend', '_searchButtonAnimationFinished');
+            // prepare dots for entry animation
+            this._offScreenArrowToDots();
+            // animate dots into their resting pos
+            this.async(() => {
+              this._slideDotsDown();
+              // set toggle for next animation run
+              this.toolbarMoreButtonsToggle = !this.toolbarMoreButtonsToggle;
+
+              if (this.toolbarMoreButtonsToggle) {
+                // wait to transform 3dots back to chevron-right
+                this.async(() => {
+                  this._morphDotsToArrow();
+                }, 1000);
+              }
+            }, 100);
+          }
+        },
+
+        // icon button tap event in main toolbar
+        _moreButtonTapped() {
+          const runAnimation = () => {
+            if (this.toolbarMoreButtonsToggle) {
+              this._hideToolbarButtonsAnimation();
+              return;
+            }
+            this._showToolbarButtonsAnimation();
+          };
+          // shunt any new animation requests until the current running animation completes
+          if (this.moreButtonsAnimationShunt) {
+            this.moreButtonsAnimationShunt = false;
+            // onTap property found in redaap-behaviors/on-tap-behavior
+            this.onTap = runAnimation;
+          }
+        },
+        
+
+        _clearSurveyIconButtonTapped() {
+          const openClearDialog = () => {
+            this._delayedHideToolbarButtonsAnimation();
+            window.Redaap.clearDialog.open();
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = openClearDialog;
+        },
+
+
+        _logoutButtonTapped() {
+          const openLogoutDialog = () => {
+            this.userLoggedOut();
+            window.Redaap.appSecurity.openLogOut();
+          };
+
+          this.onTap = openLogoutDialog;
+        }
+
+
+      });
+    })();
+  </script>
+
+</dom-module>

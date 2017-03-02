@@ -1,0 +1,288 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+<link rel="import" href="../redaap-behaviors/open-close-fullscreen-behavior.html">
+<link rel="import" href="selector-thumbnail.html">
+
+
+<dom-module id="photo-selector">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        @apply(--fullscreen-elements);
+        background-color: var(--dark-primary-color);
+      }
+
+      paper-toolbar {
+        color: var(--primary-text-color);
+      	background-color: var(--accent-color);
+      }
+
+      photo-capture {
+        left: -4px;
+      }
+
+      #title {
+        position: relative;
+        left: -4px;
+      }
+
+      .content {
+        opacity: 0;
+      }
+
+      .fadeInContent {
+        opacity: 1;
+        transition: opacity 0.2s ease-in;
+      }
+
+    </style>
+
+
+    <paper-scroll-header-panel id="panel">
+    	<paper-toolbar id="toolbar">
+
+        <photo-capture id="capture" 
+                       filename="[[label]]"
+                       disable-thumbnail
+                       disable-viewer>
+        </photo-capture>
+
+    		<span id="title" class="title" style="margin-left: 0px;">[[label]]</span>
+        <paper-icon-button id="close" 
+                           on-tap="_closeButtonTapped" 
+                           icon="custom-icons:close">
+        </paper-icon-button>
+    	</paper-toolbar>
+
+      <div id="content" class="content">
+       	<template id="photosRepeater"
+                  is="dom-repeat" 
+       						items="[[photos]]"
+                  as="photo" 
+       						target-framerate="60" 
+                  strip-whitespace>
+
+          <selector-thumbnail photo="[[photo]]" on-tap="_imageTapped"></selector-thumbnail>
+
+        </template>
+      </div>
+  	</paper-scroll-header-panel>
+    
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'photo-selector',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior,
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.Utilities,                  
+          window.Redaap.Behaviors.OnTapBehavior,              
+          window.Redaap.Behaviors.OpenCloseFullscreenBehavior 
+        ],
+
+        properties: {
+
+          animationConfig: {
+            value() {
+              return {
+              	'selectorEntry': [{
+                  name: 'slide-from-top-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this,
+                  timing: {duration: 200, delay: 100, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'slide-from-top-animation',
+                  nodes:  [
+                    this.$.capture,
+                    this.$.title,
+                    this.$.close
+                  ],
+                  timing: {duration: 400, delay: 50, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'fade-in-animation',
+                  nodes:  [
+                    this.$.capture,
+                    this.$.title,
+                    this.$.close
+                  ],
+                  timing: {duration: 200, delay: 250, easing: 'ease-out'}
+                }],
+                'selectorExit': [{
+                  name: 'slide-up-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this,
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
+                }]
+              };
+            }
+          },
+
+          label: String,
+          // array of photo data objs
+          photoDataArray: Array,
+          // array of photo data objs with src property and no dead data
+          photos: Array
+        },
+
+
+        listeners: {
+          'neon-animation-finish':      '_animationFinished',
+          // template-repeater stamping event
+          'dom-change':                 '_domChangedEvent',
+          // photo-capture temp url when user adds a photo
+          'photo-capture-placeholder':  '_photoCapturePlaceholder',
+          // photo-capture temp url when user adds a photo
+          'photo-capture-external-src': '_photoCaptureExternalSrc'
+        },
+
+
+        _extractPhotoData(array) {
+          //array === [{key, orient, placeholder, savedUrl}]
+          // favor savedUrl over fetching a temp url from web-worker
+          const urls = array.map(({key, placeholder, savedUrl}) => {
+            // favor savedUrl
+            if (savedUrl) {
+              return savedUrl;
+            } else if (placeholder) {
+              return placeholder;
+            } else {
+              // resort to an attempt to get a new tempUrl from web-worker
+              // returns a promise
+              return window.Redaap.webWorker.getUrl(key);
+            }
+          });
+
+          Promise.all(urls).
+            then(resolvedUrls => {
+              this.photos = array.map((obj, index) => {
+                // find the matching src in resolvedUrls array 
+                // which is resolved promises from urls array
+                const src = resolvedUrls[index];
+                if (src) {
+                  // add src to each obj for template
+                  return Object.assign({src}, obj);
+                } else {
+                  // the resolvedUrls array contains undefined values
+                  // when webWorker cannot look up the file data by key
+                  // because it is missing from localForage
+                  this.fire('photo-selector-dead-photo-data', {obj});
+                  return;
+                }
+              });
+            }).
+            catch(error => console.log('photo-viewer error: ', error));
+        },
+
+        // called by photo-viewer on photo delete        
+        updateDelete(key) {
+          const index = this.photos.findIndex(photo => photo.key === key);
+          this.schedule.bind(this, this.splice('photos', index, 1));
+        },
+
+
+        updateAdd(obj, src) {
+          const photoObj = Object.assign({src}, obj);
+          this.schedule.bind(this, this.unshift('photos', photoObj));
+        },
+
+        // called by photo-viewer on close
+        cleanUp() {
+          this.photoDataArray = undefined;
+          this.photos         = undefined;
+        },
+
+        // from local photo-capture
+        _photoCapturePlaceholder(event) {
+          // pass payload up to parent
+          this.fire('photo-selector-new-photo-placeholder', event.detail);
+        },
+
+        // from local photo-capture
+        _photoCaptureExternalSrc(event) {
+          // pass payload up to parent
+          this.fire('photo-selector-new-photo-external-src', event.detail);
+        },
+
+        // called by photo-viewer
+        playEntryAnimation() {
+          this.open();
+        	this.cancelAnimation();
+        	this.playAnimation('selectorEntry', 'selectorEntry');
+        },
+
+
+        _playExitAnimation() {
+          this.cancelAnimation();
+          this.playAnimation('selectorExit', 'selectorExit');
+        },
+
+
+        _animationFinished(_, animationType) {
+          if (animationType === 'selectorEntry') {
+            this._extractPhotoData(this.photoDataArray);
+          } else if (animationType === 'selectorExit') {
+            this.cleanUp();
+            this.close();
+            this.fire('photo-selector-close');
+          }
+        },
+
+        // wait to fade everything in til template-repeat dom settles
+        _domChangedEvent() {
+          if (this.photos) {
+            this.$.content.classList.add('fadeInContent');
+          } else {
+            this.$.content.classList.remove('fadeInContent');
+          }
+        },
+
+
+        _imageTapped(event) {
+          const photo = event.model.photo;
+          // ignore photos that are not able to load because user
+          // is offline and there photo has already been saved to db
+          // meaning there is no more reference in localForage
+          if (photo.unreachable) { return; }
+
+          const selected = () => {
+            this.fire('photo-selector-photo-selected', {photo});
+          };
+
+          this.onTap = selected;
+        },
+
+
+        _closeButtonTapped() {
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = this._playExitAnimation.bind(this);
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

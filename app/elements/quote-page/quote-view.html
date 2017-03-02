@@ -1,0 +1,296 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="quote-fab.html">
+<link rel="import" href="../pricing-table/pricing-table.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="quote-view">
+  <template>
+  	<style include="shared-styles"></style>
+    <style>
+
+      :host {
+        display: block;
+        position: fixed;
+        top: 0px;
+        left: 0px;
+        width: 100%;
+		    height: 100%;
+		    background-color: transparent;
+      }
+
+      #ripple {
+        width: 100%;
+        height: 100%;
+        background-color: var(--default-primary-color);
+      }
+
+      #panel {
+        background-color: var(--default-primary-color);
+      }
+
+      paper-toolbar {
+      	background-color: var(--default-primary-color);
+        --paper-toolbar-content: {
+          padding: 0px;
+        };
+      }
+
+      paper-item {
+      	--paper-item-disabled-color: white;
+      }
+
+      paper-item-body {
+      	--paper-item-body-secondary-color: white;
+      }
+
+      #closeButtonDiv {
+        padding-right: 16px;
+      }
+
+      .centerItems {
+        width: 100%;
+      }
+
+      .container {
+        min-height: 100%;
+        margin-bottom: 0px;
+        padding-bottom: 64px;
+        background-color: white
+      }
+
+      #finePrint {
+        font-size: 10px;
+        padding-bottom: 16px;
+        margin-top: 16px;
+      }
+
+      paper-fab {
+        position: fixed;
+        bottom: 16px;
+        right: 16px;
+        color: var(--primary-text-color);
+        z-index: 1;
+      }
+
+
+    </style>
+
+    <div id="ripple" hidden$="[[hideFake]]"></div>
+
+    <quote-fab id="fab"></quote-fab>
+
+    
+
+
+    <paper-scroll-header-panel id="panel" fixed hidden$="[[!hideFake]]">
+    	<paper-toolbar id="toolbar" class="medium-tall" bottom-justify="center">
+    		<span id="title" class="title" style="margin-left: 16px;">Quote</span>
+
+        <div id="closeButtonDiv">
+          <paper-icon-button id="closeButton"
+            on-tap="_closeButtonTapped" 
+            icon="custom-icons:close">
+          </paper-icon-button>
+        </div>
+
+      	<div class="bottom centerItems centerText noSelect">
+          <paper-item id="term" 
+                      class="dialogTitle inline" 
+                      disabled 
+                      hidden$="[[_computeHideTerm(selectedPricing.term)]]">
+            <paper-item-body two-line>
+              <div>[[selectedPricing.term]]</div>
+              <div secondary>term</div>
+            </paper-item-body>
+          </paper-item>
+          <paper-item id="payment" 
+                      class="dialogTitle inline" 
+                      disabled>
+            <paper-item-body two-line>
+              <div>$[[selectedPricing.grandMonthly]]</div>
+              <div secondary>service fee</div>
+            </paper-item-body>
+          </paper-item>
+          <paper-item id="qty" 
+                      class="dialogTitle inline" 
+                      disabled>
+            <paper-item-body two-line>
+              <div>[[selectedPricing.totalQuantity]]</div>
+              <div secondary>count</div>
+            </paper-item-body>
+          </paper-item>
+        </div>
+    	</paper-toolbar>
+
+      <div id="container" class="container noSelect">        
+        
+        <pricing-table client="[[client]]"
+                       date="[[date]]"
+                       version="[[version]]"
+                       pricing="[[selectedPricing]]">
+        </pricing-table>
+
+        <div id="finePrint">
+          This Proposal includes converting existing lighting listed above to LED lighting and providing lighting maintenance services at the Client's property (“Project”).  Client acknowledges this Proposal is subject to the Terms of Service and further acknowledges they have received a copy of the Terms of Service and have reviewed and have approved and will abide by the Terms of Service.  REDAAP Services will commence within 21 days from approval and acceptance.  The first month's bill will become due 45 days from signing this Proposal.
+        </div>
+
+      </div>
+
+  	</paper-scroll-header-panel>
+
+  </template>
+
+  
+  <script>
+    (function() {
+      Polymer({
+        is: 'quote-view',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior,
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.OnTapBehavior 
+        ],
+
+        properties: {
+
+        	animationConfig: {
+            value() {
+              return {
+                'entry': {
+                  name: 'ripple-animation',
+                  id: 'ripple',
+                  toPage: this,
+                  timing: {duration: 400, easing: 'ease-out'}
+                },
+                'contentEntry': [{
+                  name: 'cascaded-animation',
+                  animation: 'slide-from-top-animation',
+                  nodes: [
+                    this.$.toolbar, 
+                    this.$.term, 
+                    this.$.payment, 
+                    this.$.qty
+                  ],
+                  timing: {duration: 200, delay: 50, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'fade-in-animation',
+                  nodes: [
+                    this.$.title, 
+                    this.$.term, 
+                    this.$.payment, 
+                    this.$.qty
+                  ],
+                  timing: {duration: 200, delay: 100, easing: 'ease-out'}
+                }, {
+                  name: 'slide-from-right-animation',
+                  node: this.$.closeButtonDiv,
+                  timing: {duration: 300, delay: 400, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this.$.closeButtonDiv,
+                  timing: {duration: 300, delay: 450, easing: 'ease-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.closeButton,
+                  transformTo: 'rotate(-180deg)',
+                  timing: {duration: 300, delay: 400, easing: 'ease-out'}
+                }, {
+                  name: 'slide-from-bottom-animation',
+                  node: this.$.container,
+                  timing: {duration: 500, delay: 200, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this.$.container,
+                  timing: {delay: 300, easing: 'ease-out'}
+                }],
+                'exit': [{
+                  name: 'slide-down-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this,
+                  timing: {duration: 300, delay: 100, easing: 'ease-in'}
+                }]
+              };
+            }
+          },
+
+          sharedElements: {
+            value() {
+              return {
+                'ripple': this.$.ripple
+              };
+            }
+          },
+          // bound from account-form
+          client: Object,
+          // the user chosen quote data from quote-selector via lighting-main
+          selectedPricing: Object,
+        	// from lighting-main
+        	version: {
+            type: Number,
+            value: 0
+          },
+        	// displayed in email modal found in index.html under signaturePad 
+          // and is sent along with the email
+          date: {
+            type: Date,
+            value: () => new Date().toLocaleDateString()
+          }
+        },
+
+
+        listeners: {
+          // wait for content animation
+        	'neon-animation-finish': '_animationFinished'
+        },
+
+        // toolbar term paper-item dislpay state ie only show 12, 36, 60
+        _computeHideTerm: term => term < 1,
+        // called by parent, quote-page
+        // reset all trigger an style state to be ready for next animation sequence
+        resetForNextAnimation() {
+          this.hideFake = false;
+          this.$.fab.hide();
+        },
+
+        // from quote-page to orchestrate content animation timing
+        animateContent() {
+          this.$.panel.measureHeaderHeight();
+          this.hideFake = true;
+          this.cancelAnimation();
+          this.playAnimation('contentEntry', 'contentEntry');
+        },
+
+        // after user cancels the picker wait to close until after 'preCancel' animation finishes
+        _animationFinished(_, animationType) {
+          if (animationType === 'contentEntry') {
+            this.$.fab.runFabEntryAnimation();
+          }
+        },
+
+        // called from close icon button on-transitionend in top toolbar of this element
+        _closeButtonTapped() {
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = this.fire.bind(this, 'closeQuote');
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

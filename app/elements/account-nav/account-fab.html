@@ -1,0 +1,285 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="account-fab">
+  <template>
+    <style>
+
+      :host {
+      	display: none;
+      }
+
+      paper-fab {
+        position: absolute;
+        bottom: 0px;
+        right: 0px;
+        color: var(--primary-text-color);
+        background-color: transparent;
+        --paper-fab-keyboard-focus-background: transparent;
+      }
+
+      #rotate {
+        position: absolute;
+        width: 56px;
+        height: 56px;
+        bottom: 0px;
+        right: 0px;
+        border-radius: 100%;
+        background-color: var(--accent-color);
+      }
+
+      #iconMask {
+        position: relative;
+        width: 56px;
+        height: 56px;
+        border-radius: 100%;
+        overflow: hidden;
+        background-color: transparent;
+      }
+
+      #icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        -webkit-transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%);
+      }
+
+    </style>
+
+    <!-- need to creat 2 layers for animation
+
+    top layer is the paper-fab so it can handle the drop shadow, ripple effect, 
+    receive user tap events and make the on-transitionend function call 
+  
+    bottom layer handles the icon mask, rotation and color
+    -->
+
+      
+      <div id="rotate">
+        <div id="iconMask">
+          <iron-icon id="icon" icon="custom-icons:check"></iron-icon>
+        </div>
+      </div>      
+
+      <paper-fab id="fab" on-tap="_checkAccountFormFabTapped"></paper-fab>
+
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'account-fab',
+
+        behaviors: [
+          Polymer.NeonAnimatableBehavior,
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.Utilities,
+          window.Redaap.Behaviors.OnTapBehavior
+        ],
+
+        properties: {
+
+        	animationConfig: {
+        		value() {
+        			return {
+        				'fabEntry': [{
+                  name: 'transform-animation',
+                  node: this.$.fab,
+                  transformFrom: 'scale(0, 0)',
+                  transformTo: 'scale(1, 1)',
+                  timing: {duration: 300, easing: 'ease-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.iconMask,
+                  transformFrom: 'scale(0, 0)',
+                  transformTo: 'scale(1, 1)',
+                  timing: {duration: 200, easing: 'ease-out'}
+                 }, {
+                  name: 'transform-animation',
+                  node: this.$.rotate,
+                  transformOrigin: '50% 50%',
+                  transformFrom: 'rotate(270deg) scale(0, 0)',
+                  transformTo: 'rotate(360deg) scale(1, 1)',
+                  timing: {duration: 150, delay: 100, easing: 'ease-out'}
+        				}],
+                'fabExit': [{
+                  name: 'slide-down-animation',
+                  node: this.$.rotate,
+                  timing: {duration: 200, easing: 'ease-in'}
+                }, {
+                  name: 'slide-down-animation',
+                  node: this.$.fab,
+                  timing: {duration: 200, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this.$.rotate,
+                  timing: {duration: 100, delay: 100, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this.$.fab,
+                  timing: {duration: 100, delay: 100, easing: 'ease-in'}
+                }],
+                'fabFadeOut': {
+                  name: 'fade-out-animation',
+                  node: this.$.icon,
+                  timing: {duration: 200, easing: 'ease-in'}
+                },
+                'fabScaleDown': [{
+                  name: 'transform-animation',
+                  node: this.$.rotate,
+                  transformFrom: 'scale(1, 1)',
+                  transformTo: 'scale(0.8, 0.8)',
+                  timing: {duration: 100, easing: 'ease-in'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.fab,
+                  transformFrom: 'scale(1, 1)',
+                  transformTo: 'scale(0.8, 0.8)',
+                  timing: {duration: 100, easing: 'ease-in'}
+                }],
+                'exit': {
+                  name: 'hero-animation',
+                  id: 'hero',
+                  fromPage: this,
+                  timing: {duration: 200, easing: 'ease-in'}
+                }
+        			};
+        		}
+        	},
+
+          sharedElements: {
+            value() {
+              return {
+                'hero': this.$.rotate
+              };
+            }
+          },
+          // used to control fab visible state and entry/exit animations
+          route: String,
+
+          clientValid: Boolean,
+        },
+
+
+        listeners: {
+          'neon-animation-finish': '_fabAnimationFinished'
+        },
+
+
+        observers: [
+          '_computeVisibility(route, clientValid)'
+        ],
+
+
+        runFabScaleDown() {
+          this.cancelAnimation();
+          this.playAnimation('fabScaleDown', 'fabScaleDown');
+        },
+
+
+        _fabIsVisible() {
+          return (this.getComputedStyleValue('display') !== 'none' && 
+                  this.getComputedStyleValue('display') !== '');
+        },
+
+
+        _animateIn() {
+          if (this._fabIsVisible()) { return; }
+
+          const run = () => {
+            this.style.display = 'block';
+            this.$.icon.style.display = 'initial';
+            this.$.fab.style.display = 'initial';
+            // parent will reset its styles for fabEntry animation
+            this.fire('account-fab-show');
+            this.cancelAnimation();
+            this.playAnimation('fabEntry');
+          };
+          
+          this.schedule(run);
+        },
+
+        _animateOut() {
+          if (this._fabIsVisible()) {
+            const run = () => {
+              this.cancelAnimation();
+              this.playAnimation('fabExit', 'fabExit');
+            };
+            
+            this.schedule(run);
+          }
+        },
+
+
+        _animateHero() {
+          if (this._fabIsVisible()) {
+            const run = () => {
+              this.fire('account-fab-hide');
+              this.cancelAnimation();
+              this.playAnimation('fabFadeOut', 'fabFadeOut');
+            };
+            
+            this.schedule(run);
+          }
+        },
+
+
+        _computeVisibility(route, clientValid) {
+          if (route === 'client') {
+            if (clientValid) {
+              this._animateHero();
+            } else {
+              this._animateIn();
+            }
+          } else {
+            this._animateOut();
+          }
+        },
+
+        
+        _fabAnimationFinished(_, animationType) {
+          switch (animationType) {
+            case 'fabExit':
+              this.fire('account-fab-close');
+              this.style.display = 'none';
+              break;
+            case 'fabFadeOut':
+              this.$.icon.style.display = 'none';
+              this.$.fab.style.display = 'none';
+              break;
+            case 'fabScaleDown':
+              this.fire('account-fab-scaleDown-finish');
+              break;
+            default:
+              return;
+          }
+        },
+        
+        // run account-form checkForm() method
+        _checkAccountFormFabTapped() {
+          const check = () => {
+            window.Redaap.accountForm.checkForm();
+          };
+          // onTap property found in redaap-behaviors/on-tap-behavior
+          this.onTap = check;
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>
