@@ -379,21 +379,43 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               break;
           }
         },
+
+
+        _setPlaceholderBackground(url) {
+          this.backgroundImagePlaceholder.style.backgroundImage = `url(${url})`;
+          this.backgroundImagePlaceholder.style.transition      = 'opacity 0.3s ease-out';
+          this.backgroundImagePlaceholder.style.opacity         = '1';
+        },
+
+
+        _resetPlaceholderBackground() {
+          this.backgroundImagePlaceholder.style.backgroundImage = 'none';
+          this.backgroundImagePlaceholder.style.transition      = '';
+          this.backgroundImagePlaceholder.style.opacity         = '0';
+        },
+
+
+        _setExternalSrcBackground(url) {
+          this.backgroundImage.style.backgroundImage = `url(${url})`;
+          this.backgroundImage.style.opacity         = '1';
+        },
+
+
+        _resetExternalSrcBackground() {
+          this.backgroundImage.style.backgroundImage = 'none';
+          this.backgroundImage.style.opacity         = '0';
+        },
         // photo-capture placeholder event
         // controls header background img placeholder
         // placeholder is set first before the img file has had time to be saved to db
         // it is removed 500ms after main background div src has been set to avoid flicker
         _placeHolderSrcFromPhotoCapture(event) {
           const url = event.detail.placeholder;
-
           if (url && url !== '#') {
-            this.backgroundImagePlaceholder.style.backgroundImage = `url(${url})`;
-            this.backgroundImagePlaceholder.style.transition      = 'opacity 0.3s ease-out';
-            this.backgroundImagePlaceholder.style.opacity         = '1';
+            this._resetExternalSrcBackground();
+            this._setPlaceholderBackground(url);
           } else {
-            this.backgroundImagePlaceholder.style.backgroundImage = 'none';
-            this.backgroundImagePlaceholder.style.transition      = '';
-            this.backgroundImagePlaceholder.style.opacity         = '0';
+            this._resetPlaceholderBackground();
           }
         },
         // photo-capture external-src event
@@ -401,13 +423,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // is set once the img file has been saved to db and then reloaded into browser
         _externalSrcFromPhotoCapture(event) {
           const url = event.detail.externalSrc;
-
           if (url) {
-            this.backgroundImage.style.backgroundImage = `url(${url})`;
-            this.backgroundImage.style.opacity         = '1';
+            this._setExternalSrcBackground(url);
           } else {
-            this.backgroundImage.style.backgroundImage = 'none';
-            this.backgroundImage.style.opacity         = '0';
+            this._resetExternalSrcBackground();
           }
         },
 
@@ -420,17 +439,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // clear array
           this.solutions   = undefined;
           this.savedData   = undefined;
-
-
-
-          // // reset photo-capture placeholder
-          // this.placeholder = undefined;
-
-
-
-
-
-
           // deselect user selection element focus that is in light-selector
           window.Redaap.lightSelector.resetSelectionIndex();
           this.areaPageCustomElement.clearAreaName();

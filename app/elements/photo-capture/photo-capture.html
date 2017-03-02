@@ -294,6 +294,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // called by photo-viewer once a new photo has saved from db
         updateSavedUrl(url) {
           this.set('savedUrl', url);
+          this.fire('photo-capture-external-src', this._makeEventPayload());
         }, 
         // reset for another photo capture 
         // called by solution-view before it animates open
