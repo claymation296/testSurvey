@@ -161,6 +161,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   transformTo: 'scale(1, 1)',
                   timing: {duration: 200, easing: 'ease-out'}
                 },
+                'fullscreenDelete': [{
+                  name: 'slide-down-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this,
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
+                }],
                 'fullscreenDeleteLast': [{
                   name: 'slide-down-animation',
                   node: this,
@@ -168,7 +177,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 }, {
                   name: 'fade-out-animation',
                   node: this,
-                  timing: {duration: 300, delay: 100, easing: 'ease-in'}
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
                 }],
                 'fullscreenBack': [{
                   name: 'slide-left-animation',
@@ -177,7 +186,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 }, {
                   name: 'fade-out-animation',
                   node: this,
-                  timing: {duration: 300, delay: 100, easing: 'ease-in'}
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
                 }],
                 'fullscreenClose': [{
                   name: 'slide-up-animation',
@@ -186,7 +195,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 }, {
                   name: 'fade-out-animation',
                   node: this,
-                  timing: {duration: 300, delay: 100, easing: 'ease-in'}
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
                 }]
               };
             }
@@ -273,6 +282,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this.fire('fullscreen-photo-close-animation-done');
               break;
             case 'fullscreenBack':
+            case 'fullscreenDelete':
               this._cleanup();
               break;
             default:
@@ -304,7 +314,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         playDeleteAnimation() {
           this.fire('fullscreen-photo-back');
-          this._playExitAnimation('fullscreenBack');
+          this._playExitAnimation('fullscreenDelete');
         },
 
 

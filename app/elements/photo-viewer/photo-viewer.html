@@ -211,8 +211,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // before this event fires
           if (key !== this.capture.key) { return; }
           // update the photo keys data in the photoDataArray
-          const index = this.photoDataArray.findIndex(obj => obj.key === key);
+          const index     = this.photoDataArray.findIndex(obj => obj.key === key);
           const newKeyObj = keys[key];
+          // saved/processed photos no longer need orientation correction
+          newKeyObj.orient = 0;
           // remove and replace the old keys data
           // no need to update photo-selector model data
           // since the data object is only being replaced, not added or deleted
