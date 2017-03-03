@@ -61,6 +61,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         position: relative;
         top: 1px;
         background-color: inherit;
+        border-radius: 50%;
+        overflow: hidden;
       }
 
       iron-label {
@@ -92,6 +94,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         left: 0px;
         right: 0px;
         border-radius: 50%;
+        overflow: hidden;
         background-color: var(--photo-capture-background-color, dodgerblue);
         z-index: -1;
         opacity: 0;
@@ -102,6 +105,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       .showImageTag {
         opacity: 1;
         z-index: 0;
+      }
+
+      iron-image {
+        width: 100%;
+        height: 100%;
       }
 
       .orientation3 {
@@ -146,18 +154,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </iron-label>
 
 
-    <iron-image id="imageTag"
-                class$="centeredAboveFileInput [[_computeOrientation(orientation)]]"
-                hidden$="[[disableThumbnail]]"
-                on-tap="_photoTapped"
-                src="[[pic]]"
-                placeholder="[[placeholder]]"
-                sizing="cover"
-                preload 
-                fade
-                loaded="{{loaded}}">
-    </iron-image>
-
+    <div id="imageTag" class="centeredAboveFileInput">
+      <iron-image class$="[[_computeOrientation(orientation)]]"
+                  hidden$="[[disableThumbnail]]"
+                  on-tap="_photoTapped"
+                  src="[[pic]]"
+                  placeholder="[[placeholder]]"
+                  sizing="cover"
+                  preload 
+                  fade
+                  loaded="{{loaded}}">
+      </iron-image>
+    </div>
 
 
     <div id="externalSrcIconButton" 
@@ -262,7 +270,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.pic = undefined;
           this.fire('photo-capture-placeholder', this._makeEventPayload());
         },
-        // called by photo-viewer if user updates the data pertaining to this
+        // called by photo-viewer if user updates the photo pertaining to this
         // capture instance
         updateThumbnail({key, orient, placeholder, url}) {
           // the order of operations is very important here
@@ -302,7 +310,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this._revokeUrl();
           this.placeholder = '#';
           this.placeholderErrorRetry = true;
-          this.fire('photo-capture-placeholder', this._makeEventPayload());
+          this.fire('photo-capture-placeholder',  this._makeEventPayload());
           this.fire('photo-capture-external-src', this._makeEventPayload());
           this._hideImageTag();
         },
@@ -359,6 +367,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             return; 
           }
           Polymer.dom(this.$.imageTag).classList.add('showImageTag');
+          this.updateStyles();
         },
 
 
@@ -393,6 +402,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _imageLoaded(bool) {
           if (!bool) { return; }
+          // saved/processed photos no longer need orientation correction
+          this.set('orientation', 0);
           // fire the external src only after the file has been loaded into the browser
           // using iron-image for load timing wether it is hidden or not
           this.fire('photo-capture-external-src', this._makeEventPayload(this.pic));
@@ -414,6 +425,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // temp url will no longer work so issue a new one
           if (status === 404) {
             if (this.key && this.placeholderErrorRetry) {
+              // ignore event if saved url is present
+              if (this.savedUrl) { return; }
               this.placeholderErrorRetry = false;
               this._lookupTempUrlByKey(this.key);
             }
@@ -445,7 +458,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               // and are processed in Jimp with the correct orientation
               // so no longer necessary to correct it
               this.set('orientation', 0);
-              // vary important to reset orient for keys data for this photo as well
+              // very important to reset orient for keys data for this photo as well
               if (this.keys) {
                 this.set(`keys.${key}.orient`, 0); 
                 this.set(`keys.${key}.placeholder`, url);
@@ -558,25 +571,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         
 
         _setSavedImgData(key, url) {
+          // check if the saved data still matches current state
+          if (this.key !== key) { return; }
 
-
-          // HACK: !!!!!
-
-
-
-          // wait > 1sec for db to sync before loading the newly created url
-          // to avoid a 502 Bad Gateway error
-          this.async(() => {
-            // check if the saved data still matches current state
-            if (this.key === key) {
-
-              if (this.keys) {
-                this.set(`keys.${key}.savedUrl`, url);
-              }
-              this.set('savedUrl', url);
-              this.schedule(this._load.bind(this));
-            }
-          }, 3000);
+          if (this.keys) {
+            // saved/processed photos no longer need orientation correction
+            this.set(`keys.${key}.orient`, 0); 
+            this.set(`keys.${key}.savedUrl`, url);
+          }
+          this.set('savedUrl', url);
+          this.schedule(this._load.bind(this));
         },
 
 
