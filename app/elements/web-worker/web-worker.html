@@ -141,9 +141,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _blobFromFile: file => file.slice(0, file.size, file.type),
 
 
-        _fileFromBlob: (blob, name) => new File([blob], name), // jshint ignore:line
-
-
         _dispatch(job) {
           const promise = new Promise((resolve, reject) => {
 
@@ -299,14 +296,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           };
 
           const getBlobs  = (promises = blobPromises) => Promise.all(promises);
-
-          const makeFiles = blobs => 
+          
+          const makeJobs  = blobs => 
                               blobs.map((blob, index) => 
-                                this._fileFromBlob(blob, values[index].blobName));
-
-          const makeJobs  = files => 
-                              files.map((file, index) => 
-                                Object.assign({file}, values[index]));
+                                Object.assign({blob}, values[index]));
 
           const makeBatchAndStoreRemovePromises = jobs => {
             const batch = {};
@@ -336,7 +329,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.jobLocalforage.
             iterate(storeValuesAndMakeBlobPromises).
             then(getBlobs).
-            then(makeFiles).
             then(makeJobs).
             then(makeBatchAndStoreRemovePromises).
             then(sendBatchToWorker).

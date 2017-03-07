@@ -35,7 +35,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         top: 0px;
         left: 0px;
         background-color: rgba(255, 255, 255, 0.8);
-        z-index: 51;
       }
 
       .pricing {
@@ -46,9 +45,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </style>
 
     <paper-card id="options" heading="Pricing Options">
-      <div id="loading" class="loading">
-        <paper-spinner-lite alt="Fetching prices..." active="[[showSpinner]]"></paper-spinner-lite>
-      </div>
       <div id="content" class="card-content pricing">
         <paper-listbox class="centerText" selected="{{planIndex}}" on-tap="_listboxTapped">
           <paper-item id="months12" class="dialogTitle inline" hidden$="[[!displayedPrices.60]]">
@@ -82,6 +78,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             </paper-item-body>
           </paper-item>
         </paper-listbox>
+      </div>
+      <div id="loading" class="loading">
+        <paper-spinner-lite alt="Fetching prices..." active="[[showSpinner]]"></paper-spinner-lite>
       </div>
     </paper-card>
 

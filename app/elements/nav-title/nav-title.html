@@ -8,6 +8,8 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 -->
 
+<link rel="import" href="../redaap-behaviors/utilities.html">
+
 
 <dom-module id="nav-title">
   <template>
@@ -18,6 +20,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         position: absolute;
         top: 16px;
         left: 64px;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
       }
 
     </style>
@@ -33,7 +40,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         behaviors: [ 
           Polymer.NeonAnimatableBehavior,
-          Polymer.NeonAnimationRunnerBehavior
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.Utilities
         ],
 
         properties: {
@@ -90,37 +98,41 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _computeSelectedLabel(lightingTab, signageTab, route) {
-        	switch (route) {
-        		case 'home':
-        			this.newTitle = 'Home';
-        			break;
-        		case 'client':
-        			this.newTitle = 'Client';
-        			break;
-        		case 'signs':
-      				this.newTitle = signageTab === 'signagePage' ? 'Sign Selector' : 'Sign Pricing';
-        			break;
-      			case 'lights':
-      				this.newTitle = lightingTab === 'areaPage' ? 'Light Areas' : 'Light Pricing';
-      				break;
-      			case 'contact':
-      				this.newTitle = 'Contact';
-      				break;
-      			default:
-      				this.newTitle = '';
-      				return;
-        	}
+          const exit = () => {
+            switch (route) {
+              case 'home':
+                this.newTitle = 'Home';
+                break;
+              case 'client':
+                this.newTitle = 'Client';
+                break;
+              case 'signs':
+                this.newTitle = signageTab === 'signagePage' ? 'Sign Selector' : 'Sign Pricing';
+                break;
+              case 'lights':
+                this.newTitle = lightingTab === 'areaPage' ? 'Light Areas' : 'Light Pricing';
+                break;
+              case 'contact':
+                this.newTitle = 'Contact';
+                break;
+              default:
+                this.newTitle = '';
+                return;
+            }
 
-        	this.cancelAnimation();
-        	this.playAnimation('exit', 'exit');
+            this.cancelAnimation();
+            this.playAnimation('exit', 'exit');
+          };
+
+          this.schedule(exit);
         },
 
 
         _animationFinished(_, animationType) {
         	if (animationType === 'exit') {
-        		this.title = this.newTitle;
-        		this.cancelAnimation();
-        		this.playAnimation('entry', 'entry');
+            this.title = this.newTitle;
+            this.cancelAnimation();
+            this.playAnimation('entry', 'entry');
         	}
         }
 
