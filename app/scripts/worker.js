@@ -13,7 +13,7 @@
 	// github oliver-moran/jimp
 	const Jimp = Self.Jimp;
 	// output quality of image processing, int 0-100
-	const imageQualitySetting = 25;
+	const imageQualitySetting = 20;
 
 
 	const successful = (job, output) => {
@@ -316,11 +316,10 @@
 
 		const data = index => {
 			const {_name, _url} = saved[index];
-			const url 					= _url.replace('http://', 'https://');
 			
 			return {
 				savedName: _name,
-				savedUrl:  url
+				savedUrl:  _url
 			};
 		};
 

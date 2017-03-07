@@ -124,6 +124,30 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         transform: rotate(-90deg);
       }
 
+      .loading {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        border-radius: 50%;
+        overflow: hidden;
+        background-color: rgba(255, 255, 255, 0.8);
+        opacity: 0;
+        transition: opacity 0.2s ease-in;
+      }
+
+      .fadeInLoading {
+        opacity: 1;
+      } 
+
+      paper-spinner-lite {
+        --paper-spinner-color: var(--default-primary-color);
+      }
+
     </style>    
 
     <!-- used only for error handling -->
@@ -149,7 +173,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
              accept="image/*"
              on-change="_userSelectedPictureFile"/>   
 
-      <paper-ripple id="ripple" class="circle" recenters></paper-ripple>
+      <paper-ripple class="circle" recenters></paper-ripple>
       
     </iron-label>
 
@@ -172,8 +196,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
          class="centeredAboveFileInput"
          hidden$="[[!disableThumbnail]]" 
          on-tap="_photoTapped">
-      <paper-ripple id="ripple" class="circle" recenters></paper-ripple>
+      <paper-ripple class="circle" recenters></paper-ripple>
       <iron-icon class="cameraIcon" icon="custom-icons:camera-alt"></iron-icon>
+    </div>
+
+
+    <div id="loading" class="loading" hidden$="[[!showSpinner]]">
+      <paper-spinner-lite alt="Loading photo..." active="[[showSpinner]]"></paper-spinner-lite>
     </div>
 
   </template>
@@ -241,6 +270,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           buttonIcon: {
             type: String,
             value: 'custom-icons:camera-alt'
+          },
+
+          showSpinner: {
+            type: Boolean,
+            value: false
           },
           // when set true will ignore local iron-image and
           // instead send all image urls out to parent through externalSrc events
@@ -351,8 +385,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
+        _showSpinner() {
+          if (this.disableThumbnail) { return; }
+
+          this.showSpinner = true;
+          Polymer.dom(this.$.loading).classList.add('fadeInLoading');
+        },
+
+
+        _hideSpinner() {
+          Polymer.dom(this.$.loading).classList.remove('fadeInLoading');
+          this.async(() => {
+            this.showSpinner = false;
+          }, 200);
+        },
+
+
         _showErrorIcon() {
           this.buttonIcon = this.disconnectedIcon;
+          this._hideSpinner();
           this._hideImageTag();
         },
 
@@ -362,12 +413,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // no need to hide the input label element
           if (this.disableViewer) { return; }
 
+          this._hideSpinner();
+
           if (this.disableThumbnail) { 
             Polymer.dom(this.$.externalSrcIconButton).classList.add('showImageTag');
             return; 
           }
           Polymer.dom(this.$.imageTag).classList.add('showImageTag');
-          this.updateStyles();
         },
 
 
@@ -407,6 +459,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // fire the external src only after the file has been loaded into the browser
           // using iron-image for load timing wether it is hidden or not
           this.fire('photo-capture-external-src', this._makeEventPayload(this.pic));
+          this._showImageTag();
           // then wait for the background-image css to take so there is not a flicker
           // between switching from placeholder to main background div in parent
           this.async(() => {
@@ -440,10 +493,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (status === 0) {
             // reset iron-image src so it will display placeholder again
             this.pic = '#';
+            if (this.placeholder && this.placeholder !== '#') { return; }
             this._showErrorIcon();
           }
         },
-
         // allow an instant preview based directly off the file
         // until it has had a chance to be saved to db
         _lookupTempUrlByKey(key) {
@@ -481,7 +534,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // to save memory and cache in localstorage
         _loadImgFromSavedUrl(url) {
           this.pic = url;
-          this._showImageTag();
+          this._showSpinner();
         },
 
 
@@ -534,7 +587,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _getFile() {
           const files = this.$.input.files;
-          if (!files || !files.length) { return; }
+          if (!files || !files.length) { return {file: null, extension: null}; }
           
           const file = files[0];
           if (!file) { return {file: null, extension: null}; }
