@@ -9,7 +9,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 
-<link rel="import" href="../slide-delete/slide-delete.html">
+<link rel="import" href="area-cards.html">
 <link rel="import" href="../redaap-behaviors/utilities.html">
 <link rel="import" href="../redaap-behaviors/tab-page-animation-behavior.html">
 <link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
@@ -36,11 +36,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         position: relative;
         width: 100%;
         max-width: 460px;
-      }
-
-      .cardContainer {
-        position: relative;
-        margin-bottom: 16px;
       }
 
       paper-card {
@@ -169,14 +164,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       .rightToLeft {
         transform: translate(-4.64px, 0px) rotate(315deg);
       }
-
-      .savedArea {
-        color: var(--primary-text-color);
-      }
-
-      .editButtons {
-        top: -8px;
-      }
       
     </style>
 
@@ -244,32 +231,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </div>
 
         <div id="repeaterDiv" class="repeaterDiv">
-          <template id="areaRepeater" 
-                    is="dom-repeat" 
-                    items="{{userSelectedArray}}"
-                    initial-count="5" 
-                    target-framerate="60" 
-                    strip-whitespace
-                    filter="{{_computeFilterFunc(filter)}}">
-              
-            <slide-delete class="cardContainer"
-                          template-id="areaRepeater"
-                          template-item-class-name="cardContainer"
-                          index="[[index]]">
 
-              <paper-card class="savedArea">
-                <div class="card-content">
-                  <span class="dialogTitle noSelect">[[item.name]]</span>
-                  <paper-icon-button id="editArea" 
-                                     class="buttonRight editButtons"
-                                     on-tap="_editAreaButtonTapped" 
-                                     icon="custom-icons:create">
-                  </paper-icon-button>
-                </div>
-              </paper-card>
-            </slide-delete>
 
-          </template>
+
+          <area-cards cards="{{userSelectedArray}}" 
+                      filter="[[filter]]"
+                      hidden$="[[_computeQuoteCardsMode(mode)]]">
+          </area-cards>
+
+          <area-cards cards="{{bomArray}}" 
+                      filter="[[filter]]"
+                      hidden$="[[_computeBomCardsMode(mode)]]">
+          </area-cards>
+
+
+
         </div>
 
       </div>
@@ -302,23 +278,129 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             notify: true,
         		value: () => ([])
         	},
+
+
+          bom: {
+            type: Object,
+            value: {
+              office: {
+                can: {
+                  base: 'e26',
+                  color: 'white',
+                  contactors: null,
+                  controls: 'dimmer',
+                  emergency: true,
+                  height: 8,
+                  hours: '12/5',
+                  icon: 'canLight',
+                  kelvin: 5000,
+                  lamps: 2,
+                  mount: '',
+                  notes: '',
+                  photos: {
+                    '144443843_433': {
+                      orientation: 0,
+                      placeholder: '',
+                      savedUrl: ''
+                    }
+                  },
+                  qty: 7,
+                  type: '8"',
+                  volts: 120,
+                  watts: 32
+                }
+              }, 
+              break_room: {
+                trouffer: {
+                  base: 'tombstone',
+                  color: 'bronze',
+                  contactors: null,
+                  controls: 'timmer',
+                  emergency: false,
+                  height: 10,
+                  hours: '14/7',
+                  icon: 'fluorescent',
+                  kelvin: 4500,
+                  lamps: 3,
+                  mount: '',
+                  notes: '',
+                  photos: {
+                    '14476453_349': {
+                      orientation: 0,
+                      placeholder: '',
+                      savedUrl: ''
+                    }
+                  },
+                  qty: 4,
+                  type: '2x4',
+                  volts: 208,
+                  watts: 24
+                }
+              }
+            }
+          },
+
+          bomArray: {
+            type: Array,
+            computed: '_computeBomArray(bom.*)'
+          },
+
+
         	// user input area name
         	areaName: String,
 
           filterToggle: {
             type: String,
             value: 'closed'
-          }
+          },
+
+          mode: String
         },
 
-        // match the filter input with the area name substring of the same length
-        _computeFilterFunc(str) {
-          if (!str) { return null; }
-          str = str.toLowerCase();
-          const endOfSubStr = str.length;
-          // return a filter function
-          return item => item.name.substr(0, endOfSubStr).toLowerCase() === str;
+
+        listeners: {
+          'area-cards-edit-button-tapped': '_editAreaButtonTapped'
         },
+
+
+        _computeQuoteCardsMode: mode => (mode && mode === 'quote') ? false : true,
+
+        _computeBomCardsMode:   mode => (mode && mode === 'bom')   ? false : true,
+
+
+
+
+
+        _computeBomArray(obj) {
+          const bom   = obj.base;
+          const keys  = Object.keys(bom);
+          const array = keys.map(key => {
+
+            const fixtureKeys = Object.keys(bom[key]);
+            const fixtures    = fixtureKeys.map(fixKey => 
+                                  Object.assign(bom[key][fixKey], {label: fixKey}));
+
+            return {
+              name: key,
+              fixtures
+            };
+          });
+
+
+          console.log('computing bom array: ', array);
+
+          return array;
+        },
+
+
+        editBom(data) {
+          console.log('edit bom in area-page: ', data);
+        },
+
+
+
+
+
         
         // common func
         _getIndexByName(array, name) {
@@ -524,13 +606,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.onTap = openLightSelector;
         },
 
-
+        // event fired from area-cards.html
         _editAreaButtonTapped(event) {
-          const data = event.model.item;
-
           const openEditor = () => {
             // send data and ref to this element so this.editUSA() can be called by area-edit
-            window.Redaap.areaEdit.init(data, this);
+            window.Redaap.areaEdit.init(event.detail.data, this, this.mode);
           };
           // onTap property found in redaap-behaviors/on-tap-behavior
           // open area-edit and pass in its requred data

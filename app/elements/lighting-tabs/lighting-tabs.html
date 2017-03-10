@@ -29,31 +29,60 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     </style>
 
+      <template is="dom-if" if="[[showQuoteTabs]]">
+        <paper-tabs selected="{{lightingTab}}" attr-for-selected="tabname" selected-class="selectedTab">
+          <span class="flex"></span>
+          <paper-tab tabname="areaPage">
+            <iron-icon id="areaTabIcon" icon="custom-icons:room"></iron-icon>
+            <span class="tabLabel">Areas</span>
+          </paper-tab>
+          <span class="flex"></span>
+          <paper-tab tabname="quoteSelector">
+            <iron-icon id="quoteTabIcon" icon="custom-icons:assignment"></iron-icon>
+            <span class="tabLabel">Pricing</span>
+          </paper-tab>
+          <span class="flex"></span>
+        </paper-tabs>
 
-      <paper-tabs selected="{{lightingTab}}" attr-for-selected="tabname" selected-class="selectedTab">
-        <span class="flex"></span>
-        <paper-tab tabname="areaPage">
-          <iron-icon id="areaTabIcon" icon="custom-icons:room"></iron-icon>
-          <span class="tabLabel">Areas</span>
-        </paper-tab>
-        <span class="flex"></span>
-        <paper-tab tabname="quoteSelector">
-          <iron-icon id="quoteTabIcon" icon="custom-icons:assignment"></iron-icon>
-          <span class="tabLabel">Pricing</span>
-        </paper-tab>
-        <span class="flex"></span>
-      </paper-tabs>
+        <paper-badge id="areaBadge" 
+                     class="badge"
+                     for="areaTabIcon" 
+                     label="[[badgeCount]]">
+        </paper-badge>
+        <paper-badge id="quoteBadge" 
+                     class="badge"
+                     for="quoteTabIcon" 
+                     icon="custom-icons:check">
+        </paper-badge>
+      </template>
 
-      <paper-badge id="areaBadge" 
-                   class="badge"
-                   for="areaTabIcon" 
-                   label="[[badgeCount]]">
-      </paper-badge>
-      <paper-badge id="quoteBadge" 
-                   class="badge"
-                   for="quoteTabIcon" 
-                   icon="custom-icons:check">
-      </paper-badge>
+
+      <template is="dom-if" if="[[!showQuoteTabs]]">
+        <paper-tabs selected="{{lightingTab}}" attr-for-selected="tabname" selected-class="selectedTab">
+          <span class="flex"></span>
+          <paper-tab tabname="areaPage">
+            <iron-icon id="bomAreaTabIcon" icon="custom-icons:room"></iron-icon>
+            <span class="tabLabel">Areas</span>
+          </paper-tab>
+          <span class="flex"></span>
+          <paper-tab tabname="bomSend">
+            <iron-icon id="bomSendTabIcon" icon="custom-icons:send"></iron-icon>
+            <span class="tabLabel">Send</span>
+          </paper-tab>
+          <span class="flex"></span>
+        </paper-tabs>
+
+        <paper-badge id="bomAreaBadge" 
+                     class="badge"
+                     for="bomAreaTabIcon" 
+                     label="[[bomBadgeCount]]">
+        </paper-badge>
+        <paper-badge id="bomSendBadge" 
+                     class="badge"
+                     for="bomSendTabIcon" 
+                     icon="custom-icons:check">
+        </paper-badge>
+      </template>
 
 
   </template>
@@ -75,11 +104,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             value: 'areaPage',
         		notify: true
         	},
-        	// bound from main-page
-        	userSelectedArray: {
-        		type: Array,
-        		notify: true
-        	},
+        	// bound from lighting-main
+        	userSelectedArray: Array,
           // passed in from account-form via main-page if all inputs are complete and valid
           clientValid: Boolean,
           // bound from area-tab to control quote generation flow
@@ -106,17 +132,56 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             value: false,
             computed: '_computeQuoteBadgeState(clientValid, talliesValid)',
             observer: '_setQuoteBadgeState'
+          },
+
+          mode: {
+            type: String,
+            observer: '_modeChanged'
           }
         },
 
-        ready() {
-          // hide quote badge as default to prevent it from an initial flash
-          // if uSA is empty or undefined
-          this._applyHideClass(true, this.$.quoteBadge);
+
+        listeners: {
+          'dom-change': '_ifTemplateDomChanged'
+        },
+
+
+        _ifTemplateDomChanged(event) {
+          this.debounce('lightingTabsDebounce', () => {
+            const hide = () => {
+              // hide quote badge as default to prevent it from an initial flash
+              // if uSA is empty or undefined
+              if (this.mode && this.mode === 'bom') {
+                this._applyHideClass(true, this.$$('#bomSendBadge'));
+                return;
+              }
+              this._applyHideClass(true, this.$$('#quoteBadge'));
+            };
+
+
+            if (this.route === 'lights') {
+              this._show();
+            }
+            this.schedule(hide);
+          }, 10);
+        },
+
+
+        _modeChanged(mode) {
+          if (mode) {
+            if (mode === 'quote') {
+              this.showQuoteTabs = true;
+            } else {
+              this.showQuoteTabs = false;
+            }
+          } else {
+            this._hide();
+          }
         },
 
 
         _applyHideClass(bool, badge) {
+          if (!badge) { return; }
           const apply = () => {
             this.toggleClass('hideBadge', bool, badge);
             badge.updatePosition();
@@ -133,16 +198,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _setQuoteBadgeState(bool, oldBool) {
           if (bool === undefined || oldBool === undefined) { return; }
           
-          this._applyHideClass(!bool, this.$.quoteBadge);
+          this._applyHideClass(!bool, this.$$('#quoteBadge'));
         },
 
         // common badge state code
         _hideAreaTabBadge(bool) {
           this.debounce('badgeDebounce', () => {
             if (!this.badgeCount) {
-              this._applyHideClass(true, this.$.areaBadge);
+              this._applyHideClass(true, this.$$('#areaBadge'));
             } else {
-              this._applyHideClass(bool, this.$.areaBadge);
+              this._applyHideClass(bool, this.$$('#areaBadge'));
             }
           }, 100);
         },
@@ -151,7 +216,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _hideQuoteTabBadges(bool) {
           this.debounce('otherBadgesDebounce', () => {
             if (this.talliesValid) {
-              this._applyHideClass(bool, this.$.quoteBadge);
+              this._applyHideClass(bool, this.$$('#quoteBadge'));
             }
           }, 100);
         },
@@ -171,6 +236,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _show() {
+          if (!this.mode) { return; }
+
           const showTabs = () => {
             this.style.display = 'flex';
             this.async(() => {

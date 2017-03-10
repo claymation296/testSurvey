@@ -21,11 +21,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   /* Application theme */
 
-  :root {
+  html {
+
+    --quote-dark-color: #610000;
+    --quote-primary-color: #7c0000;
+    --quote-light-color: #d4baba;
+
+    --bom-dark-color: #303f9f;
+    --bom-primary-color: #3F51B5;
+    --bom-light-color: #C5CAE9;
+
     --dark-primary-color: #610000;
     --default-primary-color: #7c0000;
     --light-primary-color: #d4baba;
-    --text-primary-color: #FFFFFF; /*text/icons*/
+    --text-primary-color: #FFFFFF;   /*text/icons*/
+    
     /*--accent-color: #ffff8d;*/
     --accent-color: #9E9E9E;
     --primary-background-color: #FFFFFF;
@@ -39,7 +49,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     /* Components */
 
     /* paper-drawer-panel */
-    --drawer-menu-color: #d4baba;
     --drawer-border-color: 1px solid #ccc;
     --drawer-toolbar-border-color: 1px solid rgba(0, 0, 0, 0.22);
 
@@ -53,6 +62,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     --sent-status-color: mediumspringgreen;
   }
 
+
   /* General styles */
 
   paper-toolbar {
@@ -65,7 +75,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   #drawerToolbar {
     color: var(--secondary-text-color);
-    background-color: var(--drawer-menu-color);
+    background-color: var(--light-primary-color);
     border-bottom: var(--drawer-toolbar-border-color);
   }
 

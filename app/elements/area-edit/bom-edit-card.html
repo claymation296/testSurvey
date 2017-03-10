@@ -9,14 +9,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 
-<link rel="import" href="replacements-repeater.html">
 <link rel="import" href="../photo-capture/photo-capture.html">
 <link rel="import" href="../notes-page/notes-button.html">
 <link rel="import" href="../slide-delete/slide-delete.html">
 
 
 
-<dom-module id="area-edit-card">
+<dom-module id="bom-edit-card">
   <template>
     <style include="shared-styles"></style>
     <style>
@@ -86,7 +85,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                        icon="custom-icons:[[item.icon]]" 
                        hidden$="[[!item.icon]]">
             </iron-icon>
-            [[item.label]]
+            [[item.type]] [[item.label]]
           </div>
           
           <photo-capture filename="[[item.label]]"
@@ -103,10 +102,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         </div>
       </slide-delete>
-      
-      <replacements-repeater id="replacementsRepeater" 
-                             replacements="{{item.replacements}}">
-      </replacements-repeater>
 
     </paper-card>
 
@@ -115,7 +110,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <script>
     (function() {
       Polymer({
-        is: 'area-edit-card',
+        is: 'bom-edit-card',
 
         properties: {
 
@@ -143,12 +138,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _forwardEventToParent() {
-          this.fire('area-edit-card-forwarded-delete-animation-done');
+          this.fire('edit-card-forwarded-delete-animation-done');
         },
 
 
         _itemChanged() {
-          this.fire('area-edit-card-item-edited');
+          this.fire('edit-card-item-edited');
         }
 
       });

@@ -9,7 +9,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 
-<link rel="import" href="../account-form/account-form.html">
+<link rel="import" href="lighting-mode.html">
 <link rel="import" href="../area-page/area-page.html">
 <link rel="import" href="../quote-selector/quote-selector.html">
 <link rel="import" href="../redaap-behaviors/utilities.html">
@@ -32,21 +32,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     </style>
 
-    <iron-localstorage name="redaap-userSelectedArray"
-                       value="{{userSelectedArray}}"
-                       error-message="{{localStorageError}}">
-    </iron-localstorage>
-
 
     <neon-animated-pages id="neon" 
                          selected="[[computedTab]]" 
                          attr-for-selected="id">
-
-
       <!-- id's used to reference these elements from outside of lighting-main dom -->
       <area-page id="areaPage"
-                 user-selected-array="{{userSelectedArray}}"
-                 reverse-animation="[[reverseAnimation]]">
+                 mode="[[mode]]"
+                 reverse-animation="[[reverseAnimation]]"
+                 user-selected-array="{{userSelectedArray}}">
       </area-page>
 
       <quote-selector id="quoteSelector"
@@ -56,10 +50,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                       tallies-valid="[[talliesValid]]"
                       reverse-animation="[[reverseAnimation]]">
       </quote-selector>
-
-
-
   	</neon-animated-pages>
+
+    <lighting-mode id="mode"></lighting-mode>
 
   </template>
 
@@ -83,7 +76,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
 
           computedTab: String,
-          // main data collection that is shared with most of the app
+
+          mode: {
+            type: String,
+            notify: true,
+            observer: '_modeChanged'
+          },
+          // quote data collection
           // userSelectedArray === [{count, 
           //                         fixture: {name, label, icon, checked}, 
           //                         replacement: {name, label, icon, color}, 
@@ -185,18 +184,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // the last element found to have zero or no quantity in _validateAreas()
           // so that the highlighted values can be removed in a more performant manner
           // than simply iterating over the entire uSA to find and remove them
-          lastZeroQty: Object,
-          // error message from iron-localstorage
-          localStorageError: {
-            type: String,
-            observer: '_localStorageError'
-          }
+          lastZeroQty: Object
         },
         
 
         observers: [
           '_newFixtureAdded(userSelectedArray.*)'
         ],
+
+
+        listeners: {
+          'lighting-mode-set': '_lightingModeSet'
+        },
 
 
         attached() {
@@ -222,6 +221,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             () => this._accountFormValidated(), 
             false
           );
+        },
+
+        // fired by lighting-mode
+        _lightingModeSet(event) {
+          this.set('mode', event.detail.mode);
+        },
+        
+
+        _modeChanged(mode, oldMode) {
+          if (mode) { 
+            // from app-state
+            if (!oldMode) {
+              this.$.mode.hide(mode);
+              return;
+            }
+            // direct user input
+            this.$.mode.hide();
+            return; 
+          }
+          // initial and after clear survey
+          this.$.mode.enter();
         },
 
         // add saved photo data into the given element
@@ -327,11 +347,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.set('route', 'client');
           }, 800);
         },
-
+        // called by survey-search when user selects a saved survey
         // reset both valid states and hide badges after a survey is loaded in
-        resetValidity() {
-          this.set('clientValid', false);
-          this.set('talliesValid', false);
+        resetQuoteMode(data) {
+          this.set('userSelectedArray', data);
+          this.set('clientValid',       false);
+          this.set('talliesValid',      false);
         },
 
         // action to take in case any of the cards has no quantity entered
@@ -349,7 +370,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // build an array of indexes that lead to each replacement that have a zero qty
           // so that said tally elements can be highlighted for the user
           if (!Array.isArray(this.userSelectedArray) || this.userSelectedArray.length === 0) {
-            this.userSelectedArray = [];
+            this.set('userSelectedArray', []);
             this._isNotValid();
             return;
           }
@@ -430,8 +451,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.surveyDataSnapShot = undefined;
             window.Redaap.accountForm.clearClient();
             window.Redaap.webWorker.clearPhotoData();
-            this.set('clientValid', false);
+            this.set('clientValid',  false);
             this.set('talliesValid', false);
+            this.set('mode', null);
             // reset page to account-form
             this.async(() => {
               this.set('lightingTab', 'areaPage');
@@ -527,12 +549,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             catch(error => {
               this._saveError(error);
             });
-        },
-
-
-
-        _localStorageError(newVal) {
-          console.log(newVal);
         }
 
       });

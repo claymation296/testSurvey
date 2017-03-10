@@ -9,7 +9,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 
-<link rel="import" href="area-edit-card.html">
+<link rel="import" href="quote-edit-card.html">
+<link rel="import" href="bom-edit-card.html">
 <link rel="import" href="../close-save-button/close-save-button.html">
 <link rel="import" href="../redaap-behaviors/utilities.html">
 <link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
@@ -74,12 +75,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     target-framerate="60" 
                     strip-whitespace>
 
-            <template is="dom-if" if="[[showCards]]">
-              <area-edit-card class="card"
+            <template is="dom-if" if="[[showQuoteCards]]">
+              <quote-edit-card class="card"
                               item="{{item}}" 
                               index="[[index]]" 
                               defer-photo="{{deferPhoto}}">
-              </area-edit-card>
+              </quote-edit-card>
+            </template>
+
+            <template is="dom-if" if="[[showBomCards]]">
+              <bom-edit-card class="card"
+                             item="{{item}}" 
+                             index="[[index]]" 
+                             defer-photo="{{deferPhoto}}">
+              </bom-edit-card>
             </template>
 
           </template>
@@ -163,7 +172,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // pull fixtures array out of data for the template repeater
           fixtures:  Array,
 
-          showCards: Boolean,
+          showQuoteCards: Boolean,
+
+          showBomCards: Boolean,
 
           cardObserver: Object,
 
@@ -204,14 +215,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           'neon-animation-finish':                          '_animationFinished',
           // fired from replacement-repeater.html
           'replacements-repeater-zero-quantity':            '_zeroQuantity',
-          // fired by area-edit-card anytime its model data is altered
+          // fired by quote and bom -edit-card anytime its model data is altered
           // used to animate exit button into a check button
-          'area-edit-card-item-edited':                     '_editMade',
-          // forwarded by area-edit-card from slide-delete after delete animation completes
-          'area-edit-card-forwarded-delete-animation-done': '_editMade',
-          // fired from area-edit-card's slide-delete custom element
+          'edit-card-item-edited':                          '_editMade',
+          // forwarded by quote and bom -edit-card from slide-delete after delete animation completes
+          'edit-card-forwarded-delete-animation-done':      '_editMade',
+          // fired from quote and bom -edit-card's slide-delete custom element
           'slide-delete-element-deleted':                   '_removeDeletedElementFromDreading',
-          // fired from area-edit-card's slide-delete custom element
+          // fired from quote and bom -edit-card's slide-delete custom element
           'slide-delete-last-element-deleted':              '_deleteFixture',
           // last-element-deleted event intercepted by replacements-repeater
           // and emmitted as 'last-replacement-deleted' if necessary
@@ -225,6 +236,30 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // must observe splices on fixtures coming back out from slide-delete
           '_fixturesChanged(fixtures.splices)'
         ],
+
+
+
+        // called by area-page edit buttons
+        init(newData, areaPageElement, mode) {
+
+          if (!this.areaPageCE) {
+            this.areaPageCE = areaPageElement;
+          } 
+
+          const setData = () => {
+            // triggers dom-change events that run _repeaterDomInit()
+            this.set('data', newData);
+          };
+
+          this.mode           = mode;
+          this.showQuoteCards = false;
+          this.showBomCards   = false;
+          this.data           = undefined;
+          this.listen(this.$.fixtureRepeater, 'dom-change', '_repeaterDomInit');
+          this.schedule(setData);
+        },
+
+
         // pull fixtures out of data object for the template repeater
         // cannot use a computed property here because of a dom-repeat bug
         _dataChanged(data) {
@@ -239,7 +274,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // observe splices to fixtures and update this.data
-        // should pick up any changes made in area-edit-card
+        // should pick up any changes made in quote-edit-card
         _fixturesChanged(splices) {
           // update this.data
           if (splices) {
@@ -254,7 +289,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _getAllCards() {
-          return Polymer.dom(this.$.content).querySelectorAll('area-edit-card');
+          if (this.mode === 'quote') {
+            return Polymer.dom(this.$.content).querySelectorAll('quote-edit-card');
+          }
+          return Polymer.dom(this.$.content).querySelectorAll('bom-edit-card');
         },
         // repeater dom-change event cb for delete method for deletes
         // originating from within card (not top level delete)
@@ -385,7 +423,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.unlisten(this.$.fixtureRepeater, 'dom-change', '_repeaterDomInit');
 
             const loadCardsCallback = () => {
-              this.showCards    = true;
+              if (this.mode === 'quote') {
+                this.showQuoteCards = true;
+              } else {
+                this.showBomCards = true;
+              }
+              
               const handler     = this._playCardEntry.bind(this);
               this.cardObserver = Polymer.dom(this.$.content).observeNodes(handler);
             };            
@@ -393,25 +436,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             const open = this.open.bind(this, loadCardsCallback);
             this.schedule(open);
           }, 100);
-        },
-
-        // called by area-page edit buttons
-        init(newData, areaPageElement) {
-
-          if (!this.areaPageCE) {
-            this.areaPageCE = areaPageElement;
-          }  
-
-          const setData = () => {
-            // triggers dom-change events that run _repeaterDomInit()
-            this.set('data', newData);
-          };
-
-          this.showCards = false;
-          this.data = undefined;
-          this.listen(this.$.fixtureRepeater, 'dom-change', '_repeaterDomInit');
-          this.schedule(setData);
-        },
+        },        
 
         // called by area-page updateUSA method any time the uSA is updated by solution-view
         update(newData) {
@@ -480,7 +505,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // provide a callback that will be executed after animation completes
           // reset template data
           this.set('data', undefined);
-          this.showCards = false;
+          this.showQuoteCards = false;
+          this.showBomCards   = false;
           this.$.closeButton.makeX();
         },
 
@@ -495,7 +521,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
           // update the model data from uSA with user edits
           const editData = Object.assign({}, this.data);
-          this.areaPageCE.editUSA(editData);
+
+          if (this.mode === 'quote') {
+            this.areaPageCE.editUSA(editData);
+          } else {
+            this.areaPageCE.editBom(editData);
+          }
 
           this.async(() => {
             // onTap property found in redaap-behaviors/on-tap-behavior

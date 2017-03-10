@@ -1,0 +1,110 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+
+
+<dom-module id="lighting-mode-ripple">
+  <template>
+    <style>
+
+      :host {
+        display: none;
+        width: 400vh;
+        height: 400vh;
+        position: absolute;
+        border-radius: 50%;
+        --ripple-color: transparent;
+        background-color: var(--ripple-color);
+      }
+
+    </style>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'lighting-mode-ripple',
+
+        behaviors: [
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.Utilities
+        ],
+
+        properties: {
+          
+          animationConfig: {
+            value() {
+              return {
+              	'entry': {
+                  name: 'transform-animation',
+                  node: this,
+                  transformFrom: 'scale(0, 0)',
+                  transformTo: 'scale(1, 1)',
+                  timing: {duration: 300, easing: 'ease-in'}
+                },
+                'exit': {
+                	name: 'fade-out-animation',
+                	node: this,
+                	timing: {duration: 400, easing: 'ease-out'}
+                }
+              };
+            }
+          }
+        },
+
+
+        listeners: {
+          'neon-animation-finish': '_rippleAnimationFinished'
+        },
+
+        // x y pos of tap event from light-selector to center the ripple origin
+        enter({color, element, mode, styles, x, y}) {
+        	const cookie = {element, mode, styles, type: 'entry'};
+        	this.style.top 			= `calc(${y}px - 200vh)`;
+        	this.style.left 		= `calc(${x}px - 200vh)`;
+        	this.customStyle['--ripple-color'] = color;
+        	this.updateStyles();
+
+        	const run = () => {
+        		this.style.display = 'block';
+        		this.cancelAnimation();
+        		this.playAnimation('entry', cookie);
+        	};
+
+        	this.schedule(run);
+        },
+
+
+        _rippleAnimationFinished(_, cookie) {
+        	if (typeof cookie === 'string' && cookie === 'exit') {
+        		this.style.display = 'none';
+        	} else if (typeof cookie === 'object') {
+        		if (cookie.type === 'entry') {
+        			const hideLightingMode = () => {
+        				cookie.element.fireMode(cookie.mode);
+		        		this.cancelAnimation();
+		        		this.playAnimation('exit', 'exit');
+		        	};
+
+        			Polymer.updateStyles(cookie.styles);
+
+        			this.schedule(hideLightingMode);
+	          }
+        	}
+        }
+ 
+      });
+    })();
+  </script>
+
+</dom-module>
