@@ -1,0 +1,240 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+
+<dom-module id="lighting-mode">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+      	height: 100vh;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        right: 0px;
+        color: var(--primary-text-color);
+        background-color: var(--primary-background-color);
+      }
+
+      #title {
+      	padding: 32px;
+      	text-align: center;
+        font-size: 24px;
+        font-weight: 400;
+      }
+
+      .content {
+      	display: flex;
+      	height: 100%;
+        background-color: var(--primary-background-color);
+      }
+
+      .half {
+      	position: relative;
+      	width: 50%;
+      	height: 100%;
+      	text-align: center;
+      }
+
+      .subTitle {
+      	padding: 16px;
+      	font-size: 20px;
+      }
+
+      paper-button {
+      	width: 100px;
+      	position: absolute;
+      	top: 96px;
+      	left: 50%;
+      	transform: translate(-50%, 0px);
+      	margin: 0px;
+      	color: var(--text-primary-color);
+      }
+
+
+      #quote {
+        border-right: 1px solid #e8e8e8;
+      }
+
+      #quoteBtn {
+      	background-color: var(--quote-primary-color);
+      }
+
+      #bom {
+        border-left: 1px solid #e8e8e8;
+      }
+
+      #bomBtn {
+      	background-color: var(--bom-primary-color);
+      }
+
+      p {
+        position: absolute;
+        top: 148px;
+        padding: 16px;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 20px;
+        color: #727272;
+      }
+
+    </style>
+
+
+    <div id="title" class="noSelect">Lighting Mode</div>
+
+  	<div class="content">
+    
+	    <div id="quote" class="half">
+	    	<div class="subTitle noSelect">Quote</div>
+	    	<paper-button id="quoteBtn" 
+	    								active="[[quoteBtnActive]]" 
+	    								raised
+	    								on-tap="_quoteButtonTapped">
+	    								quote
+	    	</paper-button>
+        <p class="noSelect">
+          Quote Mode is a sales tool, used to get an immediate rough price estimate for an LED lighting upgrade. It is easier to use and much faster to complete than Bill of Materials Mode.  However, a Bill of Materails survey must be completed in order to purchase any product.
+        </p>
+	    </div>
+
+	    <div id="bom" class="half">
+	    	<div class="subTitle noSelect">Bill of Materials</div>
+	    	<paper-button id="bomBtn" 
+	    								acitve="[[!quoteBtnActive]]" 
+	    								raised
+	    								on-tap="_bomButtonTapped">
+	    								bom
+	    	</paper-button>
+        <p class="noSelect">
+          Use Bill of Materials Mode to record an accurate and thorough lighting survey that will be used to order LED upgrade products.  The information gathered in this mode is used by our teams to build a custom solution, then later return precise pricing and install schedules.  
+        </p>
+
+	    </div>
+	  </div>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'lighting-mode',
+
+        behaviors: [ 
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.OnTapBehavior 
+        ],
+
+        properties: {
+
+          animationConfig: {
+            value() {
+              return {
+                'entry': [{
+                  name: 'slide-from-bottom-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-out'}
+                }, {
+                  name: 'transform-animation',
+                  node: this,
+                  transformOrigin: '50% 50%',
+                  transformFrom: 'scale(0, 0)',
+                  transformTo: 'scale(1, 1)',
+                  timing: {duration: 300, easing: 'ease-out'}
+                 }, {
+                  name: 'fade-in-animation',
+                  node: this,
+                  timing: {duration: 200, delay: 100, easing: 'ease-out'}
+                }]
+              };
+            }
+          },
+
+          quoteBtnActive: {
+          	type: Boolean,
+          	value: true
+          },
+
+          modeStyles: {
+            type: Object,
+            value: {
+              bom: {
+                '--default-primary-color': 'var(--bom-primary-color)',
+                '--dark-primary-color':    'var(--bom-dark-color)',
+                '--light-primary-color':   'var(--bom-light-color)'
+              },
+              quote: {
+                '--default-primary-color': 'var(--quote-primary-color)',
+                '--dark-primary-color':    'var(--quote-dark-color)',
+                '--light-primary-color':   'var(--quote-light-color)'
+              }
+            }
+          }
+        },
+
+        // called by lighting-main
+        enter() {
+          this.style.display = 'block';
+          this.cancelAnimation();
+          this.playAnimation('entry');
+        },
+
+        // called by lighting-main
+        hide(mode) {
+          this.style.display = 'none';
+          // update app theme if mode is saved in app-state.html
+          if (mode) {
+            this.async(() => {
+              Polymer.updateStyles(this.modeStyles[mode]);
+            });
+          }
+        },
+
+        // called by lighting-mode-ripple between entry and exit animations
+        fireMode(mode) {
+          this.fire('lighting-mode-set', {mode});
+        },
+        // pass user touch event coords and new styles to be set by
+        // lighting-mode-ripple between its entry and exit animations
+        _runRippleAnimation(mode, styles, event) {
+          const source = event.detail.sourceEvent;
+          const obj = {
+            color:   styles['--default-primary-color'],
+            element: this,
+            mode,
+            x:       source.clientX || source.pageX,
+            y:       source.clientY || source.pageY,
+            styles
+          };
+          
+          window.Redaap.lightingRipple.enter(obj);
+        },
+
+
+        _quoteButtonTapped(event) {
+          this.onTap = this._runRippleAnimation('quote', this.modeStyles.quote, event);
+        },
+
+
+        _bomButtonTapped(event) {
+          this.onTap = this._runRippleAnimation('bom', this.modeStyles.bom, event);
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

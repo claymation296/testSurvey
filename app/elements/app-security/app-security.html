@@ -39,6 +39,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     </style>
 
+
     <template is="dom-if" if="[[!currentUser]]" restamp on-dom-change="_loginTemplateDomChanged">
       <neon-animated-pages id="pages" 
                            selected="[[selected]]"
@@ -89,8 +90,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Boolean,
             value: false
           },
-          // passed to Parse login
-          email: String,
+          // passed to Parse login and databound to app-state.html
+          email: {
+            type: String,
+            notify: true
+          },
           // passed to Parse login and gets cleared after logout
           password: String,
           // current user email username

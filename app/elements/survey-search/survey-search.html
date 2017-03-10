@@ -99,12 +99,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
           // preview data fired from search-page when user selects a preview
           survey: Object,
-          // injected back into app for review and editing
-          // controls light-tally template repeat cards and light-selector dropdowns
-          userSelectedArray: {
-            type: Array,
-            notify: true
-          },
           // databound from search-page
           // needed to track state of search
           // only want to call search once upon first opening of the page
@@ -183,6 +177,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this.style.zIndex = 50;
               this.style.display = 'block';
               this.style.opacity = '0';
+              // catches updates to theme color when switching mode
+              this.updateStyles();
               // must force preview page to measure its header before entry
               this.searchPageCustomElement  = this.$$('#searchPage');
               this.previewPageCustomElement = this.$$('#previewPage');
@@ -321,12 +317,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             prev[curr] = survey[curr];
             return prev;
           }, {});
-
-          // have lighting-main reset 'valid' and 'talliesValid' after fresh reload
-          window.Redaap.lightingMain.resetValidity();
+          // have lighting-main load a new userSelectedArray and 
+          // reset 'valid' and 'talliesValid' after fresh reload
+          window.Redaap.lightingMain.resetQuoteMode(data);
           // pass client object to account-form
           window.Redaap.accountForm.reloadClientFromSavedSurvey(client);
-          this.set('userSelectedArray', data);
           // wait for data to propogate throughout the app then close
           this.async(() => {
             window.requestAnimationFrame(this._animateClosed.bind(this, true));

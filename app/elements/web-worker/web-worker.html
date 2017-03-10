@@ -11,15 +11,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
 <dom-module id="web-worker">
-
-  <style>
-    :host {
-      display: none;
-    }
-  </style>
-
-
   <template>
+    <style>
+
+      :host {
+        display: none;
+      }
+      
+    </style>
 
     <!-- need localstorage outside of worker since it is not available to the worker environment -->
     <iron-localstorage name="redaap-dbStorageController"

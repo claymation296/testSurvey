@@ -1,0 +1,115 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../slide-delete/slide-delete.html">
+
+
+<dom-module id="area-cards">
+  <template>
+  	<style include="shared-styles"></style>
+    <style>
+
+      :host {
+      	display: block;
+      }
+
+      paper-card {
+        margin-bottom: 0px;
+      }
+
+      .cardContainer {
+        position: relative;
+        margin-bottom: 16px;
+      }
+
+      .savedArea {
+        color: var(--primary-text-color);
+      }
+
+      .editButtons {
+        top: -8px;
+      }
+
+      .buttonRight {
+        --paper-icon-button: {
+          float: right;
+        };
+      }
+
+    </style>
+
+    
+
+    <template id="areaRepeater" 
+              is="dom-repeat" 
+              items="{{cards}}"
+              initial-count="5" 
+              target-framerate="60" 
+              strip-whitespace
+              filter="{{_computeFilterFunc(filter)}}">
+        
+      <slide-delete class="cardContainer"
+                    template-id="areaRepeater"
+                    template-item-class-name="cardContainer"
+                    index="[[index]]">
+
+        <paper-card class="savedArea">
+          <div class="card-content">
+            <span class="dialogTitle noSelect">[[item.name]]</span>
+            <paper-icon-button id="editArea" 
+                               class="buttonRight editButtons"
+                               on-tap="_editAreaButtonTapped" 
+                               icon="custom-icons:create">
+            </paper-icon-button>
+          </div>
+        </paper-card>
+      </slide-delete>
+
+    </template>
+
+
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'area-cards',
+
+        properties: {
+
+        	cards: {
+        		type: Array,
+        		notify: true
+        	},
+
+        	filter: String
+        },
+
+
+        // match the filter input with the area name substring of the same length
+        _computeFilterFunc(str) {
+          if (!str) { return null; }
+          str = str.toLowerCase();
+          const endOfSubStr = str.length;
+          // return a filter function
+          return item => item.name.substr(0, endOfSubStr).toLowerCase() === str;
+        },
+
+
+        _editAreaButtonTapped(event) {
+        	this.fire('area-cards-edit-button-tapped', {data: event.model.item});
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

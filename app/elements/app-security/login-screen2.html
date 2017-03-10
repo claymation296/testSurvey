@@ -130,11 +130,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     </style>
 
-    <iron-localstorage name="redaap-userLogin"
-      value="{{email}}"
-      error-message="{{localStorageError}}">
-    </iron-localstorage>
-
 
     <!-- after user taps login/signup the white card will be 'painted' red by this element -->
     <div id="redMain">
@@ -308,13 +303,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           	notify: true
           },
 
-          a11yTarget: Object,
-
-          // error message from iron-localstorage
-          localStorageError: {
-            type: String,
-            observer: '_localStorageError'
-          }
+          a11yTarget: Object
         },
 
 
@@ -327,28 +316,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // for anti-ripple effect
         _setMask(x, y, r) {
           // set the dimensions of the mask
-          this.$.redMain.style.width = `${r}px`;
+          this.$.redMain.style.width  = `${r}px`;
           this.$.redMain.style.height = `${r}px`;
           // place the center of the mask at the tap event source
-          this.$.redMain.style.top = `${y}px`;
-          this.$.redMain.style.left = `${x}px`;
+          this.$.redMain.style.top    = `${y}px`;
+          this.$.redMain.style.left   = `${x}px`;
           // position the card back at the center of the screen
           // it must be placed inside the mask element for the effect to work
           // but then it's neccesary to calculate back to the center of the screen
           // half of the mask dimension minus the difference between the touch event source
           // and the midpoint of the screen
           const height = this.offsetHeight ? (this.offsetHeight / 2) : 0;
-          const width = this.offsetWidth ? (this.offsetWidth / 2) : 0;
-          const top = r ? (y - height) : 0;
-          const left = r ? (x - width) : 0;
-          this.$.redLogin.style.top = `-webkit-calc(50% - ${top}px)`;
-          this.$.redLogin.style.top = `calc(50% - ${top}px)`;
-          this.$.redLogin.style.left = `-webkit-calc(50% - ${left}px)`;
+          const width  = this.offsetWidth  ? (this.offsetWidth  / 2) : 0;
+          const top    = r ? (y - height) : 0;
+          const left   = r ? (x - width)  : 0;
+          this.$.redLogin.style.top  = `calc(50% - ${top}px)`;
           this.$.redLogin.style.left = `calc(50% - ${left}px)`;
-          this.$.hero.style.top = `-webkit-calc(50% - ${top}px)`;
-          this.$.hero.style.top = `calc(50% - ${top}px)`;
-          this.$.hero.style.left = `-webkit-calc(50% - ${left}px)`;
-          this.$.hero.style.left = `calc(50% - ${left}px)`;
+          this.$.hero.style.top      = `calc(50% - ${top}px)`;
+          this.$.hero.style.left     = `calc(50% - ${left}px)`;
         },
 
         _setAnimationConfigByType(type) {
@@ -445,14 +430,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           } else {
             // reset for animation
             this.$.redMain.style.opacity = 0;
-            this.$.redMain.style.zIndex = 0;
+            this.$.redMain.style.zIndex  = 0;
             this.set('hidden', false);
-            this.set('cardElevation', 0);
-            this.set('loginElevation', 0);
+            this.set('cardElevation',   0);
+            this.set('loginElevation',  0);
             this.set('cancelElevation', 0);
-            this.$.loginButton.style.opacity = 0;
-            this.$.cancelButton.style.opacity = 0;
-            this.$.redLoginButton.style.opacity = 1;
+            this.$.loginButton.style.opacity     = 0;
+            this.$.cancelButton.style.opacity    = 0;
+            this.$.redLoginButton.style.opacity  = 1;
             this.$.redCancelButton.style.opacity = 1;
           }
         },
@@ -472,13 +457,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             const getButtonCenterCoords = ({width, height, top, left}) => {
               return {
                 // top left corner pos plus half the total width or height 
-                x: left + (width / 2),
-                y: top + (height / 2)
+                x: left + (width  / 2),
+                y: top +  (height / 2)
               };
             };
             
             const measurements = this.$.loginButton.getBoundingClientRect();
-            const coords = getButtonCenterCoords(measurements);
+            const coords       = getButtonCenterCoords(measurements);
             x = coords.x;
             y = coords.y;
           }
@@ -552,10 +537,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             // fire cancel event up to app-security.html
             this.fire('cancel');
           }, 1);
-        },
-
-        _localStorageError(error) {
-          console.log('login localstorage error: ', error);
         }
 
       });

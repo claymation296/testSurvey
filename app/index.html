@@ -30,7 +30,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <meta name="viewport" 
     content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=0">
 
-  <meta name="generator" content="REDAAP" />
+  <meta name="generator" content="REDAAP">
   <title>REDAAP</title>
   <!-- Place favicon.ico in the `app/` directory -->
 
@@ -136,6 +136,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   
   <template is="dom-bind" id="app">
 
+
+    <app-state state="{{state}}"></app-state>
+
+    <web-worker saved-photo-data="{{savedPhotoData}}" queue-size="{{queueSize}}"></web-worker>
+
+
     <!-- inline style to work around mobile scroll issue before new carbon elements are released -->
     <paper-drawer-panel id="paperDrawerPanel" responsive-width="1281px" disable-edge-swipe>
 
@@ -229,17 +235,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           <!-- lighting-tabs are hidden when not on 'lighting' menu selection -->
           <lighting-tabs class="bottom bottom-container center horizontal layout"
+                         client-valid="[[state.clientValid]]"
                          lighting-tab="{{lightingTab}}"
-                         selected-label="{{selectedLabel}}"
-                         user-selected-array="{{userSelectedArray}}"
+                         mode="[[state.mode]]"
                          route="[[route]]"
-                         client-valid="[[clientValid]]"
-                         tallies-valid="{{talliesValid}}">
+                         selected-label="{{selectedLabel}}"
+                         tallies-valid="{{state.talliesValid}}"
+                         user-selected-array="[[state.userSelectedArray]]">
           </lighting-tabs>
 
           <signage-tabs class="bottom bottom-container center horizontal layout"
                         signage-tab="{{signageTab}}"
-                        client-valid="[[clientValid]]"
+                        client-valid="[[state.clientValid]]"
                         route="[[route]]">
           </signage-tabs>
 
@@ -261,10 +268,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </section> -->
 
           <section data-route="client">
-            <account-form client="{{client}}"
+            <account-form client="{{state.client}}"
                           displayed-client-company-name="{{displayedClientCompanyName}}"
                           version="[[version]]" 
-                          client-valid="{{clientValid}}"
+                          client-valid="{{state.clientValid}}"
                           route="{{route}}">
             </account-form>
           </section>
@@ -274,16 +281,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </section>
 
           <section data-route="lights">
-            <lighting-main lighting-tab="{{lightingTab}}"
-                           user-selected-array="{{userSelectedArray}}"
-                           selected-pricing="{{selectedPricing}}"
-                           version="{{version}}"
+            <lighting-main client="[[state.client]]"
+                           client-valid="{{state.clientValid}}"
                            displayed-client-company-name="{{displayedClientCompanyName}}"
-                           client="[[client]]"
-                           client-valid="{{clientValid}}"
-                           tallies-valid="{{talliesValid}}"
+                           lighting-tab="{{lightingTab}}"
+                           mode="{{state.mode}}"
                            route="{{route}}"
-                           saved-photo-data="[[savedPhotoData]]">
+                           saved-photo-data="[[savedPhotoData]]"
+                           selected-pricing="{{selectedPricing}}"
+                           tallies-valid="{{state.talliesValid}}"
+                           user-selected-array="{{state.userSelectedArray}}"
+                           version="{{version}}">
             </lighting-main>
           </section>
 
@@ -311,7 +319,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                             style="background-color: white; padding: 16px;">
               <h2 class="page-title">Contact Us</h2>
               <p>quicksale@teuservices.com</p>
-              <p>v0.4.7</p>
+              <p>v0.4.8</p>
             </paper-material>
           </section>
 
@@ -324,9 +332,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <!-- ************************ overlays *************************** -->
 
-    <web-worker saved-photo-data="{{savedPhotoData}}" queue-size="{{queueSize}}"></web-worker>
+    <app-security email="{{state.email}}" displayed-user-name="{{userName}}"></app-security>
 
-    <app-security displayed-user-name="{{userName}}"></app-security>
+    <lighting-mode-ripple></lighting-mode-ripple>
 
     <area-edit></area-edit>
 
@@ -338,10 +346,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <photo-viewer></photo-viewer>
 
-    <account-nav route="{{route}}" client-valid="[[clientValid]]"></account-nav>
+    <account-nav route="{{route}}" client-valid="[[state.clientValid]]"></account-nav>
 
     <quote-page selected-pricing="[[selectedPricing]]"
-                client="[[client]]"
+                client="[[state.client]]"
                 version="[[version]]">
     </quote-page>
 
@@ -349,9 +357,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <success-page></success-page>
 
-    <survey-search user-selected-array="{{userSelectedArray}}"
-                   lighting-tab="{{lightingTab}}">
-    </survey-search>
+    <survey-search lighting-tab="{{lightingTab}}"></survey-search>
 
     
 

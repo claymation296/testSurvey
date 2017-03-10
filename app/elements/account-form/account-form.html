@@ -43,15 +43,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     </style>
 
-    <iron-localstorage id="localstorage" 
-                       name="redaap-client"
-                       value="{{client}}"
-                       auto-save-disabled
-                       on-iron-localstorage-load="_loadClientFromLocalstorage"
-                       on-iron-localstorage-load-empty="_initializeClientLocalstorage"
-                       error-message="{{localStorageError}}">
-    </iron-localstorage>
-
 
     <div id="content">
 
@@ -68,13 +59,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[a-zA-Z\s]"
                          prevent-invalid-input 
-                         value="{{info.clientName}}">
+                         value="{{inputs.clientName}}">
             </paper-input>
             <gold-phone-input id="phone"
                               label="Phone Number *"
                               auto-validate 
                               required
-                              value="{{info.phone}}">
+                              maxLength="12"
+                              value="{{inputs.phone}}">
             </gold-phone-input>
             <!-- dont allow spaces, newline, carriage returns, etc. 
                  allow any alphanumeric combo before one '@' followed by 
@@ -88,7 +80,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          auto-validate 
                          required 
                          error-message="Please enter a valid email format"
-                         value="{{info.email}}">
+                         value="{{inputs.email}}">
             </paper-input>
             <paper-input label="Company *"
                          autocapitalize 
@@ -99,7 +91,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[0-9a-zA-Z\s]"
                          prevent-invalid-input 
-                         value="{{info.companyName}}">
+                         value="{{inputs.companyName}}">
             </paper-input>
             <paper-input label="Address"
                          autocapitalize 
@@ -109,7 +101,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[.#0-9a-zA-Z\s]"
                          prevent-invalid-input 
-                         value="{{info.address}}">
+                         value="{{inputs.address}}">
             </paper-input>
             <paper-input label="City"
                          autocapitalize 
@@ -120,7 +112,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter 
                          allowed-pattern="[a-zA-Z\s]"
                          prevent-invalid-input
-                         value="{{info.city}}">
+                         value="{{inputs.city}}">
             </paper-input>
             <paper-input id="state"
                          label="State Abbreviation"
@@ -132,11 +124,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          minLength="2" 
                          maxLength="2"
                          error-message="Please use two letter state code only"
-                         value="{{info.state}}">
+                         value="{{inputs.state}}">
             </paper-input>
             <gold-zip-input id="zip"
                             auto-validate
-                            value="{{info.zip}}">
+                            value="{{inputs.zip}}">
             </gold-zip-input>
           </div>
           <paper-item class="noSelect">* required fields</paper-item>
@@ -153,7 +145,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          maxLength="30" char-counter
                          allowed-pattern="[#0-9a-zA-Z\s]"
                          prevent-invalid-input 
-                         value="{{info.projectName}}">
+                         value="{{inputs.projectName}}">
             </paper-input>
             <paper-input label="Project Address"
                          autocapitalize 
@@ -163,7 +155,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[.#0-9a-zA-Z\s]"
                          prevent-invalid-input
-                         value="{{info.projectAddress}}">
+                         value="{{inputs.projectAddress}}">
             </paper-input>
             <paper-input label="Project City"
                          autocapitalize 
@@ -174,7 +166,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter 
                          allowed-pattern="[a-zA-Z\s]"
                          prevent-invalid-input
-                         value="{{info.projectCity}}">
+                         value="{{inputs.projectCity}}">
             </paper-input>
             <paper-input id="projectState"
                          label="Project State Abbreviation"
@@ -186,11 +178,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          minLength="2" 
                          maxLength="2"
                          error-message="Please use two letter state code only"
-                         value="{{info.projectState}}">
+                         value="{{inputs.projectState}}">
             </paper-input>
             <gold-zip-input id="projectZip"
                             auto-validate
-                            value="{{info.projectZip}}">
+                            value="{{inputs.projectZip}}">
             </gold-zip-input>
             <paper-input label="Project Site Contact"
                          autocapitalize 
@@ -200,7 +192,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[a-zA-Z\s]"
                          prevent-invalid-input
-                         value="{{info.projectContact}}">
+                         value="{{inputs.projectContact}}">
             </paper-input>
             <paper-input label="Project Job Description"
                          autocapitalize 
@@ -208,7 +200,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          autocorrect
                          maxLength="30" 
                          char-counter
-                         value="{{info.projectDescription}}">
+                         value="{{inputs.projectDescription}}">
             </paper-input>
           </div>    
         </paper-card>
@@ -234,14 +226,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // shares data with main-page and localstorage
           client: {
           	type: Object,
-          	notify: true
+          	notify: true,
+            observer: '_clientChanged'
           },
-          // used to clear input
-          clearInput: {
+
+
+          inputs: {
             type: Object,
             value: {
               clientName: '',
-              phone: '',
+              phone: null,
               email: '',
               companyName: '',
               address: '',
@@ -258,12 +252,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               surveyVersion: undefined
             }
           },
-          // holds client info from input fields
-          info: {
+          // used to clear inputs
+          clearInputs: {
             type: Object,
             value: {
               clientName: '',
-              phone: '',
+              phone: null,
               email: '',
               companyName: '',
               address: '',
@@ -284,7 +278,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           displayedClientCompanyName: {
             type: String,
             notify: true,
-            computed: '_computeDisplayedClientCompanyName(info.companyName)'
+            computed: '_computeDisplayedClientCompanyName(inputs.companyName)'
           },
           // a list of element id's that will be checked for proper format validity
           idArray: {
@@ -316,39 +310,68 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: String,
             notify: true
           },
-          
-          localStorageError: {
-            type: String,
-            observer: '_localStorageError'
+          // skip initial definition of inputs
+          initialLoad: {
+            type: Boolean,
+            value: true
           }
         },
 
 
         observers: [
-        	'_populateClientObj(info.*)'
+        	'_inputsChanged(inputs.*)'
         ],
-
-
-
-
 
 
         // !!!!!!!!!!@@@@@@####### temporary solution until a 'home' page is created $$$$$$$$%%%%
         attached() {
           if (this.route === 'home') {
             this.set('route', 'client');
+          }          
+        },
+
+
+        _computeDisplayedClientCompanyName: str => (str.length > 25) ? `${str.slice(0, 22)}...` : str,
+
+
+        _updateInputsFromLocalstorage(client) {
+          // must iterate through this.inputs in order to propagate data down
+          // to local dom inputs (Object.assign will not work here 3/10/2017)
+          const keys = Object.keys(client);
+
+          keys.forEach(key => {
+            const val = client[key];
+            if (val) {
+              this.set(`inputs.${key}`, val);
+            }
+          });
+        },
+
+
+        _clientChanged(client, oldClient) {
+          this.set('clientValid', false);
+          // oldClient undefined on initial page load 
+          // and client becomes truthy when app-state sets it
+          if (client && !oldClient) {
+            this._updateInputsFromLocalstorage(client);
           }
         },
 
 
+        _inputsChanged(inputs) {
+          this.debounce('account-inputs-debounce', () => {
+            // the first time inputs is changed is when it is initially defined
+            // which blows away this.client if there is data saved in app-state
+            // so skip the initial inputs definition
+            if (this.initialLoad) {
+              this.initialLoad = false;
+              return;
+            }
 
-
-
-
-        
-
-        // decouple this.info from any notifying properties and truncate string
-        _computeDisplayedClientCompanyName: str => (str.length > 25) ? `${str.slice(0, 22)}...` : str,
+            this.client = undefined;
+            this.set('client', inputs.base);
+          }, 100);
+        },
 
         
         _clientValidChanged(bool, oldBool) {
@@ -365,34 +388,35 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
         },
 
+        _searchObject(obj, value) {
+          const requiredFields = key => {
+            const required = (
+              key === 'clientName' ||
+              key === 'phone'      ||
+              key === 'email'      ||
+              key === 'companyName'
+            );
+
+            return required;
+          };
+
+          for (const key in obj) {
+            if (requiredFields(key)) {
+              if (!obj[key] || obj[key].trim() === value) {
+                return true;
+              }
+            }
+          }
+
+          return false;
+        },
+
         // called by account-fab
         checkForm() {
           const load = () => {
-            // cb for filter function
-            const requiredFields = key => {
-              const required = (
-                key === 'clientName' ||
-                key === 'phone'      ||
-                key === 'email'      ||
-                key === 'companyName'
-              );
-              return required;
-            };
-            // searches a shallow object for a given value and returns a boolean
-            const searchObject = (obj, value) => {
-              for (const key in obj) {
-                if (requiredFields(key)) {
-                  if (obj[key].trim() === value) {
-                    return true;
-                  }
-                }
-              }
-
-              return false;
-            };
             // create a function that returns a boolean based on the client obj values
             // true if any inputs are left blank and false if they have all been filled in
-            const emptyInput = searchObject(this.info, '');
+            const emptyInput = this._searchObject(this.client, '');
             // loop through this.idArray to find any elements with false values
             // meaning an input field value has an invalid format
             // if the element has a value, run the validate method, otherwise return true
@@ -419,82 +443,41 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const setInputs = () => {
             // allow user to copy entries to matching project inputs if
             // they are the same place 
-            const {companyName, address, city, state, zip} = this.info;
+            const {companyName, address, city, state, zip} = this.inputs;
 
-            this.set('info.projectName', companyName);
-            this.set('info.projectAddress', address);
-            this.set('info.projectCity', city);
-            this.set('info.projectState', state);
-            this.set('info.projectZip', zip);
+            this.set('inputs.projectName',    companyName);
+            this.set('inputs.projectAddress', address);
+            this.set('inputs.projectCity',    city);
+            this.set('inputs.projectState',   state);
+            this.set('inputs.projectZip',     zip);
           };
           // onTap property found in redaap-behaviors/on-tap-behavior
           this.onTap = setInputs;
         },
 
-        // this.client follows this.info
-        _populateClientObj(info) {
-        	if (info.base) {
-            this.debounce('localstorageDebounce', () => {
-              const save = () => {
-                // reset valid if user makes any changes
-                this.set('clientValid', false);
-                // force localstorage to save the entire object
-                // at once instead of iterating over individual keys
-                // because localstorage autosave listens for value.*
-                this.client = undefined;
-                this.set('client', info.base);
-                this.$.localstorage.save();
-              };
-
-              this.schedule(save);
-            }, 500);
-        	}
-        },
-
         // called by survey-search.html anytime the user loads in an old survey
         reloadClientFromSavedSurvey(obj) {
-          this.info = obj;
-          this.set('client', obj);
-          this.$.localstorage.save();
+          const reload = () => {
+            this.inputs = undefined;
+            this.set('inputs', obj);
+          };
+          
+          this.schedule(reload);
         },
-
-
-        _resetInput() {
-          this.info = Object.assign({}, this.clearInput);
-        },
-        // clearClient is called by main-page
+        // clearClient is called by lighting-main
         // when user chooses to clear the survey
-        // reset input as well as client/localstorage
         clearClient() {
           const clear = () => {
-            this._resetInput();
-            this.set('client', this.info);
-            this.$.localstorage.save();
+            this.inputs = undefined;
+            this.set('inputs', Object.assign({}, this.clearInputs));
           };
-
+          
           this.schedule(clear);
         },
 
         // passed in from main-page
         _newVersion(v) {
-        	this.set('client.surveyVersion', v);
-          this.$.localstorage.save();
-        },
-
-        // populate paper-inputs with cached data
-        _loadClientFromLocalstorage() {
-          this.info = this.client;
-        },
-
-        // invoked if localstorage cache is empty
-        _initializeClientLocalstorage() {
-          this.set('client', this.info);
-          this.$.localstorage.save();
-        },
-        
-
-        _localStorageError(error) {
-          console.log('client localstorage error: ', error);
+        	this.set('inputs.surveyVersion', v);
         }
 
       });
