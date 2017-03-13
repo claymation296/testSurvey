@@ -10,7 +10,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
 <link rel="import" href="quote-edit-card.html">
-<link rel="import" href="bom-edit-card.html">
+<link rel="import" href="bom-edit-row.html">
 <link rel="import" href="../close-save-button/close-save-button.html">
 <link rel="import" href="../redaap-behaviors/utilities.html">
 <link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
@@ -26,7 +26,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       :host {
         @apply(--fullscreen-elements);
-        background-color: white;
+        background-color: var(--primary-background-color);
       }
 
       paper-toolbar {
@@ -77,18 +77,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             <template is="dom-if" if="[[showQuoteCards]]">
               <quote-edit-card class="card"
-                              item="{{item}}" 
-                              index="[[index]]" 
-                              defer-photo="{{deferPhoto}}">
+                               item="{{item}}" 
+                               index="[[index]]" 
+                               defer-photo="{{deferPhoto}}">
               </quote-edit-card>
             </template>
 
             <template is="dom-if" if="[[showBomCards]]">
-              <bom-edit-card class="card"
-                             item="{{item}}" 
-                             index="[[index]]" 
-                             defer-photo="{{deferPhoto}}">
-              </bom-edit-card>
+              <bom-edit-row class="card"
+                            area="[[data.name]]"
+                            light="{{item}}" 
+                            index="[[index]]" 
+                            defer-photo="{{deferPhoto}}">
+              </bom-edit-row>
             </template>
 
           </template>
@@ -212,7 +213,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         listeners: {
-          'neon-animation-finish':                          '_animationFinished',
+          'neon-animation-finish':                          '_areaEditAnimationFinished',
           // fired from replacement-repeater.html
           'replacements-repeater-zero-quantity':            '_zeroQuantity',
           // fired by quote and bom -edit-card anytime its model data is altered
@@ -228,7 +229,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // and emmitted as 'last-replacement-deleted' if necessary
           'replacements-repeater-last-replacement-deleted': '_deleteFixture',
           // fired by close-save-button
-          'close-save-button-tapped':                       '_closeButtonTapped'
+          'close-save-button-tapped':                       '_closeButtonTapped',
+          // fired by bom-edit-fullscreen close button
+          'bom-edit-fullscreen-close-button-tapped':        '_closeButtonTapped'
         },
         
 
@@ -236,8 +239,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // must observe splices on fixtures coming back out from slide-delete
           '_fixturesChanged(fixtures.splices)'
         ],
-
-
 
         // called by area-page edit buttons
         init(newData, areaPageElement, mode) {
@@ -292,7 +293,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (this.mode === 'quote') {
             return Polymer.dom(this.$.content).querySelectorAll('quote-edit-card');
           }
-          return Polymer.dom(this.$.content).querySelectorAll('bom-edit-card');
+          return Polymer.dom(this.$.content).querySelectorAll('bom-edit-row');
         },
         // repeater dom-change event cb for delete method for deletes
         // originating from within card (not top level delete)
@@ -396,7 +397,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _animationFinished(_, animationType) {
+        _areaEditAnimationFinished(_, animationType) {
           if (animationType === 'cardEntry') {
             const loadPhotos = () => {
               this.deferPhoto = true;
@@ -412,6 +413,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.allCards = this._getAllCards();
           this.animationConfig.cardEntry[0].nodes = this.allCards; 
           this.animationConfig.cardEntry[1].nodes = this.allCards;
+          this.cancelAnimation();
           this.playAnimation('cardEntry', 'cardEntry');
         },
 

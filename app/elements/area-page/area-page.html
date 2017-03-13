@@ -232,8 +232,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         <div id="repeaterDiv" class="repeaterDiv">
 
-
-
           <area-cards cards="{{userSelectedArray}}" 
                       filter="[[filter]]"
                       hidden$="[[_computeQuoteCardsMode(mode)]]">
@@ -243,8 +241,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                       filter="[[filter]]"
                       hidden$="[[_computeBomCardsMode(mode)]]">
           </area-cards>
-
-
 
         </div>
 
@@ -283,60 +279,167 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           bom: {
             type: Object,
             value: {
-              office: {
-                can: {
-                  base: 'e26',
-                  color: 'white',
-                  contactors: null,
-                  controls: 'dimmer',
-                  emergency: true,
-                  height: 8,
-                  hours: '12/5',
-                  icon: 'canLight',
-                  kelvin: 5000,
-                  lamps: 2,
-                  mount: '',
-                  notes: '',
-                  photos: {
-                    '144443843_433': {
-                      orientation: 0,
-                      placeholder: '',
-                      savedUrl: ''
-                    }
+              areas: {
+                'office': {
+                  fixtures: {
+                    '8in_can': true,
+                    '2x4_trouffer': true
                   },
-                  qty: 7,
-                  type: '8"',
-                  volts: 120,
-                  watts: 32
-                }
-              }, 
-              break_room: {
-                trouffer: {
-                  base: 'tombstone',
-                  color: 'bronze',
-                  contactors: null,
-                  controls: 'timmer',
-                  emergency: false,
-                  height: 10,
-                  hours: '14/7',
-                  icon: 'fluorescent',
-                  kelvin: 4500,
-                  lamps: 3,
-                  mount: '',
-                  notes: '',
                   photos: {
-                    '14476453_349': {
-                      orientation: 0,
-                      placeholder: '',
-                      savedUrl: ''
-                    }
+                    '144443843_433': true
+                  }
+                },
+                'break_room': {
+                  fixtures: {
+                    '2x4_trouffer': true
                   },
-                  qty: 4,
-                  type: '2x4',
-                  volts: 208,
-                  watts: 24
+                  photos: {
+                    '14476453_349': true
+                  }
+                },
+                'main_entrance': {
+                  fixtures: {
+                    '8in_can': true
+                  },
+                  photos: {
+                    '14473455_146': true
+                  }
                 }
-              }
+              },
+              fixtures: {
+                '8in_can': {
+                  'office': {
+                    base: 'e26',
+                    catagory: 'can',
+                    color: 'white',
+                    contactors: null,
+                    controls: 'dimmer',
+                    emergency: {
+                      qty: 4
+                    },
+                    height: 8,
+                    hours: '12/5',
+                    icon: 'canLight',
+                    kelvin: 4500,
+                    label: '8 inch Can',
+                    lamps: 1,
+                    mount: '',
+                    notes: '',
+                    photos: {
+                      '144443843_433': true
+                    },
+                    qty: 7,
+                    type: '8in',
+                    volts: 120,
+                    watts: 20
+                  },
+                  'main_entrance': {
+                    base: 'pl',
+                    catagory: 'can',
+                    color: 'white',
+                    contactors: null,
+                    controls: 'timer',
+                    emergency: false,
+                    height: 12,
+                    hours: '8/7',
+                    icon: 'canLight',
+                    label: '8 inch Can',
+                    kelvin: 5000,
+                    lamps: 2,
+                    mount: '',
+                    notes: '',
+                    photos: {
+                      '144475694_394': true
+                    },
+                    qty: 4,
+                    type: '8in',
+                    volts: 120,
+                    watts: 32
+                  }
+                },
+                '2x4_trouffer': {
+                  'break_room': {
+                    base: 'tombstone',
+                    catagory: 'trouffer',
+                    color: 'white',
+                    contactors: null,
+                    controls: 'motion',
+                    emergency: false,
+                    height: 10,
+                    hours: '14/7',
+                    icon: 'fluorescent',
+                    kelvin: 4500,
+                    label: '2x4 Trouffer',
+                    lamps: 3,
+                    mount: '',
+                    notes: '',
+                    photos: {
+                      '14476453_349': true
+                    },
+                    qty: 4,
+                    type: '2x4',
+                    volts: 208,
+                    watts: 24
+                  },
+                  'office': {
+                    base: 'tombstone',
+                    catagory: 'trouffer',
+                    color: 'white',
+                    contactors: null,
+                    controls: 'timer',
+                    emergency: false,
+                    height: 10,
+                    hours: '12/7',
+                    icon: 'fluorescent',
+                    kelvin: 4500,
+                    label: '2x4 Trouffer',
+                    lamps: 2,
+                    mount: '',
+                    notes: '',
+                    photos: {
+                      '14473455_146': true
+                    },
+                    qty: 6,
+                    type: '2x4',
+                    volts: 208,
+                    watts: 28
+                  }
+                }
+              },
+              photos: {
+                '144443843_433': {
+                  area: 'office',
+                  fixture: '8in_can',
+                  orientation: 0,
+                  placeholder: '',
+                  savedUrl: '',
+                  time: ''
+                },
+                '144475694_394': {
+                  area: 'main_entrance',
+                  fixture: '8in_can',
+                  orientation: 6,
+                  placeholder: '',
+                  savedUrl: '',
+                  time: ''
+                },
+                '14476453_349': {
+                  area: 'break_room',
+                  fixture: '2x4_trouffer',
+                  orientation: 0,
+                  placeholder: '',
+                  savedUrl: '',
+                  time: ''
+                },
+                '14473455_146': {
+                  area: 'office',
+                  fixture: '2x4_trouffer',
+                  orientation: 0,
+                  placeholder: '',
+                  savedUrl: '',
+                  time: ''
+                }
+              }              
             }
           },
 
@@ -362,32 +465,34 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           'area-cards-edit-button-tapped': '_editAreaButtonTapped'
         },
 
-
         _computeQuoteCardsMode: mode => (mode && mode === 'quote') ? false : true,
 
         _computeBomCardsMode:   mode => (mode && mode === 'bom')   ? false : true,
 
 
-
-
-
         _computeBomArray(obj) {
           const bom   = obj.base;
-          const keys  = Object.keys(bom);
-          const array = keys.map(key => {
+          const areas = Object.keys(bom.areas);
 
-            const fixtureKeys = Object.keys(bom[key]);
-            const fixtures    = fixtureKeys.map(fixKey => 
-                                  Object.assign(bom[key][fixKey], {label: fixKey}));
+          const array = areas.map(area => {
+            const name        = area.split('_').join(' ');
+            const fixtureKeys = Object.keys(bom.areas[area].fixtures);
 
+            const fixtures = fixtureKeys.map(fixKey => {
+              const fixture   = Object.assign({}, bom.fixtures[fixKey][area]);
+              const photoKeys = Object.keys(fixture.photos);
+              // add photo data to each item in the new photos array
+              const photos    = photoKeys.map(photoKey => 
+                                  Object.assign({key: photoKey}, bom.photos[photoKey]));
+              fixture.photos  = photos;
+              return fixture;
+            });
+            // data obj in area-cards.html
             return {
-              name: key,
-              fixtures
+              fixtures,
+              name
             };
           });
-
-
-          console.log('computing bom array: ', array);
 
           return array;
         },
