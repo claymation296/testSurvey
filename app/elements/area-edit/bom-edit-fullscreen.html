@@ -1,0 +1,400 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+<link rel="import" href="../redaap-behaviors/open-close-fullscreen-behavior.html">
+<link rel="import" href="../redaap-behaviors/expand-collapse-classes-behavior.html">
+<link rel="import" href="../close-save-button/close-save-button.html">
+<link rel="import" href="../photo-capture/photo-capture.html">
+<link rel="import" href="../notes-page/notes-button.html">
+
+
+
+<dom-module id="bom-edit-fullscreen">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+      	@apply(--fullscreen-elements);
+        background-color: var(--primary-background-color);
+      }
+
+      paper-scroll-header-panel {
+        --paper-scroll-header-panel-full-header: {
+          background-color: transparent;
+        };
+        --paper-scroll-header-panel-condensed-header: {
+          background-color: var(--light-primary-color);
+        };
+        --paper-scroll-header-panel-header-container: {
+          background-color: var(--light-primary-color);
+        };
+        --paper-scroll-header-panel-container: {
+          display: flex;
+          justify-content: center;
+          background-color: var(--primary-background-color);
+        };
+      }
+
+      paper-toolbar {
+        color: var(--primary-text-color);
+        --paper-toolbar-background: transparent;
+        --paper-toolbar-title: {
+          line-height: normal;
+        };
+      }
+
+      .itemIcons {
+        --iron-icon-width: 48px;
+        --iron-icon-height: 48px;
+        --iron-icon-stroke-color: var(--primary-text-color);
+      }
+
+      photo-capture {
+        --photo-capture-background-color: transparent;
+      }
+      
+    </style>
+
+    <paper-scroll-header-panel id="panel">
+      <paper-toolbar id="toolbar" class="tall">
+        <paper-icon-button id="backButton" 
+                           on-tap="_bomBackButtonTapped" 
+                           icon="custom-icons:arrow-back">
+        </paper-icon-button>
+        <span id="title" class="flex title">[[area]]</span>
+
+        <close-save-button id="closeButton"></close-save-button>
+
+
+
+        <iron-icon id="lightIcon" class="bottom itemIcons" 
+                   icon="custom-icons:[[light.icon]]" 
+                   hidden$="[[!light.icon]]">
+        </iron-icon>
+
+        <span id="bottomTitle" class="bottom dialogTitle noSelect">[[light.label]]</span>
+
+        <span class="bottom flex"></span>
+
+        <photo-capture id="capture" 
+        							 class="bottom" 
+        							 filename="[[light.label]]"
+                       key="{{photo.key}}"
+                       keys="{{photo.keys}}"
+                       orientation="{{photo.orientation}}"
+                       placeholder="{{photo.placeholder}}"
+                       saved-url="{{photo.savedUrl}}" 
+                       disable-thumbnail
+                       defer-load 
+                       defer-trigger="{{deferPhoto}}">
+        </photo-capture>
+
+
+        <notes-button id="notes" class="bottom" existing-fixture="{{light}}"></notes-button>
+
+
+
+      </paper-toolbar>
+
+
+
+
+
+      
+
+
+
+
+            
+
+    </paper-scroll-header-panel>
+
+    
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'bom-edit-fullscreen',
+
+        behaviors: [
+        	window.Redaap.Behaviors.Utilities,
+          window.Redaap.Behaviors.OnTapBehavior,
+          window.Redaap.Behaviors.OpenCloseFullscreenBehavior, 
+          window.Redaap.Behaviors.ExpandCollapseClassesBehavior 
+        ],
+
+        properties: {
+
+        	animationConfig: {
+            value() {
+              return {
+                'entry': [{
+                  name: 'slide-from-top-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'slide-from-top-animation',
+                  nodes:  [
+                    this.$.backButton, 
+                    this.$.title,
+                    this.$.lightIcon,
+                    this.$.bottomTitle, 
+                    this.$.closeButton,
+                    this.$.capture,
+                    this.$.notes
+                  ],
+                  timing: {duration: 200, delay: 50, easing: 'ease-out'}
+                }, {
+                  name: 'cascaded-animation',
+                  animation: 'fade-in-animation',
+                  nodes:  [
+                    this.$.backButton, 
+                    this.$.title,
+                    this.$.lightIcon,
+                    this.$.bottomTitle, 
+                    this.$.closeButton,
+                    this.$.capture,
+                    this.$.notes
+                  ],
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
+                }],
+                'bomEditBack': [{
+                  name: 'slide-left-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this,
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
+                }]
+              };
+            }
+          },
+
+          area: String,
+
+          light: Object,
+
+          photo: {
+          	type: Object,
+          	computed: '_computePhoto(light.photos)'
+          },
+
+          orientation: {
+          	type: Number,
+          	computed: '_computeOrientation(photo.orientation)',
+          	observer: '_orientationChanged'
+          },
+          // trigger the photos to load after the entry animation completes
+          deferPhoto: {
+            type: Boolean,
+            notify: true
+          }
+        },
+
+        listeners: {
+          'neon-animation-finish':      '_bomFullscreenAnimationFinished',
+          // fired by photo-capture once a temporary url has been passed back from worker
+          'photo-capture-placeholder':  '_placeHolderSrcFromPhotoCapture',
+          // fired by photo-capture once a url has been passed back from db
+          'photo-capture-external-src': '_externalSrcFromPhotoCapture',
+          // fired by close-save-button
+          'close-save-button-tapped':   '_bomCloseButtonTapped'
+        },
+
+        // animation config setup since headerContainer is dynamically
+        // created by paper-scroll-header-panel
+        ready() {
+          // for animation config setup
+          const header   = Polymer.dom(this.$.panel).node.$.headerContainer;
+          // must create two divs inside the header backgound div in order
+          // to correct the image orientation
+          // one for placeholder ObjectURL and the other is for the saved url from db
+          const headerBg = Polymer.dom(this.$.panel).node.$.headerBg;
+          this.backgroundImagePlaceholder = document.createElement('div');
+          this.backgroundImage            = document.createElement('div');
+          // initial styles for both divs with no orientation correction
+          this._setupBackgroundImageDiv(this.backgroundImagePlaceholder);
+          this._setupBackgroundImageDiv(this.backgroundImage);
+          // add them to header background
+          Polymer.dom(headerBg).appendChild(this.backgroundImagePlaceholder);
+          Polymer.dom(headerBg).appendChild(this.backgroundImage);
+        },
+
+
+        init(area, light) {
+        	console.log('bom fullscreen init: ', light);
+
+        	const callback = () => {
+        		this.deferPhoto = true;
+        	};
+
+        	this.area 			= area;
+        	this.light 			= light;
+        	this.deferPhoto = false;
+        	this.open(callback);
+        },
+
+        // initial styles for both background divs that are appended to header panel background
+        _setupBackgroundImageDiv(element) {
+          element.style.height             = '100%';
+          element.style.position           = 'absolute';
+          element.style.top                = '0px';
+          element.style.bottom             = '0px';
+          element.style.left               = '0px';
+          element.style.right              = '0px';
+          element.style.backgroundRepeat   = 'no-repeat';
+          element.style.backgroundSize     = 'cover';
+          element.style.backgroundPosition = 'center center';
+          element.style.transform          = 'rotate(0deg)';
+          element.style.opacity            = '0';
+        },
+
+
+        _computeOrientation: orientation => orientation,
+
+
+        _correctOrientation(elements, num = 1) {
+          const config = {
+            1: {height: '100%',  pos: 'center center', rotate: '0'},
+            3: {height: '100%',  pos: 'center center', rotate: '180'},
+            6: {height: '100vw', pos: 'center right',  rotate: '90'},
+            8: {height: '100vw', pos: 'center left',   rotate: '-90'}
+          };
+          const {height, pos, rotate} = config[num];
+
+          elements.forEach(element => {
+            element.style.height             = height;
+            element.style.backgroundPosition = pos;
+            element.style.transform          = `rotate(${rotate}deg)`;
+          });
+        },
+
+        // photo-capture image orientation correction for both background divs
+        _orientationChanged(orientation) {
+          const elements = [this.backgroundImage, this.backgroundImagePlaceholder];
+
+          switch (orientation) {
+            case 3:
+              this._correctOrientation(elements, 3);
+              break;
+            case 6:
+              this._correctOrientation(elements, 6);
+              break;
+            case 8:
+              this._correctOrientation(elements, 8);
+              break;
+            default:
+              this._correctOrientation(elements);
+              break;
+          }
+        },
+
+
+        _setPlaceholderBackground(url) {
+          this.backgroundImagePlaceholder.style.backgroundImage = `url(${url})`;
+          this.backgroundImagePlaceholder.style.transition      = 'opacity 0.3s ease-out';
+          this.backgroundImagePlaceholder.style.opacity         = '1';
+        },
+
+
+        _resetPlaceholderBackground() {
+          this.backgroundImagePlaceholder.style.backgroundImage = 'none';
+          this.backgroundImagePlaceholder.style.transition      = '';
+          this.backgroundImagePlaceholder.style.opacity         = '0';
+        },
+
+
+        _setExternalSrcBackground(url) {
+          this.backgroundImage.style.backgroundImage = `url(${url})`;
+          this.backgroundImage.style.opacity         = '1';
+        },
+
+
+        _resetExternalSrcBackground() {
+          this.backgroundImage.style.backgroundImage = 'none';
+          this.backgroundImage.style.opacity         = '0';
+        },
+        // photo-capture placeholder event
+        // controls header background img placeholder
+        // placeholder is set first before the img file has had time to be saved to db
+        // it is removed 500ms after main background div src has been set to avoid flicker
+        _placeHolderSrcFromPhotoCapture(event) {
+          const url = event.detail.placeholder;
+          if (url && url !== '#') {
+            this._resetExternalSrcBackground();
+            this._setPlaceholderBackground(url);
+          } else {
+            this._resetPlaceholderBackground();
+          }
+        },
+        // photo-capture external-src event
+        // controls header background img
+        // is set once the img file has been saved to db and then reloaded into browser
+        _externalSrcFromPhotoCapture(event) {
+          const url = event.detail.externalSrc;
+          if (url) {
+            this._setExternalSrcBackground(url);
+          } else {
+            this._resetExternalSrcBackground();
+          }
+        },
+
+
+        _computePhoto(photos) {
+          // TODO: 
+          //      sort by timestamp
+          const {key, orientation, placeholder, savedUrl} = photos[photos.length - 1];
+          const keys = photos.reduce((prev, curr) => prev[curr.key] = curr, {});
+
+          return {key, keys, orientation, placeholder, savedUrl};
+        },
+
+
+        _bomFullscreenAnimationFinished(_, animationType) {
+          if (animationType === 'bomEditBack') {
+            this.close();
+          }
+        },
+
+
+        _bomBackButtonTapped() {
+        	const back = () => {
+        		this.cancelAnimation();
+        		this.playAnimation('bomEditBack', 'bomEditBack');
+        	};
+
+        	this.onTap = back;
+        },
+
+
+        _bomCloseButtonTapped(event) {
+        	// shared back button custom element 
+        	// so eat the event to stop bubbling
+        	event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+
+          this.onTap = this.fire.bind(this, 'bom-edit-fullscreen-close-button-tapped');
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

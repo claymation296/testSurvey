@@ -274,7 +274,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // in order to call light-tally's updateUSA() method
         attached() {
           this.async(() => {
-            const lightingMainDom     = Polymer.dom(window.Redaap.lightingMain);
+            const lightingMainDom = Polymer.dom(window.Redaap.lightingMain);
             this.areaPageCustomElement = lightingMainDom.node.$.areaPage;
           });
         },
