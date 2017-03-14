@@ -46,8 +46,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         position: absolute;
         top: 8px;
         right: 8px;
-        color: white;
-        background-color: var(--default-primary-color);
+        color: var(--primary-text-color);
+        background-color: var(--disabled-text-color);
         border-radius: 50%;
         overflow: hidden;
       }
@@ -72,25 +72,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <div secondary>[[light.lamps]] lamp [[light.watts]]W [[light.kelvin]]K</div>
           </paper-item-body>
         </paper-icon-item>
-
-
-
-
-
         <div class="total">[[light.qty]]</div>
-
-
-
-
-
-
         <paper-ripple></paper-ripple>
       </div>
+
     </slide-delete>
 
 
     <bom-edit-fullscreen id="fullscreen"></bom-edit-fullscreen>
-
 
 
   </template>
@@ -125,7 +114,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _rowTapped(event) {
           this.onTap = () => this.$.fullscreen.init(this.area, this.light);
         },
-
 
 
         _forwardEventToParent() {

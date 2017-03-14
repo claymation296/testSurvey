@@ -53,7 +53,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </login-screen>
         <login-screen2 selected="[[selected]]" 
                        email="{{email}}" 
-                       password="{{password}}" 
                        type="[[type]]">
         </login-screen2>
         <login-screen3 selected="[[selected]]" error="[[error]]"></login-screen3>
@@ -95,8 +94,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: String,
             notify: true
           },
-          // passed to Parse login and gets cleared after logout
-          password: String,
           // current user email username
           username: {
             type: String,
@@ -250,7 +247,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // allow condtional template to stamp neon-animated-pages for login/signup
           this.currentUser = undefined;
           this.username    = '';
-          this.password    = '';
           window.Redaap.logoutDialog.close();
         },
 
@@ -355,10 +351,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // custom event from login-screen2.html
-        _logInUser() {
+        _logInUser(event) {
+          const pw = event.detail.pw;
           // switch to screen with spinner
           this.selected = 3;
-          window.Redaap.webWorker.login(this.email, this.password).
+          window.Redaap.webWorker.login(this.email, pw).
             then(user => {
               this._userLoggedIn(user);
             }).
@@ -368,10 +365,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // called by signup-screen2 custom event
-        _signUpNewUser() {
+        _signUpNewUser(event) {
+          const pw = event.detail.pw;
           // switch to screen with spinner while waiting on Parse to sign up user
           this.selected = 3;
-          window.Redaap.webWorker.signup(this.email, this.password).
+          window.Redaap.webWorker.signup(this.email, pw).
             then(user => {
               this._newUserSignedIn(user);
             }).
