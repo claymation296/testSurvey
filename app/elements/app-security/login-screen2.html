@@ -297,11 +297,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           	type: String,
           	notify: true
           },
-          // data passed up to app-security
-          password: {
-          	type: String,
-          	notify: true
-          },
 
           a11yTarget: Object
         },
@@ -429,6 +424,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }
           } else {
             // reset for animation
+            this.password = '';
             this.$.redMain.style.opacity = 0;
             this.$.redMain.style.zIndex  = 0;
             this.set('hidden', false);
@@ -513,9 +509,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // fired up to app-security.html
         _fireEvent() {
           if (this.type === 'Sign Up') {
-            this.fire('signup');
+            this.fire('signup', {pw: this.password});
           } else {
-            this.fire('login');
+            this.fire('login',  {pw: this.password});
           }
         },
         // called from cancel button
@@ -534,6 +530,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               node: this,
               timing: {easing: 'ease-in-out'}
             };
+            this.password = '';
             // fire cancel event up to app-security.html
             this.fire('cancel');
           }, 1);

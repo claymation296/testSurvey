@@ -50,9 +50,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       paper-toolbar {
         color: var(--primary-text-color);
         --paper-toolbar-background: transparent;
-        --paper-toolbar-title: {
-          line-height: normal;
-        };
       }
 
       .itemIcons {
@@ -63,6 +60,46 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       photo-capture {
         --photo-capture-background-color: transparent;
+      }
+
+      .total {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 56px;
+        height: 56px;
+        position: absolute;
+        bottom: -28px;
+        right: 16px;
+        color: var(--text-primary-color);
+        background-color: var(--default-primary-color);
+        border-radius: 50%;
+        overflow: hidden;
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+                    0 1px 5px 0 rgba(0, 0, 0, 0.12),
+                    0 3px 1px -2px rgba(0, 0, 0, 0.2);
+      }
+
+      #content {
+        width: 220px;
+        margin: 32px 0px;
+      }
+
+      paper-dropdown-menu {
+        display: block;
+      }
+
+      .controlsLabel {
+        margin-top: 32px;
+      }
+
+      paper-checkbox {
+        display: block;
+        margin: 16px 0px;
+      }
+
+      #lastInput {
+        margin-bottom: 64px;
       }
       
     </style>
@@ -75,22 +112,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </paper-icon-button>
         <span id="title" class="flex title">[[area]]</span>
 
-        <close-save-button id="closeButton"></close-save-button>
-
-
-
-        <iron-icon id="lightIcon" class="bottom itemIcons" 
-                   icon="custom-icons:[[light.icon]]" 
-                   hidden$="[[!light.icon]]">
-        </iron-icon>
-
-        <span id="bottomTitle" class="bottom dialogTitle noSelect">[[light.label]]</span>
-
-        <span class="bottom flex"></span>
-
         <photo-capture id="capture" 
-        							 class="bottom" 
-        							 filename="[[light.label]]"
+                       filename="[[light.label]]"
                        key="{{photo.key}}"
                        keys="{{photo.keys}}"
                        orientation="{{photo.orientation}}"
@@ -101,23 +124,183 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                        defer-trigger="{{deferPhoto}}">
         </photo-capture>
 
+        <notes-button id="notes" existing-fixture="{{light}}"></notes-button>
 
-        <notes-button id="notes" class="bottom" existing-fixture="{{light}}"></notes-button>
+        <close-save-button id="closeButton"></close-save-button>
 
+        <iron-icon id="lightIcon" class="bottom itemIcons" 
+                   icon="custom-icons:[[light.icon]]" 
+                   hidden$="[[!light.icon]]">
+        </iron-icon>
 
+        <span id="bottomTitle" class="bottom dialogTitle noSelect">[[light.label]]</span>
+
+        <div id="total" class="bottom total">[[light.qty]]</div>
 
       </paper-toolbar>
 
+      <div id="content">
+
+        <paper-input label="Fixture Quantity"
+                     class="inputs"
+                     type="tel" 
+                     min="0"
+                     maxLength="5" 
+                     value="{{light.qty}}"
+                     allowed-pattern="[0-9]"
+                     prevent-invalid-input>
+        </paper-input>
+
+        <paper-dropdown-menu label="Number of Lamps">
+          <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.lamps}}">
+            <paper-item id="1">1</paper-item>
+            <paper-item id="2">2</paper-item>
+            <paper-item id="3">3</paper-item>
+            <paper-item id="4">4</paper-item>
+            <paper-item id="6">6</paper-item>
+            <paper-item id="8">8</paper-item>
+            <paper-item id="10">10</paper-item>
+          </paper-listbox>
+        </paper-dropdown-menu>
 
 
+        <paper-input label="Wattage"
+                     type="tel" 
+                     min="0"
+                     maxLength="4" 
+                     value="{{light.watts}}"
+                     allowed-pattern="[0-9]"
+                     prevent-invalid-input>
+          <div suffix>W</div>
+        </paper-input>
+
+        <paper-dropdown-menu label="Color Temperature (Kelvin)">
+          <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.kelvin}}">
+            <paper-item id="2700">2700K</paper-item>
+            <paper-item id="3000">3000K</paper-item>
+            <paper-item id="3500">3500K</paper-item>
+            <paper-item id="4000">4000K</paper-item>
+            <paper-item id="4500">4500K</paper-item>
+            <paper-item id="5000">5000K</paper-item>
+          </paper-listbox>
+        </paper-dropdown-menu>
+
+        <paper-dropdown-menu label="Input Voltage">
+          <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.volts}}">
+            <paper-item id="120">120V</paper-item>
+            <paper-item id="208">208V</paper-item>
+            <paper-item id="240">240V</paper-item>
+            <paper-item id="277">277V</paper-item>
+            <paper-item id="480">480V</paper-item>
+          </paper-listbox>
+        </paper-dropdown-menu>
+
+        <paper-dropdown-menu label="Fixture Color">
+          <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.color}}">
+            <paper-item id="white">White</paper-item>
+            <paper-item id="grey">Grey</paper-item>
+            <paper-item id="black">Black</paper-item>
+            <paper-item id="bronze">Bronze</paper-item>
+            <paper-item id="custom">Custom</paper-item>
+          </paper-listbox>
+        </paper-dropdown-menu>
 
 
-      
+        <paper-input label="Base Type"
+                     autocapitalize
+                     required 
+                     maxLength="30" 
+                     char-counter
+                     allowed-pattern="[0-9a-zA-Z\s]"
+                     prevent-invalid-input 
+                     value="{{light.base}}">
+        </paper-input>
 
 
+        <!-- <paper-input label="Mount Type"
+                     autocapitalize
+                     autocomplete 
+                     autocorrect 
+                     required 
+                     maxLength="30" 
+                     char-counter
+                     allowed-pattern="[0-9a-zA-Z\s]"
+                     prevent-invalid-input 
+                     value="{{light.mount}}">
+        </paper-input> -->
+
+        <paper-dropdown-menu label="Mount Type">
+          <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.mount}}">
+            <paper-item id="pendant">Pendant</paper-item>
+            <paper-item id="chain">Chain</paper-item>
+            <paper-item id="cable">Cable</paper-item>
+            <paper-item id="slip">Slip Fitter</paper-item>
+            <paper-item id="square">Square Arm</paper-item>
+            <paper-item id="trunnion">Trunnion/Swivel</paper-item>
+          </paper-listbox>
+        </paper-dropdown-menu>
 
 
-            
+        <paper-input label="Mounting Height"
+                     type="tel" 
+                     min="0"
+                     maxLength="3" 
+                     value="{{light.height}}"
+                     allowed-pattern="[0-9]"
+                     prevent-invalid-input>
+          <div suffix>ft</div>
+        </paper-input>
+
+
+        <paper-input label="Hours of Operation"
+                     type="tel" 
+                     min="0"
+                     maxLength="2" 
+                     value="{{light.hours}}"
+                     allowed-pattern="[0-9]"
+                     prevent-invalid-input>
+          <div suffix>hours per day</div>
+        </paper-input>
+
+        <paper-input label="Operating Days"
+                     type="tel" 
+                     min="0"
+                     maxLength="1" 
+                     value="{{light.days}}"
+                     allowed-pattern="[0-9]"
+                     prevent-invalid-input>
+          <div suffix>days per week</div>
+        </paper-input>
+
+
+        <paper-input label="Contactor Quantity (exterior only)"
+                     type="tel" 
+                     min="0"
+                     maxLength="2" 
+                     value="{{light.contactors}}"
+                     allowed-pattern="[0-9]"
+                     prevent-invalid-input>
+        </paper-input>
+
+
+        <paper-input label="Emergency Backup Quantity"
+                     type="tel" 
+                     min="0"
+                     maxLength="4" 
+                     value="{{light.emergency}}"
+                     allowed-pattern="[0-9]"
+                     prevent-invalid-input>
+        </paper-input>
+
+
+        <div class="controlsLabel">Controls/Sensors</div>
+        <paper-checkbox checked="{{light.controls.dimmer}}">Dimmer</paper-checkbox>
+        <paper-checkbox checked="{{light.controls.timer}}">Timer</paper-checkbox>
+        <paper-checkbox checked="{{light.controls.motion}}">Occupancy Sensor</paper-checkbox>
+        <paper-checkbox id="lastInput" checked="{{light.controls.light}}">Daylight Sensor</paper-checkbox>
+
+
+      </div>    
 
     </paper-scroll-header-panel>
 
@@ -150,28 +333,42 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   name: 'cascaded-animation',
                   animation: 'slide-from-top-animation',
                   nodes:  [
-                    this.$.backButton, 
                     this.$.title,
                     this.$.lightIcon,
-                    this.$.bottomTitle, 
-                    this.$.closeButton,
+                    this.$.bottomTitle,
                     this.$.capture,
-                    this.$.notes
+                    this.$.notes,
+                    this.$.closeButton,
                   ],
-                  timing: {duration: 200, delay: 50, easing: 'ease-out'}
+                  timing: {duration: 300, easing: 'ease-out'}
                 }, {
                   name: 'cascaded-animation',
                   animation: 'fade-in-animation',
                   nodes:  [
-                    this.$.backButton, 
                     this.$.title,
                     this.$.lightIcon,
-                    this.$.bottomTitle, 
-                    this.$.closeButton,
+                    this.$.bottomTitle,
                     this.$.capture,
-                    this.$.notes
+                    this.$.notes,
+                    this.$.closeButton,
                   ],
                   timing: {duration: 200, delay: 100, easing: 'ease-in'}
+                }, {
+                  name: 'slide-from-bottom-animation',
+                  node: this.$.content,
+                  timing: {duration: 700, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this.$.content,
+                  timing: {duration: 100, delay: 600, easing: 'ease-out'}
+                }, {
+                  name: 'scale-up-animation',
+                  node: this.$.total,
+                  timing: {duration: 400, delay: 500, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this.$.total,
+                  timing: {duration: 150, delay: 750, easing: 'ease-out'}
                 }],
                 'bomEditBack': [{
                   name: 'slide-left-animation',
@@ -206,6 +403,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             notify: true
           }
         },
+
 
         listeners: {
           'neon-animation-finish':      '_bomFullscreenAnimationFinished',
@@ -358,7 +556,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _computePhoto(photos) {
           // TODO: 
-          //      sort by timestamp
+          //      sort by timestamp in key
           const {key, orientation, placeholder, savedUrl} = photos[photos.length - 1];
           const keys = photos.reduce((prev, curr) => prev[curr.key] = curr, {});
 
