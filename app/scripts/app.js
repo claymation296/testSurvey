@@ -33,6 +33,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     accountForm:    'account-form',
     appSecurity:    'app-security',
     areaEdit:       'area-edit',
+    bomFullscreen:  'bom-fullscreen-edit',
+    bomSelector:    'bom-selector',
     clearDialog:    '#clearDialog',
     drawerPanel:    '#paperDrawerPanel',
     drawerScroll:   '#drawerScroll',

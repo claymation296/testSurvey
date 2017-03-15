@@ -8,7 +8,6 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 -->
 
-<link rel="import" href="bom-edit-fullscreen.html">
 <link rel="import" href="../slide-delete/slide-delete.html">
 <link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
 <link rel="import" href="../redaap-behaviors/expand-collapse-classes-behavior.html">
@@ -79,9 +78,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </slide-delete>
 
 
-    <bom-edit-fullscreen id="fullscreen"></bom-edit-fullscreen>
-
-
   </template>
 
   <script>
@@ -110,9 +106,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           'slide-delete-animation-done': '_forwardEventToParent'
         },
 
+        _rowTapped() {
+          const fire = () => {
+            this.fire('bom-edit-row-tapped', {area: this.area, light: this.light, index: this.index});
+          };
 
-        _rowTapped(event) {
-          this.onTap = () => this.$.fullscreen.init(this.area, this.light);
+          this.onTap = fire;
         },
 
 

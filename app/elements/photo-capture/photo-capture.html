@@ -336,7 +336,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // called by photo-viewer once a new photo has saved from db
         updateSavedUrl(url) {
           this.set('savedUrl', url);
-          this.fire('photo-capture-external-src', this._makeEventPayload());
+          this.fire('photo-capture-external-src', this._makeEventPayload(url));
         }, 
         // reset for another photo capture 
         // called by solution-view before it animates open
@@ -513,7 +513,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this.set('orientation', 0);
               // very important to reset orient for keys data for this photo as well
               if (this.keys) {
-                this.set(`keys.${key}.orient`, 0); 
+                this.set(`keys.${key}.orientation`, 0); 
                 this.set(`keys.${key}.placeholder`, url);
               }
               this.fire('photo-capture-placeholder', this._makeEventPayload());
@@ -629,7 +629,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           if (this.keys) {
             // saved/processed photos no longer need orientation correction
-            this.set(`keys.${key}.orient`, 0); 
+            this.set(`keys.${key}.orientation`, 0); 
             this.set(`keys.${key}.savedUrl`, url);
           }
           this.set('savedUrl', url);
