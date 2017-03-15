@@ -48,8 +48,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       .expanderTransitions {
-        -webkit-transition: transform 0.3s ease-out;
-                transition: transform 0.3s ease-out;
+        transition: transform 0.3s ease-out;
       }
 
     </style>
@@ -86,7 +85,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <template is="dom-if" if="[[showBomCards]]">
               <bom-edit-row class="card"
                             area="[[data.name]]"
-                            light="{{item}}" 
+                            light="[[item]]" 
                             index="[[index]]" 
                             defer-photo="{{deferPhoto}}">
               </bom-edit-row>
@@ -205,7 +204,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // applied to the deleted and remaining elements animations
           transitionString: {
             type: String,
-            value: 'transform 0.3s ease-out, opacity 0.1s ease-in'
+            value: 'transform 0.3s ease-in, opacity 0.1s ease-in'
           },
           // ref to area-tab custom element inside lighting-main
           areaPageCE: Object,
@@ -224,14 +223,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // fired from quote and bom -edit-card's slide-delete custom element
           'slide-delete-element-deleted':                   '_removeDeletedElementFromDreading',
           // fired from quote and bom -edit-card's slide-delete custom element
-          'slide-delete-last-element-deleted':              '_deleteFixture',
+          'slide-delete-last-element-deleted':              '_deleteQuoteFixture',
           // last-element-deleted event intercepted by replacements-repeater
           // and emmitted as 'last-replacement-deleted' if necessary
-          'replacements-repeater-last-replacement-deleted': '_deleteFixture',
+          'replacements-repeater-last-replacement-deleted': '_deleteQuoteFixture',
+          // fired by bom-edit-row
+          'bom-edit-row-tapped':                            '_bomRowTapped',
           // fired by close-save-button
-          'close-save-button-tapped':                       '_closeButtonTapped',
-          // fired by bom-edit-fullscreen close button
-          'bom-edit-fullscreen-close-button-tapped':        '_closeButtonTapped'
+          'close-save-button-tapped':                       '_closeButtonTapped'
         },
         
 
@@ -239,6 +238,42 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // must observe splices on fixtures coming back out from slide-delete
           '_fixturesChanged(fixtures.splices)'
         ],
+
+
+        bomFullscreenDelete(index) {
+          this._deleteLight(index);
+        },
+
+
+        bomFullscreenBack(callback) {
+          // force repeater template to update/render
+          // then allow bom-fullscreen-edit to animate
+          const data        = this.data;
+          this.data         = undefined;
+          this.showBomCards = false;
+
+          const show = () => {
+            this.showBomCards = true;
+            this.set('data', data);
+            this._editMade();
+            callback();
+          };
+
+          this.schedule(show);
+        },
+
+
+        bomFullscreenClose(callback) {
+          this.reset();
+          this._unsetDataCallback();
+          callback();
+        },
+
+
+
+
+
+
 
         // called by area-page edit buttons
         init(newData, areaPageElement, mode) {
@@ -345,33 +380,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _applyDeleteStyles(callback) {
-          this.selectedCard.style.transition = this.transitionString;
-          this.selectedCard.style.transform  = this.transformString;
-          this.selectedCard.style.opacity    = '0';
+          this.selectedCard.style.transformOrigin = '50% 50%';
+          this.selectedCard.style.transition      = this.transitionString;
+          this.selectedCard.style.transform       = this.transformString;
+          this.selectedCard.style.opacity         = '0';
           this.deleteHandler = this._deleteDone.bind(this, callback);
           this.selectedCard.addEventListener('transitionend', this.deleteHandler, false);
         },
-        // called by 'slide-delete-last-element-deleted' and 
-        // 'replacements-repeater-last-replacement-deleted' events
-        // must animate deleting the entire card since there is no more data
-        _deleteFixture(event) {
-          event.preventDefault();
-          event.stopPropagation();
-          event.stopImmediatePropagation();
-          // clean up the zero qty dreading list incase user decided to delete
-          // the fixture which had no qty
-          this._removeDeletedElementFromDreading(event);
-          this.selectedIndex = this.$.fixtureRepeater.
-                                 indexForElement(Polymer.dom(event).rootTarget.domHost);
+
+
+        _deleteLight(index) {
+          this.selectedIndex = index;
           this.allCards      = this._getAllCards();                                 
-          this.selectedCard  = this.allCards[this.selectedIndex];
+          this.selectedCard  = this.allCards[index];
 
           if (this.allCards.length === 1) {
             // no remaining elements left so dont setup to animate them
             this._applyDeleteStyles();
           } else {
             // setup any elements below the current element to slide down
-            const remainingElements = this.allCards.slice(this.selectedIndex + 1);
+            const remainingElements = this.allCards.slice(index + 1);
 
             if (remainingElements.length === 0) {
               // no other elements below current one so skip remaining elements setup
@@ -394,6 +422,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this._applyDeleteStyles(callback);
             }
           } 
+        },
+        // called by 'slide-delete-last-element-deleted' and 
+        // 'replacements-repeater-last-replacement-deleted' events
+        // must animate deleting the entire card since there is no more data
+        _deleteQuoteFixture(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          // clean up the zero qty dreading list incase user decided to delete
+          // the fixture which had no qty
+          this._removeDeletedElementFromDreading(event);
+          const index = this.$.fixtureRepeater.
+                          indexForElement(Polymer.dom(event).rootTarget.domHost);
+          this._deleteLight(index);
         },
 
 
@@ -513,6 +555,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
+        _bomRowTapped(event) {
+          const open = () => {
+            const {area, light, index} = event.detail;
+            window.Redaap.bomFullscreen.init(this, area, light, index);
+          };
+
+          this.onTap = open;
+        },
+
+
         _closeButtonTapped() {
           // check zeroQuantityDreading list for any outstanding replacements lacking a qty
           const listSize = Object.keys(this.zeroQuantityDreading).length;
@@ -526,12 +578,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           if (this.mode === 'quote') {
             this.areaPageCE.editUSA(editData);
-          } else {
-            this.areaPageCE.editBom(editData);
           }
 
           this.async(() => {
-            // onTap property found in redaap-behaviors/on-tap-behavior
             this.onTap = this.close.bind(this, this._unsetDataCallback.bind(this));
           }, 50);
         }

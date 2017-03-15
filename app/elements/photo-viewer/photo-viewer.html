@@ -81,7 +81,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         listeners: {
-          // 'neon-animation-finish':                 '_animationFinished',
+          // 'neon-animation-finish':                 '_photoViewerAnimationFinished',
           // photo-selector encountered bad photo data while loading
           // so remove it from the photoDataArray to maintain state
           'photo-selector-dead-photo-data':        '_removeDeadPhotoData',
@@ -104,7 +104,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        // _animationFinished(_, animationType) {
+        // _photoViewerAnimationFinished(_, animationType) {
         // },
 
 
@@ -118,7 +118,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // if a savedUrl is not already present and it cannot fetch a temprorary url from web-worker
         // localForage, then it fires this event to clean up the photoDataArray
         _removeDeadPhotoData(event) {
-          console.log('dead photo: ', event.detail.obj);
           const deadObj = event.detail.obj;
           this._removeObjFromPhotoDataArray(deadObj);
         },
@@ -134,7 +133,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             // the next photo has been saved to db
             this.capture.updateThumbnail({
               key:         nextPhoto.key,
-              orient:      nextPhoto.orient,
+              orientation: nextPhoto.orientation,
               placeholder: nextPhoto.placeholder,
               url:         nextPhoto.savedUrl 
             });
@@ -188,8 +187,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // set new data onto the element to reflect the new photo taken in photo-selector
           this.capture.updateKeys(key, keys);
           this.capture.updateThumbnail({
-            key: key,
-            orient: orientation,
+            key,
+            orientation,
             placeholder,
             url: undefined
           });
@@ -214,7 +213,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const index     = this.photoDataArray.findIndex(obj => obj.key === key);
           const newKeyObj = keys[key];
           // saved/processed photos no longer need orientation correction
-          newKeyObj.orient = 0;
+          newKeyObj.orientation = 0;
           // remove and replace the old keys data
           // no need to update photo-selector model data
           // since the data object is only being replaced, not added or deleted
@@ -234,7 +233,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const {filename, keys} = captureElement;
           this.capture = captureElement;
           this.label   = filename;
-          // keys === {key: {key, orient, savedUrl}}
+          // keys === {key: {key, orientation, savedUrl}}
           // Object.keys will create an array with the keys ordered in ascending
           // order which puts the elements in order of newest last since
           // each key is a timestamp

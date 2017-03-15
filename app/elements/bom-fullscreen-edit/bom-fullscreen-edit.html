@@ -20,7 +20,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
 
-<dom-module id="bom-edit-fullscreen">
+<dom-module id="bom-fullscreen-edit">
   <template>
     <style include="shared-styles"></style>
     <style>
@@ -98,27 +98,33 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         margin: 16px 0px;
       }
 
-      #lastInput {
-        margin-bottom: 64px;
+      #deleteButton {
+        left: 50%;
+        transform: translate(-50%, 0px);
+        margin: 64px 0px;
+        color: var(--text-primary-color);
+        background-color: var(--dark-primary-color);
       }
       
     </style>
 
-    <paper-scroll-header-panel id="panel">
+    <paper-scroll-header-panel id="panel" header-state="{{headerState}}">
       <paper-toolbar id="toolbar" class="tall">
+
         <paper-icon-button id="backButton" 
                            on-tap="_bomBackButtonTapped" 
                            icon="custom-icons:arrow-back">
         </paper-icon-button>
+
         <span id="title" class="flex title">[[area]]</span>
 
         <photo-capture id="capture" 
                        filename="[[light.label]]"
-                       key="{{photo.key}}"
-                       keys="{{photo.keys}}"
-                       orientation="{{photo.orientation}}"
-                       placeholder="{{photo.placeholder}}"
-                       saved-url="{{photo.savedUrl}}" 
+                       key="{{light.photos.key}}"
+                       keys="{{light.photos}}"
+                       orientation="{{light.photos.orientation}}"
+                       placeholder="{{light.photos.placeholder}}"
+                       saved-url="{{light.photos.savedUrl}}" 
                        disable-thumbnail
                        defer-load 
                        defer-trigger="{{deferPhoto}}">
@@ -217,18 +223,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </paper-input>
 
 
-        <!-- <paper-input label="Mount Type"
-                     autocapitalize
-                     autocomplete 
-                     autocorrect 
-                     required 
-                     maxLength="30" 
-                     char-counter
-                     allowed-pattern="[0-9a-zA-Z\s]"
-                     prevent-invalid-input 
-                     value="{{light.mount}}">
-        </paper-input> -->
-
         <paper-dropdown-menu label="Mount Type">
           <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.mount}}">
             <paper-item id="pendant">Pendant</paper-item>
@@ -297,8 +291,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <paper-checkbox checked="{{light.controls.dimmer}}">Dimmer</paper-checkbox>
         <paper-checkbox checked="{{light.controls.timer}}">Timer</paper-checkbox>
         <paper-checkbox checked="{{light.controls.motion}}">Occupancy Sensor</paper-checkbox>
-        <paper-checkbox id="lastInput" checked="{{light.controls.light}}">Daylight Sensor</paper-checkbox>
+        <paper-checkbox checked="{{light.controls.light}}">Daylight Sensor</paper-checkbox>
 
+
+        <paper-button id="deleteButton" 
+                      on-tap="_deleteButtonTapped"
+                      raised>
+          <iron-icon icon="custom-icons:delete"></iron-icon>
+          delete fixture
+        </paper-button>
 
       </div>    
 
@@ -311,7 +312,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <script>
     (function() {
       Polymer({
-        is: 'bom-edit-fullscreen',
+        is: 'bom-fullscreen-edit',
 
         behaviors: [
         	window.Redaap.Behaviors.Utilities,
@@ -378,6 +379,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   name: 'fade-out-animation',
                   node: this,
                   timing: {duration: 200, delay: 100, easing: 'ease-in'}
+                }],
+                'bomEditDelete': [{
+                  name: 'slide-down-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this,
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
+                }],
+                'exit': [{
+                  name: 'slide-up-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this,
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
                 }]
               };
             }
@@ -386,10 +405,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           area: String,
 
           light: Object,
+          // the element that called init to send edited data back to
+          caller: Object,
 
-          photo: {
-          	type: Object,
-          	computed: '_computePhoto(light.photos)'
+          edited: {
+            type: Boolean,
+            value: true
           },
 
           orientation: {
@@ -401,6 +422,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           deferPhoto: {
             type: Boolean,
             notify: true
+          },
+
+          headerState: {
+            type: Number,
+            observer: '_headerStateChanged'
           }
         },
 
@@ -415,11 +441,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           'close-save-button-tapped':   '_bomCloseButtonTapped'
         },
 
+
+        observers: [
+          '_lightChanged(light.*)'
+        ],
+
+
+
+
+        _headerStateChanged(num) {
+          console.log('header state: ', num);
+        },
+
+
+
+
         // animation config setup since headerContainer is dynamically
         // created by paper-scroll-header-panel
         ready() {
-          // for animation config setup
-          const header   = Polymer.dom(this.$.panel).node.$.headerContainer;
           // must create two divs inside the header backgound div in order
           // to correct the image orientation
           // one for placeholder ObjectURL and the other is for the saved url from db
@@ -435,17 +474,34 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        init(area, light) {
-        	console.log('bom fullscreen init: ', light);
-
+        init(caller, area, light, index) {
         	const callback = () => {
+            this.edited = false;
         		this.deferPhoto = true;
         	};
 
+          // this.deferPhoto must be set before this.light
+          this.deferPhoto = false;
+        	this.caller 		= caller;
         	this.area 			= area;
         	this.light 			= light;
-        	this.deferPhoto = false;
+        	this.index 			= index;
+          this.$.closeButton.makeX();
         	this.open(callback);
+        },
+
+
+        _computeOrientation: orientation => orientation,
+
+
+        _lightChanged(light) {
+          // ignore init (this.edited initalizes as true then set to false after entry animation)
+          if (this.edited) { return; }
+          // ignore photo-capture initialization
+          if (light.path === 'light.photos.placeholder' && light.value === '#') { return; }
+
+          this.edited = true;
+          this.$.closeButton.makeCheck();
         },
 
         // initial styles for both background divs that are appended to header panel background
@@ -462,9 +518,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           element.style.transform          = 'rotate(0deg)';
           element.style.opacity            = '0';
         },
-
-
-        _computeOrientation: orientation => orientation,
 
 
         _correctOrientation(elements, num = 1) {
@@ -554,30 +607,41 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _computePhoto(photos) {
-          // TODO: 
-          //      sort by timestamp in key
-          const {key, orientation, placeholder, savedUrl} = photos[photos.length - 1];
-          const keys = photos.reduce((prev, curr) => prev[curr.key] = curr, {});
-
-          return {key, keys, orientation, placeholder, savedUrl};
-        },
-
-
         _bomFullscreenAnimationFinished(_, animationType) {
           if (animationType === 'bomEditBack') {
-            this.close();
+            this.reset();
+          } else if (animationType === 'bomEditDelete') {
+            this.caller.bomFullscreenDelete(this.index);
+            this.reset();
           }
         },
 
 
-        _bomBackButtonTapped() {
-        	const back = () => {
-        		this.cancelAnimation();
-        		this.playAnimation('bomEditBack', 'bomEditBack');
-        	};
+        _deleteButtonTapped() {
+          const del = () => {
+            this.cancelAnimation();
+            this.playAnimation('bomEditDelete', 'bomEditDelete');
+          };
 
-        	this.onTap = back;
+          this.onTap = del;
+        },
+
+
+        _bomBackButtonTapped() {
+          const back = () => {
+            this.cancelAnimation();
+            this.playAnimation('bomEditBack', 'bomEditBack');
+          };
+
+          if (this.edited) {
+            // allow caller to rerender to reflect edits before back animation
+            const editedBack = () => {
+              this.caller.bomFullscreenBack(back);
+            };
+            this.onTap = editedBack;
+          } else {
+            this.onTap = back;
+          }
         },
 
 
@@ -588,7 +652,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           event.stopPropagation();
           event.stopImmediatePropagation();
 
-          this.onTap = this.fire.bind(this, 'bom-edit-fullscreen-close-button-tapped');
+          const closeCaller = () => {
+            this.caller.bomFullscreenClose(this.close.bind(this));
+          };
+
+          this.onTap = closeCaller;
         }
 
       });

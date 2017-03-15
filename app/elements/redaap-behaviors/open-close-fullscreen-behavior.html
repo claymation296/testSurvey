@@ -23,7 +23,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 	    listeners: {
         // wait for content animation
-      	'neon-animation-finish': '_neonAnimationFinished'
+      	'neon-animation-finish': '_openCloseBehaviorAnimationFinished'
       },
 
 
@@ -47,6 +47,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         if (this.panel) {
           this.panel.measureHeaderHeight();
+          this.panel.scrollToTop();
         }
 
         if (this.animationConfig && this.animationConfig.entry) {
@@ -77,7 +78,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
 
       // animationType can be a string or object with a callback to run
-      _neonAnimationFinished(_, animationType) {
+      _openCloseBehaviorAnimationFinished(_, animationType) {
         // reset after exit animations
         if (typeof animationType === 'string' && animationType === 'exit') {
           this.reset();
