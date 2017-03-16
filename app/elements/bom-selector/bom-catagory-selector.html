@@ -1,0 +1,509 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../redaap-behaviors/open-close-fullscreen-behavior.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+<link rel="import" href="bom-type-selector.html">
+
+
+<dom-module id="bom-catagory-selector">
+  <template>
+    <style include="shared-styles"></style>
+    <style>
+
+      :host {
+        @apply(--fullscreen-elements);
+        background-color: var(--primary-background-color);
+      }
+
+      paper-scroll-header-panel {
+        --paper-scroll-header-panel-container: {
+          display: flex;
+          justify-content: center;
+        };
+      }
+
+      paper-toolbar {
+        --paper-toolbar-background: var(--dark-primary-color);
+      }
+
+      paper-icon-button {
+        color: white;
+      }
+
+      .dialogTitle {
+        text-align: center;
+        padding: 16px;
+      }
+
+      paper-listbox {
+        width: 100%;
+        max-width: 346px;
+        background-color: var(--disabled-primary-color);
+      }
+
+      .itemIcons {
+        --iron-icon-width: 48px;
+        --iron-icon-height: 48px;
+        --iron-icon-stroke-color: var(--primary-text-color);
+      }
+
+      .itemContainer {
+        margin-bottom: 24px;
+        border-radius: 3px;
+      }
+
+      .itemContainer:focus {
+        outline: none;
+      }
+
+      .header {
+        border-radius: 3px 3px 0px 0px;
+      }
+
+      .greySelected .header {
+        background-color: var(--disabled-text-color);
+      }
+
+      paper-item-body {
+        margin-left: 16px;
+      }
+
+    </style>
+
+    <paper-scroll-header-panel id="panel">
+
+      <paper-toolbar id="toolbar">
+        <span class="title noSelect" style="margin-left: 0px;">[[areaName]]</span>
+        <paper-icon-button id="close" 
+                           on-tap="_closeButtonTapped" 
+                           icon="custom-icons:close">
+        </paper-icon-button>
+      </paper-toolbar>
+
+      <div>
+      
+        <div class="dialogTitle noSelect">Fixture Catagories</div>
+        <paper-listbox selected="{{selectionIndex}}" 
+                       selected-class="greySelected">
+          <template id="repeater" 
+                    is="dom-repeat" 
+                    items="[[catagories]]"
+                    initial-count="5" 
+                    target-framerate="60" 
+                    strip-whitespace>
+            <div id="container" class="itemContainer">
+              <paper-icon-item class="header noSelect">
+                <iron-icon class="itemIcons" icon="custom-icons:[[item.icon]]" item-icon></iron-icon>
+                <paper-item-body>[[item.name]]</paper-item-body>
+              </paper-icon-item>
+            </div>
+          </template>
+        </paper-listbox>
+
+        <div class="bottomPadding96"></div>
+      </div>
+
+    </paper-scroll-header-panel>
+
+
+
+
+    <bom-type-selector id="typeSelector" 
+                       area-name="[[areaName]]" 
+                       catagory="[[catagory]]">
+    </bom-type-selector>
+
+
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'bom-catagory-selector',
+
+        behaviors: [
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.OpenCloseFullscreenBehavior, 
+          window.Redaap.Behaviors.OnTapBehavior                
+        ], 
+
+        properties: {
+
+          animationConfig: {
+            value() {
+              return {
+                'entry': [{
+                  name: 'scale-up-animation',
+                  node: this,
+                  timing: {duration: 300, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this,
+                  timing: {duration: 200, delay: 100, easing: 'ease-out'}
+                }],
+                'exit': [{
+                  name: 'scale-down-animation',
+                  node: this,
+                  timing: {duration: 200, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this,
+                  timing: {duration: 100, delay: 50, easing: 'ease-in'}
+                }]
+              };
+            }
+          },
+
+          catagories: {
+            type: Array,
+            readOnly: true,
+            value: [
+              {name: 'Tube',        icon: 'fluorescent'},
+              {name: 'Can',         icon: 'canLight'},
+              {name: 'Plug-in',     icon: 'pl'},
+              {name: 'Track',       icon: 'mr16'},
+              {name: 'Sconce',      icon: 'sconce'},
+              {name: 'Chandelier',  icon: 'candelabra'},
+              {name: 'Edison',      icon: 'a19'},
+              {name: 'Flood',       icon: 'flood'},
+              {name: 'Pole/Street', icon: 'shoeBox'},
+              {name: 'Wall Pack',   icon: 'wallPack'},
+              {name: 'High Bay',    icon: 'highBay'},
+              {name: 'Canopy',      icon: 'canopy'},
+              {name: 'Custom',      icon: 'content-paste'}
+            ]
+          },
+          // index of user selection in listbox
+          selectionIndex: {
+            type: Number,
+            observer: '_catagorySelected'
+          },
+
+          catagory: String,
+
+          bom: {
+            type: Object,
+            notify: true,
+            value: () => ({areas: {}, fixtures: {}, photos: {}}),
+            observer: '_bomChanged'
+          }
+
+
+          // bom: {
+          //   type: Object,
+          //   value: {
+          //     areas: {
+          //       'office': {
+          //         fixtures: {
+          //           '8in_can': true,
+          //           '2x4_troffer': true
+          //         },
+          //         photos: {
+          //           '144443843_433': true
+          //         }
+          //       },
+          //       'break_room': {
+          //         fixtures: {
+          //           '2x4_troffer': true
+          //         },
+          //         photos: {
+          //           '14476453_349': true
+          //         }
+          //       },
+          //       'main_entrance': {
+          //         fixtures: {
+          //           '8in_can': true
+          //         },
+          //         photos: {
+          //           '14473455_146': true
+          //         }
+          //       }
+          //     },
+          //     fixtures: {
+          //       '8in_can': {
+          //         'office': {
+          //           base: 'e26',
+          //           catagory: 'can',
+          //           color: 'white',
+          //           contactors: '',
+          //           controls: {
+          //             'dimmer': true,
+          //             'light': false,
+          //             'motion': false,
+          //             'timer': false
+          //           },
+          //           days: '5',
+          //           emergency: '',
+          //           height: '8',
+          //           hours: '12',
+          //           icon: 'canLight',
+          //           kelvin: '4500',
+          //           label: '8 inch Can',
+          //           lamps: 1,
+          //           mount: '',
+          //           notes: '',
+          //           photos: {
+          //             '144443843_433': true
+          //           },
+          //           qty: 7,
+          //           type: '8in',
+          //           volts: '120',
+          //           watts: '20'
+          //         },
+          //         'main_entrance': {
+          //           base: 'pl',
+          //           catagory: 'can',
+          //           color: 'white',
+          //           contactors: '',
+          //           controls: {
+          //             'dimmer': false,
+          //             'light': false,
+          //             'motion': false,
+          //             'timer': true
+          //           },
+          //           days: '7',
+          //           emergency: '',
+          //           height: '12',
+          //           hours: '8',
+          //           icon: 'canLight',
+          //           label: '8 inch Can',
+          //           kelvin: '5000',
+          //           lamps: 2,
+          //           mount: '',
+          //           notes: '',
+          //           photos: {
+          //             '144475694_394': true
+          //           },
+          //           qty: 4,
+          //           type: '8in',
+          //           volts: '120',
+          //           watts: '32'
+          //         }
+          //       },
+          //       '2x4_troffer': {
+          //         'break_room': {
+          //           base: 'tombstone',
+          //           catagory: 'troffer',
+          //           color: 'white',
+          //           contactors: '',
+          //           controls: {
+          //             'dimmer': false,
+          //             'light': false,
+          //             'motion': true,
+          //             'timer': false
+          //           },
+          //           days: '7',
+          //           emergency: '',
+          //           height: '10',
+          //           hours: '14',
+          //           icon: 'fluorescent',
+          //           kelvin: '4500',
+          //           label: '2x4 Troffer',
+          //           lamps: 3,
+          //           mount: '',
+          //           notes: '',
+          //           photos: {
+          //             '14476453_349': true
+          //           },
+          //           qty: 4,
+          //           type: '2x4',
+          //           volts: '208',
+          //           watts: '24'
+          //         },
+          //         'office': {
+          //           base: 'tombstone',
+          //           catagory: 'troffer',
+          //           color: 'white',
+          //           contactors: '',
+          //           controls: {
+          //             'dimmer': false,
+          //             'light': true,
+          //             'motion': false,
+          //             'timer': true
+          //           },
+          //           days: '7',
+          //           emergency: '',
+          //           height: '10',
+          //           hours: '12',
+          //           icon: 'fluorescent',
+          //           kelvin: '4500',
+          //           label: '2x4 Troffer',
+          //           lamps: 2,
+          //           mount: '',
+          //           notes: '',
+          //           photos: {
+          //             '14473455_146': true
+          //           },
+          //           qty: 6,
+          //           type: '2x4',
+          //           volts: '208',
+          //           watts: '28'
+          //         }
+          //       }
+          //     },
+          //     photos: {
+          //       '144443843_433': {
+          //         area: 'office',
+          //         fixture: '8in_can',
+          //         orientation: 0,
+          //         placeholder: '',
+          //         savedUrl: ''
+          //       },
+          //       '144475694_394': {
+          //         area: 'main_entrance',
+          //         fixture: '8in_can',
+          //         orientation: 6,
+          //         placeholder: '',
+          //         savedUrl: ''
+          //       },
+          //       '14476453_349': {
+          //         area: 'break_room',
+          //         fixture: '2x4_troffer',
+          //         orientation: 0,
+          //         placeholder: '',
+          //         savedUrl: ''
+          //       },
+          //       '14473455_146': {
+          //         area: 'office',
+          //         fixture: '2x4_troffer',
+          //         orientation: 0,
+          //         placeholder: '',
+          //         savedUrl: ''
+          //       }
+          //     }              
+          //   }
+          // }
+
+
+        },
+
+        listeners: {
+          'bom-type-selector-back':  '_bomTypeBackButtonTapped',
+
+          'bom-type-selector-close': '_bomTypeCloseButtonTapped',
+
+          'bom-type-selector-save':  '_bomTypeSave'
+        },
+
+
+
+        _bomChanged(bom) {
+          console.log('bom changed: ', bom);
+        },
+
+
+
+
+
+        // called by area-tab before open
+        setAreaName(areaName) {
+          // set the title of the toolbar
+          this.areaName = areaName;
+        },
+
+        // called by solution-view on each close
+        resetSelectionIndex() {
+          this.selectionIndex = undefined;
+        },
+        // this.selectionIndex observer
+        // set fixture data out to main-page, area-tab, and solution-page
+        _catagorySelected(index) {
+          // this.selectionIndex is set to undefined to reset all
+          // selected attributes so ignore the change until it is defined to a number
+          if (typeof index === 'number') {
+            const fixture = Object.assign({}, this.catagories[index]);
+
+            this.catagory = this.catagories[index].name;
+            this.$.typeSelector.open();
+          }
+        },
+
+        // called by paper-icon-button in toolbar
+        _closeButtonTapped() {
+          this.onTap = this.close.bind(this);
+        },
+
+
+        _bomTypeBackButtonTapped() {
+          this.resetSelectionIndex();
+        },
+
+
+        _bomTypeCloseButtonTapped() {
+          const callback = () => {
+            this.$.typeSelector.resetSelectionIndex();
+            this.$.typeSelector.reset();
+          };
+
+          this.resetSelectionIndex();
+          this.close(callback);
+        },
+
+        
+        _bomTypeSave(event) {
+          const {area, light} = event.detail;
+          const bom = this.bom;
+
+          // add new light to bom
+          // bom = {
+          //     areas: {},
+          //     fixtures: {},
+          //     photos: {}
+          // }
+
+          // TODO:
+          //      test for overwrites
+          if (!bom.areas[area]) {
+            bom.areas[area] = {};
+          }
+
+          if (!bom.areas[area].fixtures) {
+            bom.areas[area].fixtures = {};
+          }
+
+          if (!bom.areas[area].photos) {
+            bom.areas[area].photos = {};
+          }
+
+          if (!bom.fixtures[light.label]) {
+            bom.fixtures[light.label] = {};
+          }
+          
+          bom.areas[area].fixtures[light.label] = true;
+
+
+          const photoKeys = Object.keys(light.photos);
+          photoKeys.forEach(key => {
+            bom.areas[area].photos[key] = true;
+          });
+
+
+          bom.fixtures[light.label][area] = light;
+          bom.photos = Object.assign(bom.photos, light.photos);
+
+          console.log('light saved: ', light);
+
+          // force update
+          this.bom  = undefined;
+          this.set('bom', bom);
+          this.$.typeSelector.resetSelectionIndex();
+          this.$.typeSelector.reset();
+          this.resetSelectionIndex();
+          this.reset();
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

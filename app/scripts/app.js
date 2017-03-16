@@ -34,7 +34,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     appSecurity:    'app-security',
     areaEdit:       'area-edit',
     bomFullscreen:  'bom-fullscreen-edit',
-    bomSelector:    'bom-selector',
+    bomSelector:    'bom-catagory-selector',
     clearDialog:    '#clearDialog',
     drawerPanel:    '#paperDrawerPanel',
     drawerScroll:   '#drawerScroll',
