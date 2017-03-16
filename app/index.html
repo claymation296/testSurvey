@@ -235,6 +235,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           <!-- lighting-tabs are hidden when not on 'lighting' menu selection -->
           <lighting-tabs class="bottom bottom-container center horizontal layout"
+                         bom="[[state.bom]]"
                          client-valid="[[state.clientValid]]"
                          lighting-tab="{{lightingTab}}"
                          mode="[[state.mode]]"
@@ -281,7 +282,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </section>
 
           <section data-route="lights">
-            <lighting-main client="[[state.client]]"
+            <lighting-main bom="{{state.bom}}"
+                           client="[[state.client]]"
                            client-valid="{{state.clientValid}}"
                            displayed-client-company-name="{{displayedClientCompanyName}}"
                            lighting-tab="{{lightingTab}}"
@@ -340,7 +342,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <light-selector></light-selector>
 
-    <bom-selector></bom-selector>
+    <bom-catagory-selector bom="{{state.bom}}"></bom-catagory-selector>
 
     <solution-page id="solutions"></solution-page>
 

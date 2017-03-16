@@ -17,6 +17,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../close-save-button/close-save-button.html">
 <link rel="import" href="../photo-capture/photo-capture.html">
 <link rel="import" href="../notes-page/notes-button.html">
+<link rel="import" href="../card-inputs/inputs-repeater.html">
 
 
 
@@ -28,6 +29,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       :host {
       	@apply(--fullscreen-elements);
         background-color: var(--primary-background-color);
+        --toolbar-color: var(--primary-text-color);
+        --toolbar-background-color: var(--light-primary-color);
       }
 
       paper-scroll-header-panel {
@@ -35,10 +38,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           background-color: transparent;
         };
         --paper-scroll-header-panel-condensed-header: {
-          background-color: var(--light-primary-color);
+          background-color: var(--toolbar-background-color);
         };
         --paper-scroll-header-panel-header-container: {
-          background-color: var(--light-primary-color);
+          background-color: var(--toolbar-background-color);
         };
         --paper-scroll-header-panel-container: {
           display: flex;
@@ -48,8 +51,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       paper-toolbar {
-        color: var(--primary-text-color);
+        color: var(--toolbar-color);
         --paper-toolbar-background: transparent;
+      }
+
+      close-save-button {
+        --icon-color: var(--toolbar-color);
       }
 
       .itemIcons {
@@ -89,7 +96,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         display: block;
       }
 
-      .controlsLabel {
+      .inputLabel {
         margin-top: 32px;
       }
 
@@ -98,12 +105,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         margin: 16px 0px;
       }
 
-      #deleteButton {
+      .lastButton {
         left: 50%;
         transform: translate(-50%, 0px);
+      }
+
+      #deleteButton {
         margin: 64px 0px;
         color: var(--text-primary-color);
         background-color: var(--dark-primary-color);
+      }
+
+      #addTallyButton {
+        margin: 16px 0px 64px 0px;
+        color: var(--default-primary-color);
       }
       
     </style>
@@ -154,7 +169,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                      maxLength="5" 
                      value="{{light.qty}}"
                      allowed-pattern="[0-9]"
-                     prevent-invalid-input>
+                     prevent-invalid-input
+                     hidden$="[[_computeEditState(setting)]]">
         </paper-input>
 
         <paper-dropdown-menu label="Number of Lamps">
@@ -287,25 +303,47 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </paper-input>
 
 
-        <div class="controlsLabel">Controls/Sensors</div>
+        <div class="inputLabel">Controls/Sensors</div>
         <paper-checkbox checked="{{light.controls.dimmer}}">Dimmer</paper-checkbox>
         <paper-checkbox checked="{{light.controls.timer}}">Timer</paper-checkbox>
         <paper-checkbox checked="{{light.controls.motion}}">Occupancy Sensor</paper-checkbox>
         <paper-checkbox checked="{{light.controls.light}}">Daylight Sensor</paper-checkbox>
 
 
-        <paper-button id="deleteButton" 
+        <paper-button id="deleteButton"
+                      class="lastButton"
                       on-tap="_deleteButtonTapped"
-                      raised>
+                      raised
+                      hidden$="[[_computeEditState(setting)]]">
           <iron-icon icon="custom-icons:delete"></iron-icon>
           delete fixture
         </paper-button>
 
+
+
+        <div class="inputLabel" 
+             hidden$="[[!_computeEditState(setting)]]">
+             Fixture Quantity: [[light.qty]]
+        </div>
+
+        <inputs-repeater array="[[tallies]]" 
+                         hidden$="[[!_computeEditState(setting)]]">
+        </inputs-repeater>
+
+        <paper-button id="addTallyButton" 
+                      class="lastButton"
+                      on-tap="_addTallyButtonTapped"
+                      raised
+                      hidden$="[[!_computeEditState(setting)]]">
+          <iron-icon icon="custom-icons:add"></iron-icon>
+          Add Tally Row
+        </paper-button>
+
+
+
       </div>    
 
     </paper-scroll-header-panel>
-
-    
 
   </template>
 
@@ -330,6 +368,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   name: 'slide-from-top-animation',
                   node: this,
                   timing: {duration: 300, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this,
+                  timing: {duration: 200, delay: 100, easing: 'ease-out'}
                 }, {
                   name: 'cascaded-animation',
                   animation: 'slide-from-top-animation',
@@ -371,6 +413,31 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   node: this.$.total,
                   timing: {duration: 150, delay: 750, easing: 'ease-out'}
                 }],
+                'bomEditTotalEntry': [{
+                  name: 'scale-up-animation',
+                  node: this.$.total,
+                  timing: {duration: 400, easing: 'ease-out'}
+                }, {
+                  name: 'fade-in-animation',
+                  node: this.$.total,
+                  timing: {duration: 150, delay: 250, easing: 'ease-out'}
+                }],
+                'bomEditTotalExit': [{
+                  name: 'scale-down-animation',
+                  node: this.$.total,
+                  timing: {duration: 150, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this.$.total,
+                  timing: {duration: 100, delay: 50, easing: 'ease-in'}
+                }],
+                'bomEditAddBtn': {
+                  name: 'transform-animation',
+                  transformFrom: 'translate(-50%, 0px)',
+                  transformTo: 'translate(-50%, 60px)',
+                  node: this.$.addTallyButton,
+                  timing: {duration: 300, easing: 'ease-out'}
+                },
                 'bomEditBack': [{
                   name: 'slide-left-animation',
                   node: this,
@@ -401,12 +468,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               };
             }
           },
+          // the element that called init to send edited data back to
+          caller: Object,
+
+          setting: {
+            type: String,
+            observer: '_settingChanged'
+          },
 
           area: String,
 
           light: Object,
-          // the element that called init to send edited data back to
-          caller: Object,
+
+          index: Number,
+
+          tallies: {
+            type: Array,
+            value: () => ([{
+              tally0: undefined, 
+              tally1: undefined, 
+              tally2: undefined, 
+              tally3: undefined
+            }])
+          },
 
           edited: {
             type: Boolean,
@@ -438,7 +522,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // fired by photo-capture once a url has been passed back from db
           'photo-capture-external-src': '_externalSrcFromPhotoCapture',
           // fired by close-save-button
-          'close-save-button-tapped':   '_bomCloseButtonTapped'
+          'close-save-button-tapped':   '_bomCloseButtonTapped',
+          // fired from inputs-repeater
+          'inputs-repeater-tally-totalled': '_tallyTotalled',
         },
 
 
@@ -448,11 +534,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
 
+        _settingChanged(setting) {
+          if (!setting) { return; }
 
-        _headerStateChanged(num) {
-          console.log('header state: ', num);
+          if (setting === 'edit') {
+            this.customStyle['--toolbar-color'] = 'var(--primary-text-color)';
+            this.customStyle['--toolbar-background-color'] = 'var(--light-primary-color)';
+          } else {
+            this.customStyle['--toolbar-color'] = 'var(--text-primary-color)';
+            this.customStyle['--toolbar-background-color'] = 'var(--dark-primary-color)';
+          }
+          this.updateStyles();
         },
-
 
 
 
@@ -474,7 +567,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        init(caller, area, light, index) {
+        init(caller, setting, area, light, index) {
         	const callback = () => {
             this.edited = false;
         		this.deferPhoto = true;
@@ -483,13 +576,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // this.deferPhoto must be set before this.light
           this.deferPhoto = false;
         	this.caller 		= caller;
+          this.setting    = setting;
         	this.area 			= area;
         	this.light 			= light;
         	this.index 			= index;
           this.$.closeButton.makeX();
+          this.$.total.style.display = 'flex';
         	this.open(callback);
         },
 
+
+        _computeEditState: setting => setting === 'new',
 
         _computeOrientation: orientation => orientation,
 
@@ -502,6 +599,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           this.edited = true;
           this.$.closeButton.makeCheck();
+        },
+
+
+        _headerStateChanged(state) {
+          if (state === 1) {
+            this.cancelAnimation();
+            this.playAnimation('bomEditTotalExit', 'bomEditTotalExit');
+          } else if (state === 0) {
+            if (this.isDisplayed(this.$.total)) { return; }
+            this.$.total.style.display = 'flex';
+            this.cancelAnimation();
+            this.playAnimation('bomEditTotalEntry', 'bomEditTotalEntry');
+          }
         },
 
         // initial styles for both background divs that are appended to header panel background
@@ -605,6 +715,32 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this._resetExternalSrcBackground();
           }
         },
+        // fired from inputs-repeater child element each time user adds tally data
+        // add count to solutions
+        _tallyTotalled(event) {
+          const total = event.detail.total;
+          this.set('light.qty', total);
+        },
+
+        // called by add button
+        _addTallyRow() {
+          this.push('tallies', {
+            tally0: undefined, 
+            tally1: undefined,
+            tally2: undefined,
+            tally3: undefined
+          });
+        },
+
+        
+        _addTallyButtonTapped() {
+          const add = () => {
+            this.cancelAnimation();
+            this.playAnimation('bomEditAddBtn', 'bomEditAddBtn');
+          };
+
+          this.onTap = add;
+        },
 
 
         _bomFullscreenAnimationFinished(_, animationType) {
@@ -613,6 +749,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           } else if (animationType === 'bomEditDelete') {
             this.caller.bomFullscreenDelete(this.index);
             this.reset();
+          } else if (animationType === 'bomEditTotalExit') {
+            this.$.total.style.display = 'none';
+          } else if (animationType === 'bomEditAddBtn') {
+            this._addTallyRow();
           }
         },
 
@@ -633,7 +773,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.playAnimation('bomEditBack', 'bomEditBack');
           };
 
-          if (this.edited) {
+          if (this.edited || this.setting === 'new') {
             // allow caller to rerender to reflect edits before back animation
             const editedBack = () => {
               this.caller.bomFullscreenBack(back);
@@ -651,6 +791,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	event.preventDefault();
           event.stopPropagation();
           event.stopImmediatePropagation();
+
+
+
+          // TODO:
+          //      add validation check to required fields for 'new' setting
+
+
+
 
           const closeCaller = () => {
             this.caller.bomFullscreenClose(this.close.bind(this));

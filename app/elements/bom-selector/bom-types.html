@@ -1,0 +1,117 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<dom-module id="bom-types">
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'bom-types',
+
+        properties: {
+
+          // must match index of fixture list in fixture-list.html
+        	types: {
+        		type: Object,
+        		notify: true,
+        		readOnly: true,
+        		value: () => ({
+              'Tube': [
+        				{name: '2ft T8/T12'},
+								{name: '2ft T8/T12 U-bend'},
+								{name: '3ft T8/T12'},
+								{name: '4ft T8/T12'},
+								{name: '5ft T8/T12'},
+								{name: '8ft T8/T12'}, 
+								{name: '2ft T5'},
+								{name: '3ft T5'},
+								{name: '4ft T5'},
+								{name: '5ft T5'},
+								{name: '8ft T5'}
+							],
+							'Can': [
+                {name: 'A19'},
+                {name: 'GU/MR'},
+                {name: 'Par20'},
+                {name: 'Par30'},
+                {name: 'Par38'},
+                {name: 'Br20'},
+                {name: 'Br30'},
+                {name: 'Br40'}
+              ],
+              'Plug-in': [
+                {name: 'PL'}
+              ],
+              'Track': [
+                {name: 'GU/MR',},
+                {name: 'Par20'},
+                {name: 'Par30'},
+                {name: 'Par38'},
+                {name: 'Br20'},
+                {name: 'Br30'},
+                {name: 'Br40'}
+              ], 
+              'Sconce': [
+                {name: 'Candlabra'},
+                {name: 'A19'},
+                {name: 'PL'}
+              ],
+              'Chandelier': [
+                {name: 'Candelabra'},
+                {name: 'A19'}
+              ],
+              'Edison': [
+                {name: 'Candelabra'},
+                {name: 'A19'},
+                {name: 'Par20'},
+                {name: 'Par30'},
+                {name: 'Par38'},
+                {name: 'Br20'},
+                {name: 'Br30'},
+                {name: 'Br40'}
+              ],
+              'Flood': [
+                {name: 'Par30'},
+                {name: 'Br30'},
+                {name: 'Br40'},
+                {name: 'Small Flood'},
+                {name: 'ShoeBox'}
+              ],
+              'Pole/Street': [
+                {name: 'ShoeBox'},
+                {name: 'Post Top'},
+                {name: 'Security'},
+                {name: 'Cobra Head'}
+              ],
+              'Wall Pack': [
+                {name: 'Wall Pack'},
+                {name: 'Security'}
+              ],
+              'High Bay': [
+                {name: 'High Bay'},
+                {name: 'F-Bay'}
+              ],
+              'Canopy': [
+                {name: 'Garage Canopy'},
+                {name: 'Gas Station'}
+              ],
+              'Custom': [
+                {name: 'Custom'}
+              ]
+        		})
+        	}
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

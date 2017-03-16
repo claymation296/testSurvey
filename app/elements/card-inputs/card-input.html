@@ -92,7 +92,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	// object used to carry input data
         	rows: Object,
         },
-
+        // fade the row in when it is dynamically added to the dom
         attached() {
           this.async(() => {
             Polymer.dom(this.$.tallies).classList.add('showTallies');

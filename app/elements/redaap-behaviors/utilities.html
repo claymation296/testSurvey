@@ -49,6 +49,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       // },
 
 
+      isDisplayed(element) {
+        const display = window.getComputedStyle(element).getPropertyValue('display');
+        return display !== 'none' && display !== '';
+      },            
+
+
       message(string) {
         window.Redaap.toast.text = string;
         window.Redaap.toast.show();

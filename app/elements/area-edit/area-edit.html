@@ -269,12 +269,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           callback();
         },
 
-
-
-
-
-
-
         // called by area-page edit buttons
         init(newData, areaPageElement, mode) {
 
@@ -558,7 +552,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _bomRowTapped(event) {
           const open = () => {
             const {area, light, index} = event.detail;
-            window.Redaap.bomFullscreen.init(this, area, light, index);
+            window.Redaap.bomFullscreen.init(this, 'edit', area, light, index);
           };
 
           this.onTap = open;
