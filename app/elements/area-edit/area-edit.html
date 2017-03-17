@@ -172,6 +172,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // pull fixtures array out of data for the template repeater
           fixtures:  Array,
 
+          mode: String,
+
           showQuoteCards: Boolean,
 
           showBomCards: Boolean,
@@ -263,7 +265,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        bomFullscreenClose(callback) {
+        bomFullscreenClose(_, callback) {
           this.reset();
           this._unsetDataCallback();
           callback();
@@ -288,8 +290,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.listen(this.$.fixtureRepeater, 'dom-change', '_repeaterDomInit');
           this.schedule(setData);
         },
-
-
         // pull fixtures out of data object for the template repeater
         // cannot use a computed property here because of a dom-repeat bug
         _dataChanged(data) {
@@ -302,7 +302,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.set('fixtures', undefined);
           }
         },
-
         // observe splices to fixtures and update this.data
         // should pick up any changes made in quote-edit-card
         _fixturesChanged(splices) {
@@ -499,12 +498,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _addFixtureButtonTapped() {
-          const openLightSelector = () => {
-            window.Redaap.lightSelector.setAreaName(this.data.name);
-            window.Redaap.lightSelector.open();
-          };
-          // onTap property found in redaap-behaviors/on-tap-behavior
-          this.onTap = openLightSelector;
+          if (this.mode === 'quote') {
+            const openLightSelector = () => {
+              window.Redaap.lightSelector.setAreaName(this.data.name);
+              window.Redaap.lightSelector.open();
+            };
+
+            this.onTap = openLightSelector;
+          } else if (this.mode === 'bom') {
+            const openBomSelector = () => {
+              window.Redaap.bomSelector.setAreaName(this.data.name);
+              window.Redaap.bomSelector.open();
+            };
+
+            this.onTap = openBomSelector;
+          }
         },
 
 

@@ -104,6 +104,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             value: 'areaPage',
         		notify: true
         	},
+
+          bom: Object,
         	// bound from lighting-main
         	userSelectedArray: Array,
           // passed in from account-form via main-page if all inputs are complete and valid
@@ -113,10 +115,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Boolean,
             notify: true
           },
+
+          bomBadgeCount: {
+            type: Number,
+            computed: '_computeBomBadgeCount(bom.*)'
+          },
           // display the number of cards/fixtures in area-tab badge
           badgeCount: {
             type: Number,
-            notify: true,
             computed: '_computeBadgeCount(userSelectedArray.*)'
           },
           // pull in the main menu routing string
@@ -209,6 +215,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             } else {
               this._applyHideClass(bool, this.$$('#areaBadge'));
             }
+
+            if (!this.bomBadgeCount) {
+              this._applyHideClass(true, this.$$('#bomAreaBadge'));
+            } else {
+              this._applyHideClass(bool, this.$$('#bomAreaBadge'));
+            }
           }, 100);
         },
 
@@ -259,6 +271,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           } else {
             this._hide();
           }
+        },
+
+
+        _computeBomBadgeCount(obj) {
+          if (!obj) { return; }
+
+          const base = Object.getOwnPropertyDescriptor(obj, 'base');
+
+          if (!base.value) { return; }
+
+          const areas = base.value.areas;
+          const array = Object.keys(areas);
+          const count = array.length;
+
+          if (!count) {
+            this._hideAreaTabBadge(true);
+          } else {
+            this._hideAreaTabBadge(false);
+          }
+
+          return count;
         },
 
         // display the number of saved fixtures in a badge over the 'Saved Fixtures' tab

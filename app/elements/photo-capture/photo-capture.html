@@ -347,6 +347,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.fire('photo-capture-placeholder',  this._makeEventPayload());
           this.fire('photo-capture-external-src', this._makeEventPayload());
           this._hideImageTag();
+
+
+
+          console.log('reset capture button');
+
+
         },
         
         // called by photo-viewer when user deletes last photo from the list
@@ -573,6 +579,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _placeholderChanged() {
+
+          console.log('placeholder changed: ', this.placeholder);
+
+
           this.async(() => {
             this._revokeUrl();
           }, 500);
@@ -600,9 +610,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _setTempImgData({key, orient, url}) {
+        _setTempImgData({key, orientation, url}) {
           // accumulate all keys that are associated with this area and fixture
-          const newObj = {key, orient, placeholder: url};
+          const newObj = {key, orientation, placeholder: url};
 
           if (this.keys) {
             this.set(`keys.${key}`, newObj);
@@ -616,7 +626,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // otherwise this._load will try to load the last savedUrl
           this.set('savedUrl', undefined);
           this.set('placeholder', url);
-          this.set('orientation', orient);
+          this.set('orientation', orientation);
           this.set('key',         key);
           this.fire('photo-capture-placeholder', this._makeEventPayload());
           this._showImageTag();

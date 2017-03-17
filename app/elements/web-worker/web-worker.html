@@ -537,16 +537,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           return this._listenPromise(processedJob).
             then(output => this._saveOffline(output)).
-            then(()     => this._dispatch(saveJob)).
-            then(saved  => {
-              // not using events because this element is at top level (index.html)
-              // top down set photo data (lighting-main -> children)
-              if (saved) {
-                this.set('savedPhotoData', saved);
-              }
-              // bottom up set photo data (photo-capture -> parent)
-              return saved;
-            }).
+
+            then(() => undefined).
+
+
+
+
+
+
+            // then(()     => this._dispatch(saveJob)).
+            // then(saved  => {
+            //   // not using events because this element is at top level (index.html)
+            //   // top down set photo data (lighting-main -> children)
+            //   if (saved) {
+            //     this.set('savedPhotoData', saved);
+            //   }
+            //   // bottom up set photo data (photo-capture -> parent)
+            //   return saved;
+            // }).
             catch(error => console.log('save photo error in web-worker: ', error));
         },
 
