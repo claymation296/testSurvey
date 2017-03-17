@@ -115,13 +115,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </paper-scroll-header-panel>
 
 
-
-
     <bom-type-selector id="typeSelector" 
                        area-name="[[areaName]]" 
                        catagory="[[catagory]]">
     </bom-type-selector>
-
 
 
   </template>
@@ -193,217 +190,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           bom: {
             type: Object,
-            notify: true,
-            value: () => ({areas: {}, fixtures: {}, photos: {}}),
-            observer: '_bomChanged'
-          }
-
-
-          // bom: {
-          //   type: Object,
-          //   value: {
-          //     areas: {
-          //       'office': {
-          //         fixtures: {
-          //           '8in_can': true,
-          //           '2x4_troffer': true
-          //         },
-          //         photos: {
-          //           '144443843_433': true
-          //         }
-          //       },
-          //       'break_room': {
-          //         fixtures: {
-          //           '2x4_troffer': true
-          //         },
-          //         photos: {
-          //           '14476453_349': true
-          //         }
-          //       },
-          //       'main_entrance': {
-          //         fixtures: {
-          //           '8in_can': true
-          //         },
-          //         photos: {
-          //           '14473455_146': true
-          //         }
-          //       }
-          //     },
-          //     fixtures: {
-          //       '8in_can': {
-          //         'office': {
-          //           base: 'e26',
-          //           catagory: 'can',
-          //           color: 'white',
-          //           contactors: '',
-          //           controls: {
-          //             'dimmer': true,
-          //             'light': false,
-          //             'motion': false,
-          //             'timer': false
-          //           },
-          //           days: '5',
-          //           emergency: '',
-          //           height: '8',
-          //           hours: '12',
-          //           icon: 'canLight',
-          //           kelvin: '4500',
-          //           label: '8 inch Can',
-          //           lamps: 1,
-          //           mount: '',
-          //           notes: '',
-          //           photos: {
-          //             '144443843_433': true
-          //           },
-          //           qty: 7,
-          //           type: '8in',
-          //           volts: '120',
-          //           watts: '20'
-          //         },
-          //         'main_entrance': {
-          //           base: 'pl',
-          //           catagory: 'can',
-          //           color: 'white',
-          //           contactors: '',
-          //           controls: {
-          //             'dimmer': false,
-          //             'light': false,
-          //             'motion': false,
-          //             'timer': true
-          //           },
-          //           days: '7',
-          //           emergency: '',
-          //           height: '12',
-          //           hours: '8',
-          //           icon: 'canLight',
-          //           label: '8 inch Can',
-          //           kelvin: '5000',
-          //           lamps: 2,
-          //           mount: '',
-          //           notes: '',
-          //           photos: {
-          //             '144475694_394': true
-          //           },
-          //           qty: 4,
-          //           type: '8in',
-          //           volts: '120',
-          //           watts: '32'
-          //         }
-          //       },
-          //       '2x4_troffer': {
-          //         'break_room': {
-          //           base: 'tombstone',
-          //           catagory: 'troffer',
-          //           color: 'white',
-          //           contactors: '',
-          //           controls: {
-          //             'dimmer': false,
-          //             'light': false,
-          //             'motion': true,
-          //             'timer': false
-          //           },
-          //           days: '7',
-          //           emergency: '',
-          //           height: '10',
-          //           hours: '14',
-          //           icon: 'fluorescent',
-          //           kelvin: '4500',
-          //           label: '2x4 Troffer',
-          //           lamps: 3,
-          //           mount: '',
-          //           notes: '',
-          //           photos: {
-          //             '14476453_349': true
-          //           },
-          //           qty: 4,
-          //           type: '2x4',
-          //           volts: '208',
-          //           watts: '24'
-          //         },
-          //         'office': {
-          //           base: 'tombstone',
-          //           catagory: 'troffer',
-          //           color: 'white',
-          //           contactors: '',
-          //           controls: {
-          //             'dimmer': false,
-          //             'light': true,
-          //             'motion': false,
-          //             'timer': true
-          //           },
-          //           days: '7',
-          //           emergency: '',
-          //           height: '10',
-          //           hours: '12',
-          //           icon: 'fluorescent',
-          //           kelvin: '4500',
-          //           label: '2x4 Troffer',
-          //           lamps: 2,
-          //           mount: '',
-          //           notes: '',
-          //           photos: {
-          //             '14473455_146': true
-          //           },
-          //           qty: 6,
-          //           type: '2x4',
-          //           volts: '208',
-          //           watts: '28'
-          //         }
-          //       }
-          //     },
-          //     photos: {
-          //       '144443843_433': {
-          //         area: 'office',
-          //         fixture: '8in_can',
-          //         orientation: 0,
-          //         placeholder: '',
-          //         savedUrl: ''
-          //       },
-          //       '144475694_394': {
-          //         area: 'main_entrance',
-          //         fixture: '8in_can',
-          //         orientation: 6,
-          //         placeholder: '',
-          //         savedUrl: ''
-          //       },
-          //       '14476453_349': {
-          //         area: 'break_room',
-          //         fixture: '2x4_troffer',
-          //         orientation: 0,
-          //         placeholder: '',
-          //         savedUrl: ''
-          //       },
-          //       '14473455_146': {
-          //         area: 'office',
-          //         fixture: '2x4_troffer',
-          //         orientation: 0,
-          //         placeholder: '',
-          //         savedUrl: ''
-          //       }
-          //     }              
-          //   }
-          // }
-
-
+            notify: true
+          },
+          // ref to area-page
+          // used to clear areaName
+          areaPageCE: Object,        
         },
+
 
         listeners: {
           'bom-type-selector-back':  '_bomTypeBackButtonTapped',
-
           'bom-type-selector-close': '_bomTypeCloseButtonTapped',
-
           'bom-type-selector-save':  '_bomTypeSave'
         },
-
-
-
-        _bomChanged(bom) {
-          console.log('bom changed: ', bom);
-        },
-
-
-
-
 
         // called by area-tab before open
         setAreaName(areaName) {
@@ -411,8 +210,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.areaName = areaName;
         },
 
-        // called by solution-view on each close
-        resetSelectionIndex() {
+        
+        resetSelection() {
+          if (!this.areaPageCE) {
+            const lightingMainDom = Polymer.dom(window.Redaap.lightingMain);
+            this.areaPageCE = lightingMainDom.node.$.areaPage;
+          }
+
+          this.areaPageCE.clearAreaName();
           this.selectionIndex = undefined;
         },
         // this.selectionIndex observer
@@ -421,8 +226,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // this.selectionIndex is set to undefined to reset all
           // selected attributes so ignore the change until it is defined to a number
           if (typeof index === 'number') {
-            const fixture = Object.assign({}, this.catagories[index]);
-
             this.catagory = this.catagories[index].name;
             this.$.typeSelector.open();
           }
@@ -430,12 +233,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // called by paper-icon-button in toolbar
         _closeButtonTapped() {
-          this.onTap = this.close.bind(this);
+          const close = () => {
+            this.resetSelection();
+            this.close();
+          };
+
+          this.onTap = close;
         },
 
 
         _bomTypeBackButtonTapped() {
-          this.resetSelectionIndex();
+          this.resetSelection();
         },
 
 
@@ -445,60 +253,62 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.$.typeSelector.reset();
           };
 
-          this.resetSelectionIndex();
+          this.resetSelection();
           this.close(callback);
         },
 
         
         _bomTypeSave(event) {
           const {area, light} = event.detail;
-          const bom = this.bom;
+          const areaKey = area.split(' ').join('_');
+          const label   = light.label.split(' ').join('_');
+          const bom     = this.bom;
 
-          // add new light to bom
-          // bom = {
-          //     areas: {},
-          //     fixtures: {},
-          //     photos: {}
-          // }
+
+
 
           // TODO:
           //      test for overwrites
-          if (!bom.areas[area]) {
-            bom.areas[area] = {};
+
+
+
+
+          if (!bom.areas[areaKey]) {
+            bom.areas[areaKey] = {};
           }
 
-          if (!bom.areas[area].fixtures) {
-            bom.areas[area].fixtures = {};
+          if (!bom.areas[areaKey].fixtures) {
+            bom.areas[areaKey].fixtures = {};
           }
 
-          if (!bom.areas[area].photos) {
-            bom.areas[area].photos = {};
+          if (!bom.areas[areaKey].photos) {
+            bom.areas[areaKey].photos = {};
           }
 
-          if (!bom.fixtures[light.label]) {
-            bom.fixtures[light.label] = {};
+          if (!bom.fixtures[label]) {
+            bom.fixtures[label] = {};
           }
           
-          bom.areas[area].fixtures[light.label] = true;
-
+          bom.areas[areaKey].fixtures[label] = true;
 
           const photoKeys = Object.keys(light.photos);
           photoKeys.forEach(key => {
-            bom.areas[area].photos[key] = true;
+            bom.areas[areaKey].photos[key] = true;
           });
 
+          bom.fixtures[label][areaKey] = light;
 
-          bom.fixtures[light.label][area] = light;
-          bom.photos = Object.assign(bom.photos, light.photos);
 
-          console.log('light saved: ', light);
+          console.log('saving: ', bom.photos, light.photos.keys);
 
+
+          bom.photos = Object.assign(bom.photos, light.photos.keys);
           // force update
           this.bom  = undefined;
           this.set('bom', bom);
           this.$.typeSelector.resetSelectionIndex();
           this.$.typeSelector.reset();
-          this.resetSelectionIndex();
+          this.resetSelection();
           this.reset();
         }
 

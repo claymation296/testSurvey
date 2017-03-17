@@ -269,194 +269,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // tally === {tally0, tally1, tally2, tally3}
         	userSelectedArray: {
         		type: Array,
-            notify: true,
-        		value: () => ([])
+            notify: true
         	},
-
 
           bom: {
             type: Object,
-            value: {
-              areas: {
-                'office': {
-                  fixtures: {
-                    '8in_can': true,
-                    '2x4_troffer': true
-                  },
-                  photos: {
-                    '144443843_433': true
-                  }
-                },
-                'break_room': {
-                  fixtures: {
-                    '2x4_troffer': true
-                  },
-                  photos: {
-                    '14476453_349': true
-                  }
-                },
-                'main_entrance': {
-                  fixtures: {
-                    '8in_can': true
-                  },
-                  photos: {
-                    '14473455_146': true
-                  }
-                }
-              },
-              fixtures: {
-                '8in_can': {
-                  'office': {
-                    base: 'e26',
-                    catagory: 'can',
-                    color: 'white',
-                    contactors: '',
-                    controls: {
-                      'dimmer': true,
-                      'light': false,
-                      'motion': false,
-                      'timer': false
-                    },
-                    days: '5',
-                    emergency: '',
-                    height: '8',
-                    hours: '12',
-                    icon: 'canLight',
-                    kelvin: '4500',
-                    label: '8 inch Can',
-                    lamps: 1,
-                    mount: '',
-                    notes: '',
-                    photos: {
-                      '144443843_433': true
-                    },
-                    qty: 7,
-                    type: '8in',
-                    volts: '120',
-                    watts: '20'
-                  },
-                  'main_entrance': {
-                    base: 'pl',
-                    catagory: 'can',
-                    color: 'white',
-                    contactors: '',
-                    controls: {
-                      'dimmer': false,
-                      'light': false,
-                      'motion': false,
-                      'timer': true
-                    },
-                    days: '7',
-                    emergency: '',
-                    height: '12',
-                    hours: '8',
-                    icon: 'canLight',
-                    label: '8 inch Can',
-                    kelvin: '5000',
-                    lamps: 2,
-                    mount: '',
-                    notes: '',
-                    photos: {
-                      '144475694_394': true
-                    },
-                    qty: 4,
-                    type: '8in',
-                    volts: '120',
-                    watts: '32'
-                  }
-                },
-                '2x4_troffer': {
-                  'break_room': {
-                    base: 'tombstone',
-                    catagory: 'troffer',
-                    color: 'white',
-                    contactors: '',
-                    controls: {
-                      'dimmer': false,
-                      'light': false,
-                      'motion': true,
-                      'timer': false
-                    },
-                    days: '7',
-                    emergency: '',
-                    height: '10',
-                    hours: '14',
-                    icon: 'fluorescent',
-                    kelvin: '4500',
-                    label: '2x4 Troffer',
-                    lamps: 3,
-                    mount: '',
-                    notes: '',
-                    photos: {
-                      '14476453_349': true
-                    },
-                    qty: 4,
-                    type: '2x4',
-                    volts: '208',
-                    watts: '24'
-                  },
-                  'office': {
-                    base: 'tombstone',
-                    catagory: 'troffer',
-                    color: 'white',
-                    contactors: '',
-                    controls: {
-                      'dimmer': false,
-                      'light': true,
-                      'motion': false,
-                      'timer': true
-                    },
-                    days: '7',
-                    emergency: '',
-                    height: '10',
-                    hours: '12',
-                    icon: 'fluorescent',
-                    kelvin: '4500',
-                    label: '2x4 Troffer',
-                    lamps: 2,
-                    mount: '',
-                    notes: '',
-                    photos: {
-                      '14473455_146': true
-                    },
-                    qty: 6,
-                    type: '2x4',
-                    volts: '208',
-                    watts: '28'
-                  }
-                }
-              },
-              photos: {
-                '144443843_433': {
-                  area: 'office',
-                  fixture: '8in_can',
-                  orientation: 0,
-                  placeholder: '',
-                  savedUrl: ''
-                },
-                '144475694_394': {
-                  area: 'main_entrance',
-                  fixture: '8in_can',
-                  orientation: 6,
-                  placeholder: '',
-                  savedUrl: ''
-                },
-                '14476453_349': {
-                  area: 'break_room',
-                  fixture: '2x4_troffer',
-                  orientation: 0,
-                  placeholder: '',
-                  savedUrl: ''
-                },
-                '14473455_146': {
-                  area: 'office',
-                  fixture: '2x4_troffer',
-                  orientation: 0,
-                  placeholder: '',
-                  savedUrl: ''
-                }
-              }              
-            }
+            notify: true
           },
 
           bomArray: {
@@ -479,6 +297,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           'area-cards-edit-button-tapped': '_editAreaButtonTapped'
         },
 
+
+        observers: [
+          // used to update bom when user deletes an area card
+          '_bomArrayChanged(bomArray.*)'
+        ],
+
         _computeQuoteCardsMode: mode => (mode && mode === 'quote') ? false : true,
 
         _computeBomCardsMode:   mode => (mode && mode === 'bom')   ? false : true,
@@ -495,8 +319,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             const fixtureKeys = Object.keys(bom.areas[area].fixtures);
 
             const fixtures = fixtureKeys.map(fixKey => {
-              const fixture          = Object.assign({}, bom.fixtures[fixKey][area]);
-              const photoKeys        = Object.keys(fixture.photos);
+              const fixture = Object.assign({}, bom.fixtures[fixKey][area]);
+
+              if (!fixture.photos.keys) {
+                fixture.photos = {
+                  key: undefined,
+                  keys: undefined,
+                  orientation: undefined,
+                  placeholder: undefined,
+                  savedUrl: undefined
+                };
+                return fixture;
+              }
+
+              const photoKeys        = Object.keys(fixture.photos.keys);
               const latestPhotoIndex = photoKeys.length - 1;
 
               const photos = photoKeys.reduce((prev, curr, index) => {                
@@ -520,8 +356,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               name
             };
           });
-
-          return array;
+          // put most recent area first
+          return array.reverse();
         },
         
         // common func
@@ -530,7 +366,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           return array.findIndex(testAreaNames);
         },
 
-        // called by area-edit
+        // area deletes
+        _bomArrayChanged(obj) {
+          if (!obj) { return; }
+          if (obj.path === 'bomArray.splices') {
+            const areaToDel = obj.value.indexSplices[0].removed[0].name;
+            // wait for slide-delete animations and cleanup
+            this.async(() => {
+              this.schedule.bind(this, this.deleteArea(areaToDel));
+            }, 50);
+          }
+        },
+
+        // called by area-edit and this._bomArrayChanged()
         deleteArea(name) {
           if (this.mode === 'quote') {
             const index = this._getIndexByName(this.userSelectedArray, name);
@@ -546,6 +394,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             fixKeysToDel.forEach(fixKey => {
               delete bom.fixtures[fixKey][areaKey];
+
+              const remainingFixtures = Object.keys(bom.fixtures[fixKey]);
+
+              if (!remainingFixtures.length) {
+                delete bom.fixtures[fixKey];
+              }
             });
 
             photoKeysToDel.forEach(photoKey => {
@@ -641,8 +495,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // update all dom and local storage with Polymer data api
           this.set(`userSelectedArray.${areaIndex}`, data);
         },
-
         // called by solution-view _clearSolutions() method
+        // and bom-catagory-selector resetSelection()
         clearAreaName() {
           this.areaName = undefined;
         },

@@ -38,6 +38,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          attr-for-selected="id">
       <!-- id's used to reference these elements from outside of lighting-main dom -->
       <area-page id="areaPage"
+                 bom="{{bom}}"
                  mode="[[mode]]"
                  reverse-animation="[[reverseAnimation]]"
                  user-selected-array="{{userSelectedArray}}">
@@ -50,6 +51,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                       tallies-valid="[[talliesValid]]"
                       reverse-animation="[[reverseAnimation]]">
       </quote-selector>
+
+
+      <!-- <bom-send id="bomSend"></bom-send> -->
+
+
   	</neon-animated-pages>
 
     <lighting-mode id="mode"></lighting-mode>
@@ -89,7 +95,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           //                         tallyArray: [{name, tally0, tally1, tally2, tally3}]}]
           userSelectedArray: {
             type: Array,
-            notify: true
+            notify: true,
+            value: () => ([])
+          },
+
+          bom: {
+            type: Object,
+            notify: true,
+            value: () => ({areas: {}, fixtures: {}, photos: {}})
           },
           // saved photo data from web-worker.html
           savedPhotoData: {
@@ -289,13 +302,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // when promise is resolved or later after the photo is saved to cloud
         // from the worker dreading list
         _savedPhotoDataChanged(data) {
-          const key = data.key;
-          const match = this._findFixtureByKey(key);
+          if (this.mode === 'quote') {
+            const key = data.key;
+            const match = this._findFixtureByKey(key);
 
-          if (match) {
-            this._addPhotoToMatch(match, data);
-          } else  {
-            this.dreading[key] = data;
+            if (match) {
+              this._addPhotoToMatch(match, data);
+            } else  {
+              this.dreading[key] = data;
+            }
           }
         },
 
@@ -448,16 +463,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         clearSurvey() {
           const clearData = () => {
             this.set('userSelectedArray', []);
+            this.set('bom', {areas: {}, fixtures: {}, photos: {}});
             this.surveyDataSnapShot = undefined;
             window.Redaap.accountForm.clearClient();
             window.Redaap.webWorker.clearPhotoData();
             this.set('clientValid',  false);
             this.set('talliesValid', false);
-            this.set('mode', null);
             // reset page to account-form
-            this.async(() => {
-              this.set('lightingTab', 'areaPage');
-            }, 500);
+            const navigate = () => {
+              this.set('route', 'client');
+              this.async(() => {
+                this.set('mode', null);
+                this.set('lightingTab', 'areaPage');
+              }, 500);
+            };
+
+            this.schedule(navigate);
           };
           // onTap property found in redaap-behaviors/on-tap-behavior
           this.onTap = clearData; 
