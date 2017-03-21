@@ -12,6 +12,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="lighting-mode.html">
 <link rel="import" href="../area-page/area-page.html">
 <link rel="import" href="../quote-selector/quote-selector.html">
+<link rel="import" href="../bom-send/bom-send.html">
 <link rel="import" href="../redaap-behaviors/utilities.html">
 <link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
 
@@ -53,7 +54,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </quote-selector>
 
 
-      <!-- <bom-send id="bomSend"></bom-send> -->
+      <bom-send id="bomSend" 
+                bom="[[bom]]"
+                client="[[client]]"
+                reverse-animation="[[reverseAnimation]]">
+      </bom-send>
 
 
   	</neon-animated-pages>
@@ -303,7 +308,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // from the worker dreading list
         _savedPhotoDataChanged(data) {
           if (this.mode === 'quote') {
-            const key = data.key;
+            const key   = data.key;
             const match = this._findFixtureByKey(key);
 
             if (match) {
@@ -320,6 +325,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             case 'areaPage':
               return 0;
             case 'quoteSelector':
+            case 'bomSend':
               return 1;
             default:
               return;

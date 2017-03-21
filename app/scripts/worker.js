@@ -412,11 +412,11 @@
   	const url  		 = Self.URL.createObjectURL(file);
 
   	getOrientation(job).
-  		then(orient => {
+  		then(orientation => {
   			// dont send file back to main thread for better perf
   			const jobWithoutFile = removeFile(job);
-  			// return key, orientatin and url back to photo-capture via web-worker
-  			successful(jobWithoutFile, {key, orient, url});
+  			// return key, orientation and url back to photo-capture via web-worker
+  			successful(jobWithoutFile, {key, orientation, url});
 
   			processFile(file).
   				then(blob => {

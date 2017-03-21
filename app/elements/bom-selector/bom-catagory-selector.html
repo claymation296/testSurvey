@@ -260,8 +260,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         
         _bomTypeSave(event) {
           const {area, light} = event.detail;
-          const areaKey = area.split(' ').join('_');
-          const label   = light.label.split(' ').join('_');
+          const fillWithUnderscores = str => str.split(' ').join('_');
+          const areaKey = fillWithUnderscores(area);
+          const label   = fillWithUnderscores(light.label);
           const bom     = this.bom;
 
 
@@ -291,18 +292,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           
           bom.areas[areaKey].fixtures[label] = true;
 
-          const photoKeys = Object.keys(light.photos);
-          photoKeys.forEach(key => {
-            bom.areas[areaKey].photos[key] = true;
-          });
+          if (light.photos) {
+            const photoKeys = Object.keys(light.photos);
+            photoKeys.forEach(key => {
+              bom.areas[areaKey].photos[key] = true;
+            });
+          }          
 
           bom.fixtures[label][areaKey] = light;
-
-
-          console.log('saving: ', bom.photos, light.photos.keys);
-
-
-          bom.photos = Object.assign(bom.photos, light.photos.keys);
+          bom.photos = Object.assign(bom.photos, light.photos);
           // force update
           this.bom  = undefined;
           this.set('bom', bom);
