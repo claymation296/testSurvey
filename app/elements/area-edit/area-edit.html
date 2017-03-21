@@ -86,8 +86,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <bom-edit-row class="card"
                             area="[[data.name]]"
                             light="[[item]]" 
-                            index="[[index]]" 
-                            defer-photo="{{deferPhoto}}">
+                            index="[[index]]">
               </bom-edit-row>
             </template>
 
@@ -210,6 +209,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
           // ref to area-tab custom element inside lighting-main
           areaPageCE: Object,
+          // cache the deleted bom fixture when user uses slide-delete in bom-edit-row
+          // this will be forwarded to area-page deleteBomFixture method to update dom
+          deletedBomFix: Object
         },
 
 
@@ -231,6 +233,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           'replacements-repeater-last-replacement-deleted': '_deleteQuoteFixture',
           // fired by bom-edit-row
           'bom-edit-row-tapped':                            '_bomRowTapped',
+          // fired by bom-edit-row
+          'bom-edit-row-forwarded-delete-animation-done':   '_bomRowDeleted',
           // fired by close-save-button
           'close-save-button-tapped':                       '_closeButtonTapped'
         },
@@ -241,7 +245,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           '_fixturesChanged(fixtures.splices)'
         ],
 
+        // delete in area-edit bom-edit-row slide-delete event
+        _bomRowDeleted(event) {
+          if (!this.deletedBomFix) { return; }
+          const area = event.detail.area;
+          this.areaPageCE.deleteBomFixture(area, this.deletedBomFix);
+        },
 
+        // bom-fullscreen-edit delete button
         bomFullscreenDelete(index) {
           this._deleteLight(index);
         },
@@ -307,6 +318,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _fixturesChanged(splices) {
           // update this.data
           if (splices) {
+            // a row has been deleted
+            if (this.mode === 'bom' && splices.indexSplices) {
+              this.deletedBomFix = splices.indexSplices[0].removed[0];
+            }
+
             this.set('data.fixtures', this.fixtures);
           }
         },
@@ -353,6 +369,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             // splice instead of this.arrayDelete
             this.splice('fixtures', this.selectedIndex, 1); 
             this.splice('allCards', this.selectedIndex, 1); 
+
+            if (this.mode === 'bom') {
+              this.areaPageCE.deleteBomFixture(this.data.name, this.deletedBomFix);
+            }
 
             if (this.fixtures.length === 0) {
               this.areaPageCE.deleteArea(this.data.name);
@@ -473,9 +493,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             const open = this.open.bind(this, loadCardsCallback);
             this.schedule(open);
           }, 100);
-        },        
+        },  
 
         // called by area-page updateUSA method any time the uSA is updated by solution-view
+        // and by area-page _bomChanged observer when bom is changed by bom-catagory-selector
         update(newData) {
           // no need to run the update if area-edit is not already open
           const areaEditIsNotOpen = (
@@ -554,6 +575,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.showQuoteCards = false;
           this.showBomCards   = false;
           this.$.closeButton.makeX();
+
+          if (this.mode === 'bom') {
+            this.areaPageCE.updateBomState();
+          }
         },
 
 

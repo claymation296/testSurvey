@@ -233,13 +233,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const {filename, keys} = captureElement;
           this.capture = captureElement;
           this.label   = filename;
-
-
-
-          console.log('photo-viewer keys: ', keys);
-
-
-          // keys === {key: {key, orientation, savedUrl}}
+          // keys === {'timestamp_random key': {key, orientation, savedUrl}}
           // Object.keys will create an array with the keys ordered in ascending
           // order which puts the elements in order of newest last since
           // each key is a timestamp

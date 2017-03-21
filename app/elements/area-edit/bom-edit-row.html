@@ -116,7 +116,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _forwardEventToParent() {
-          this.fire('bom-edit-row-forwarded-delete-animation-done');
+          this.fire('bom-edit-row-forwarded-delete-animation-done', {area: this.area});
         }
 
       });

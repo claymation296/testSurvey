@@ -363,21 +363,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // photo-capture image orientation correction for both background divs
         _orientationChanged(orientation) {
           const elements = [this.backgroundImage, this.backgroundImagePlaceholder];
-
-          switch (orientation) {
-            case 3:
-              this._correctOrientation(elements, 3);
-              break;
-            case 6:
-              this._correctOrientation(elements, 6);
-              break;
-            case 8:
-              this._correctOrientation(elements, 8);
-              break;
-            default:
-              this._correctOrientation(elements);
-              break;
-          }
+          this._correctOrientation(elements, orientation);
         },
 
 

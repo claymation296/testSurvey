@@ -289,7 +289,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             value: 'closed'
           },
 
-          mode: String
+          mode: String,
+          // name of currently selected area to edit
+          // used to properly update area-edit rows in bom mode
+          currentEditArea: String
         },
 
 
@@ -299,9 +302,43 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         observers: [
+        '_bomChanged(bom.*)',
           // used to update bom when user deletes an area card
           '_bomArrayChanged(bomArray.*)'
         ],
+        // called by area-edit after close if in bom mode in order to avoid a flash
+        // on bom force update
+        updateBomState() {
+          const bom = this.bom;
+          this.bom = undefined;
+          this.set('bom', bom);
+        },
+
+        // called by area-edit bom-edit-row slide-delete events
+        deleteBomFixture(area, light) {
+          const makeKey = str => str.split(' ').join('_');
+          const areaKey = makeKey(area);
+          const fixKey  = makeKey(light.label);
+          const bom     = this.bom;
+          delete bom.areas[areaKey].fixtures[fixKey];
+
+          if (light.photos && typeof light.photos === 'object') {
+            const photoKeys = Object.keys(light.photos);
+            photoKeys.forEach(photoKey => {
+              delete bom.areas[areaKey].photos[photoKey];
+              delete bom.photos[photoKey];
+            });
+          }
+          
+          const fixture = bom.fixtures[fixKey];
+          delete fixture[areaKey];
+          const remainingFixtureAreas = Object.keys(fixture).length;
+
+          if (!remainingFixtureAreas) {
+            delete bom.fixtures[fixKey];
+          }
+        },
+        
 
         _computeQuoteCardsMode: mode => (mode && mode === 'quote') ? false : true,
 
@@ -309,7 +346,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _computeBomArray(obj) {
-          if (!obj.base) { return []; }
+          if (!obj || !obj.base) { return this.bomArray; }
 
           const bom   = obj.base;
           const areas = Object.keys(bom.areas);
@@ -317,39 +354,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const array = areas.map(area => {
             const name        = area.split('_').join(' ');
             const fixtureKeys = Object.keys(bom.areas[area].fixtures);
-
-            const fixtures = fixtureKeys.map(fixKey => {
-              const fixture = Object.assign({}, bom.fixtures[fixKey][area]);
-
-              if (!fixture.photos.keys) {
-                fixture.photos = {
-                  key: undefined,
-                  keys: undefined,
-                  orientation: undefined,
-                  placeholder: undefined,
-                  savedUrl: undefined
-                };
-                return fixture;
-              }
-
-              const photoKeys        = Object.keys(fixture.photos.keys);
-              const latestPhotoIndex = photoKeys.length - 1;
-
-              const photos = photoKeys.reduce((prev, curr, index) => {                
-                prev[curr] = Object.assign({}, bom.photos[curr]);
-                // last photo should be newest so add this data to the object to match
-                // what photo-capture expects as inputs
-                if (index === latestPhotoIndex) {
-                  prev = Object.assign({key: curr}, prev, bom.photos[curr]);
-                }
-
-                return prev;
-              }, {});
-
-              fixture.photos = photos;
-
-              return fixture;
-            });
+            const fixtures = fixtureKeys.map(fixKey => bom.fixtures[fixKey][area]);
             // data obj in area-cards.html
             return {
               fixtures,
@@ -358,6 +363,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           });
           // put most recent area first
           return array.reverse();
+        },
+
+
+        _bomChanged(obj) {
+          if (!obj || !obj.base || !this.bomArray) { return; }
+          // find the element that is being edited and send the new data to area-edit
+          const newData = this.bomArray.find(entry => entry.name === this.currentEditArea);
+          // force area-edit repeater to update edits
+          window.Redaap.areaEdit.update(newData);
         },
         
         // common func
@@ -482,7 +496,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
         },
 
-        // called by area-edit
+        // called by area-edit on close
         editUSA(data) {
           // search for a match of the area names first
           const areaIndex = this._getIndexByName(this.userSelectedArray, data.name);
@@ -615,8 +629,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // event fired from area-cards.html
         _editAreaButtonTapped(event) {
           const openEditor = () => {
+            const data = event.detail.data;
+            if (this.mode === 'bom') {
+              // cache the name of the selected area to edit
+              // in order to update area-edit dom when bom changes due to user edits
+              this.currentEditArea = data.name;
+            }
             // send data and ref to this element so this.editUSA() can be called by area-edit
-            window.Redaap.areaEdit.init(event.detail.data, this, this.mode);
+            window.Redaap.areaEdit.init(data, this, this.mode);
           };
           // onTap property found in redaap-behaviors/on-tap-behavior
           // open area-edit and pass in its requred data

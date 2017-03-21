@@ -288,7 +288,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             notify: true
           },
           // set on host if the image should load after an animation sequence
-          deferLoad: Boolean,
+          deferLoad: {
+            type: Boolean,
+            notify: true
+          },
           // if deferLoad is truthy then listen for the trigger to be set true
           // before loading the image file into the image element
           deferTrigger: {
@@ -306,9 +309,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
         // called by photo-viewer if user updates the photo pertaining to this
         // capture instance
-        updateThumbnail({key, orient, placeholder, url}) {
+        updateThumbnail({key, orientation, placeholder, url}) {
           // the order of operations is very important here
-          this.set('orientation', orient);
+          this.set('orientation', orientation);
           if (placeholder && !url) {
             this.set('placeholder', placeholder);
           } else {
@@ -347,12 +350,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.fire('photo-capture-placeholder',  this._makeEventPayload());
           this.fire('photo-capture-external-src', this._makeEventPayload());
           this._hideImageTag();
-
-
-
-          console.log('reset capture button');
-
-
         },
         
         // called by photo-viewer when user deletes last photo from the list
@@ -471,7 +468,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.async(() => {
             this._revokeUrl();
             this.placeholder = '#';
-            this.fire('photo-capture-placeholder', this._makeEventPayload());
             this._resetTrigger();
           }, 500);
         },
@@ -522,7 +518,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 this.set(`keys.${key}.orientation`, 0); 
                 this.set(`keys.${key}.placeholder`, url);
               }
-              this.fire('photo-capture-placeholder', this._makeEventPayload());
               this._showImageTag();
             } else if (!window.navigator.onLine) {
               this._showErrorIcon();
@@ -548,6 +543,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (this.pic) {
             this.pic = '#';
           }
+          this.placeholderErrorRetry = true;
+          this.fire('photo-capture-placeholder', this._makeEventPayload());
           this._showImageTag();
         },
 
@@ -569,7 +566,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if(this.deferLoad) {
             // allow instant updates to placeholder and pic
             // now that parent entry animations are complete
-            this.deferLoad = false;
+            this.set('deferLoad', false);
             this._load();
             // in case the file is still empty so reset the trigger since
             // a picture was not loaded in
@@ -579,10 +576,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _placeholderChanged() {
-
-          console.log('placeholder changed: ', this.placeholder);
-
-
           this.async(() => {
             this._revokeUrl();
           }, 500);
@@ -590,8 +583,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _keyChanged() {
-          if (this.deferLoad) { return; } 
-          this._load();
+          if (this.deferLoad) { return; }
+          this.schedule(this._load.bind(this));
         },
 
 
@@ -624,11 +617,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // clear savedUrl incase we are offline and user chooses to take another
           // photo to replace the offline icon
           // otherwise this._load will try to load the last savedUrl
-          this.set('savedUrl', undefined);
+          this.set('savedUrl',    undefined);
           this.set('placeholder', url);
           this.set('orientation', orientation);
           this.set('key',         key);
-          this.fire('photo-capture-placeholder', this._makeEventPayload());
           this._showImageTag();
         },
         
@@ -640,7 +632,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (this.keys) {
             // saved/processed photos no longer need orientation correction
             this.set(`keys.${key}.orientation`, 0); 
-            this.set(`keys.${key}.savedUrl`, url);
+            this.set(`keys.${key}.savedUrl`,    url);
           }
           this.set('savedUrl', url);
           this.schedule(this._load.bind(this));

@@ -136,36 +136,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         <span id="title" class="flex title">[[area]]</span>
 
-        <!-- <photo-capture id="capture" 
-                       filename="[[light.label]]"
-                       key="{{light.photos.key}}"
-                       keys="{{light.photos.keys}}"
-                       orientation="{{light.photos.orientation}}"
-                       placeholder="{{light.photos.placeholder}}"
-                       saved-url="{{light.photos.savedUrl}}" 
-                       disable-thumbnail
-                       defer-load 
-                       defer-trigger="{{deferPhoto}}">
-        </photo-capture> -->
-
-
-
 
         <photo-capture id="capture" 
                        filename="[[light.label]]"
-                       key="{{key}}"
-                       keys="{{keys}}"
-                       orientation="{{orientation}}"
-                       placeholder="{{placeholder}}"
-                       saved-url="{{savedUrl}}" 
+                       keys="{{light.photos}}"
+                       orientation="{{light.orientation}}"
+                       placeholder="{{light.placeholder}}"
+                       saved-url="{{light.savedUrl}}" 
+                       key="{{light.key}}"
                        disable-thumbnail
-                       defer-load 
-                       defer-trigger="{{deferPhoto}}">
+                       defer-load="{{deferLoad}}"
+                       defer-trigger="{{deferTrigger}}">
         </photo-capture>
-
-
-
-
 
 
         <notes-button id="notes" existing-fixture="{{light}}"></notes-button>
@@ -516,14 +498,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Boolean,
             value: true
           },
-
-          orientation: {
-          	type: Number,
-          	// computed: '_computeOrientation(photo.orientation)',
-          	observer: '_orientationChanged'
-          },
           // trigger the photos to load after the entry animation completes
-          deferPhoto: {
+          deferTrigger: {
             type: Boolean,
             notify: true
           },
@@ -549,7 +525,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         observers: [
-          '_lightChanged(light.*)'
+          '_lightChanged(light.*)',
+          '_orientationChanged(light.orientation)'
         ],
         // animation config setup since headerContainer is dynamically
         // created by paper-scroll-header-panel
@@ -570,34 +547,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         init(caller, setting, area, light, index) {
+
         	const callback = () => {
-            this.edited     = false;
-        		this.deferPhoto = true;
+            this.edited       = false;
+        		this.deferTrigger = true;
         	};
-
-          // this.deferPhoto must be set before this.light
-          this.deferPhoto = false;
-        	this.caller 		= caller;
-          this.setting    = setting;
-        	this.area 			= area;
-
-        	this.light 			 = light;
-          this.key         = light.photos.key;
-          this.keys        = light.photos.keys;
-          this.orientation = light.photos.orientation;
-          this.placeholder = light.photos.placeholder;
-          this.savedUrl    = light.photos.savedUrl;
-
-        	this.index 			= index;
-          this.$.closeButton.makeX();
+          // this.deferTrigger must be set before this.light
+          this.deferLoad    = true;
+          this.deferTrigger = false;
+        	this.caller 		  = caller;
+          this.setting      = setting;
+        	this.area 			  = area;
+        	this.light 			  = light;
+        	this.index 			  = index;
           this.$.total.style.display = 'flex';
-        	this.open(callback);
+          this.$.closeButton.makeX();
+          this._resetPlaceholderBackground();
+          this._resetExternalSrcBackground();
+        	this.schedule(this.open.bind(this, callback));
         },
 
 
         _computeEditState: setting => setting === 'new',
-
-//        _computeOrientation: orientation => orientation,
 
         // change the toolbar colors to reflect the differenct between adding a new fixture
         // and editing an existing one
@@ -616,10 +587,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _lightChanged(light) {
-
-          console.log('light changed: ', light);
-
-
+          if (!light.base || !light.base.qty) { return; }
           // ignore init (this.edited initalizes as true then set to false after entry animation)
           if (this.edited) { return; }
           // ignore photo-capture initialization
@@ -658,9 +626,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _correctOrientation(elements, num = 1) {
+        _correctOrientation(elements, num = 0) {
           const config = {
-            1: {height: '100%',  pos: 'center center', rotate: '0'},
+            0: {height: '100%',  pos: 'center center', rotate: '0'},
             3: {height: '100%',  pos: 'center center', rotate: '180'},
             6: {height: '100vw', pos: 'center right',  rotate: '90'},
             8: {height: '100vw', pos: 'center left',   rotate: '-90'}
@@ -675,25 +643,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // photo-capture image orientation correction for both background divs
-        _orientationChanged(orientation, oldOrientation) {
-          if (oldOrientation === undefined) { return; }
-
+        _orientationChanged(orientation) {
           const elements = [this.backgroundImage, this.backgroundImagePlaceholder];
-
-          switch (orientation) {
-            case 3:
-              this._correctOrientation(elements, 3);
-              break;
-            case 6:
-              this._correctOrientation(elements, 6);
-              break;
-            case 8:
-              this._correctOrientation(elements, 8);
-              break;
-            default:
-              this._correctOrientation(elements);
-              break;
-          }
+          this._correctOrientation(elements, orientation);
         },
 
 
@@ -726,23 +678,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // placeholder is set first before the img file has had time to be saved to db
         // it is removed 500ms after main background div src has been set to avoid flicker
         _placeHolderSrcFromPhotoCapture(event) {
-
-
-          console.log('placeholder event detail: ', event.detail);
-
-          const {externalSrc: url, key, keys, orientation, placeholder} = event.detail;
-
-          // const url = event.detail.placeholder;
+          const placeholder = event.detail.placeholder;
 
           if (placeholder && placeholder !== '#') {
-
-
-            this.light.photos.key         = key;
-            this.light.photos.keys        = keys;
-            this.light.photos.orientation = orientation;
-            this.light.photos.placeholder = placeholder;
-            this.light.photos.savedUrl    = url;
-
             this._resetExternalSrcBackground();
             this._setPlaceholderBackground(placeholder);
           } else {
@@ -753,21 +691,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // controls header background img
         // is set once the img file has been saved to db and then reloaded into browser
         _externalSrcFromPhotoCapture(event) {
-
-          const {externalSrc: url, key, keys, orientation, placeholder} = event.detail;
-
-          // const url = event.detail.externalSrc;
+          const url = event.detail.externalSrc;
           
           if (url) {
-
-            this.light.photos.key         = key;
-            this.light.photos.keys        = keys;
-            this.light.photos.orientation = orientation;
-            this.light.photos.placeholder = placeholder;
-            this.light.photos.savedUrl    = url;
-
-
-
             this._setExternalSrcBackground(url);
           } else {
             this._resetExternalSrcBackground();
@@ -801,11 +727,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-
         _reset() {
-          // force nested object values to be reset
-          // let {controls, photos} = this.light;
-          // photos = {};
           this.tallies = [{
             tally0: undefined, 
             tally1: undefined, 
@@ -868,8 +790,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
 
+
+
           // TODO:
           //      add validation check to required fields for 'new' setting
+
+
+
+
 
           if (!this.light.qty) {
             this.warn('Please include a fixture quantity');
