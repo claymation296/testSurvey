@@ -137,10 +137,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         listeners: {
           // local animation cb
-          'neon-animation-finish': '_animationFinished'
+          'neon-animation-finish': '_optionsCardAnimationFinished'
         },
 
-        // ran by main-page
+        // called by main-page
         showQuoteSpinner(bool) {
           this.showSpinner = bool;
           this.cancelAnimation();
@@ -154,7 +154,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // hide spinner and animate prices
-        _animationFinished(_, animationType) {
+        _optionsCardAnimationFinished(_, animationType) {
           if (animationType === 'spinnerExit') {
             this.$.loading.style.display = 'none';
             this.$.content.style.opacity = '1';

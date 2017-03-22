@@ -212,7 +212,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         listeners: {
-          'lighting-mode-set': '_lightingModeSet'
+          // fired by lighting-mode.html
+          'lighting-mode-set':      '_lightingModeSet',
+          // fired by bom-send.html
+          'bom-send-button-tapped': '_sendBom'
         },
 
 
@@ -354,19 +357,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           this.schedule(setTab);
         },
+
+
+        _navigateBackToAccountForm() {
+          this.warn('Please complete the account information');
+          this.async(() => {
+            if (this.mode === 'quote') {
+              // reset user selection then navigate them back to quote-selector
+              this.$.quoteSelector.resetPlanIndex();
+            }
+            // redirect user to account form so they may complete it before moving forward
+            this.set('route', 'client');
+          }, 800);
+        },
         // navigate user to account-form if they choose a price plan but dont have
         // the account form filled in
         _selectedPricingChanged(obj) {
           if (obj === undefined || obj === null || this.clientValid) { return; }
-
-          this.warn('Please complete the account information so we can send the quote');
-          this.async(() => {
-            // reset user selection then navigate them back to quote-selector
-            this.$.quoteSelector.resetPlanIndex();
-            // redirect user to account form so they may complete it before moving forward
-            // to the email steps
-            this.set('route', 'client');
-          }, 800);
+          this._navigateBackToAccountForm();
         },
         // called by survey-search when user selects a saved survey
         // reset both valid states and hide badges after a survey is loaded in
@@ -490,7 +498,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.onTap = clearData; 
         },
         // determine if all the data that constitues a completed quote is present
-        _isReadyToSave() {
+        _quoteIsReadyToSave() {
           // need recipients email, first and last name, and 
           // info including full survey list with no missing counts
           const ready = this.clientValid && 
@@ -538,7 +546,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 //*********** test dummy to fake successfull response **********************
 
         // save(type, options) {
-        //   if (!this._isReadyToSave()) { return; }
+        //   if (!this._quoteIsReadyToSave()) { return; }
         //   // options === {brochure: bool, credit: bool, contract: bool, capture: dataURL}
         //   console.log('running email dummy function: ', options);
           
@@ -557,7 +565,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // called by email-options
         save(type, options) {
-          if (!this._isReadyToSave()) { return; }
+          if (!this._quoteIsReadyToSave()) { return; }
           
           // options === {brochure: bool, credit: bool, contract: bool, capture: dataURL}
           const data = {
@@ -575,6 +583,40 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }).
             catch(error => {
               this._saveError(error);
+            });
+        },
+
+
+        _sendBom() {
+
+          // TODO:
+          //      check that bom has at least one area and one fixture first
+
+
+
+          if (!this.clientValid) {
+            this._navigateBackToAccountForm();
+            return;
+          }
+
+          this.$.bomSend.showBomSpinner(true);
+
+          console.log('bom: ', this.bom);
+
+          // this.async(() => {
+          //   this.$.bomSend.showBomSpinner(false);
+          // }, 2000);
+
+          window.Redaap.webWorker.
+            sendBom(this.bom, this.client).
+            then(() => {
+              this.$.bomSend.showBomSpinner(false);
+              window.Redaap.successPage.open();
+            }).
+            catch(error => {
+              console.log(error);
+              this.$.bomSend.showBomSpinner(false);
+              this.warn('An unexpected error occurred while sending your survey');
             });
         }
 

@@ -570,6 +570,19 @@
 	};
 
 
+
+	const sendBom = job => {
+		Db.Cloud.run('sendBom', {bom: job.bom, client: job.client}). 
+      then(() => {
+				const sendBomSuccess = {func: job.func};
+        successful(job, sendBomSuccess);
+      }, error => {
+        errored(job, error);
+      });
+	};
+
+
+
 	const surveySearch = job => {
 		Db.Cloud.run('search', job.query). 
       then(response => {
@@ -624,6 +637,9 @@
 				break;
 			case 'save':
 				save(job);
+				break;
+			case 'sendBom':
+				sendBom(job);
 				break;
 			case 'search':
 				surveySearch(job);

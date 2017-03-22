@@ -252,6 +252,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             case 'getUrl':
             case 'pricing':
             case 'save':
+            case 'sendBom':
             case 'search':
               break;
             default:
@@ -447,9 +448,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           return this._startJob('pricing', {uSA});
         },
 
-        // called by main-page
+        // called by lighting-main
         save(data) {
           return this._startJob('save', data);
+        },
+
+        // called by lighting-main
+        sendBom(bom, client) {
+          return this._startJob('sendBom', {bom, client});
         },
 
         // called by search-page
@@ -461,7 +467,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         getUrl(fileKey) {
           return this._startJob('getUrl', {fileKey});
         },
-
         // called by lighting-main clearSurvey method
         // user tapped on clear survey icon in main-toolbar-buttons
         // then confirms in modal
