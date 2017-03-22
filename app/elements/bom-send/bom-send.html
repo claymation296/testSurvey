@@ -58,6 +58,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       	margin-right: 8px;
       }
 
+      .loading {
+        width: 100%;
+        height: 100%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        background-color: rgba(255, 255, 255, 0.8);
+        opacity: 0;
+        transition: opacity 0.2s ease-in;
+      }
+
+      .displaySpinner {
+        display: flex;
+      }
+
+      .showSpinner {
+        opacity: 1;
+      }
+
     </style> 
     
     <paper-card heading="Bill of Materials">
@@ -72,7 +94,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 	        <div>[[client.phone]]</div>
 	        <div>[[client.email]]</div>
 	      </div>
-
 
 	      <div class="dialogTitle bottomMargin16 bold">Stats</div>
 	      <div class="centered">
@@ -95,12 +116,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             </paper-item-body>
           </paper-item>
 	      </div>
-
-
-
-
-
     	</div>
+
     	<div class="card-actions">
     		<paper-button id="sendButton" 
                       on-tap="_sendBomButtonTapped"
@@ -109,6 +126,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           Send BOM
         </paper-button>
     	</div>
+
+      <div id="loading" class="loading">
+        <paper-spinner-lite alt="Fetching prices..." active="[[showSpinner]]"></paper-spinner-lite>
+      </div>
 
   	</paper-card>
 
@@ -121,6 +142,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // track window resizes and page animation
         behaviors: [
           Polymer.IronResizableBehavior, 
+          window.Redaap.Behaviors.Utilities,
           window.Redaap.Behaviors.TabPageAnimationBehavior
         ], 
 
@@ -129,7 +151,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	bom: Object,
 
         	client: Object
+        },
 
+        // called by main-page
+        showBomSpinner(bool) {
+          this.showSpinner = bool;
+          if (bool) {
+            this.$.loading.classList.add('displaySpinner');
+            this.async(() => {
+              this.schedule.bind(this, this.$.loading.classList.add('showSpinner'));
+            }, 1);
+            
+            return;
+          }
+          this.$.loading.classList.remove('showSpinner');
+          this.async(() => {
+            this.schedule.bind(this, this.$.loading.classList.remove('displaySpinner'));
+          }, 300);
         },
 
         _computeAreaCount: bom => bom ? Object.keys(bom.areas).length : 0,
@@ -154,11 +192,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _sendBomButtonTapped() {
-
-        	// this.fire('bom-send-button-tapped');
-
-
-        	console.log('send bom: ', this.bom, this.client);
+        	this.fire('bom-send-button-tapped');
         }
 
       });

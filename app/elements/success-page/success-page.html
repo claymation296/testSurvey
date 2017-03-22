@@ -47,7 +47,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <h1>Success!</h1>
         <iron-icon icon="custom-icons:cloud-done"></iron-icon>
         <h1 id="thankYou">Thank you!</h1>
-        <div id="message">This quote has been saved</div>
+        <div id="message">This [[_computeMessage(mode)]] has been saved</div>
       </div>
     </div>
 
@@ -106,7 +106,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               };
             }
           }
-        }
+        },
+
+        _computeMessage: mode => mode === 'quote' ? 'quote' : 'survey', 
 
       });
     })();
