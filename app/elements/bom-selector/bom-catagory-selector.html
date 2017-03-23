@@ -262,7 +262,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const {area, light} = event.detail;
           const fillWithUnderscores = str => str.split(' ').join('_');
           const areaKey = fillWithUnderscores(area);
-          const label   = fillWithUnderscores(light.label);
+          const fixKey  = fillWithUnderscores(light.label);
           const bom     = this.bom;
 
 
@@ -286,21 +286,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             bom.areas[areaKey].photos = {};
           }
 
-          if (!bom.fixtures[label]) {
-            bom.fixtures[label] = {};
+          if (!bom.fixtures[fixKey]) {
+            bom.fixtures[fixKey] = {};
           }
           
-          bom.areas[areaKey].fixtures[label] = true;
+          bom.areas[areaKey].fixtures[fixKey] = true;
 
           if (light.photos) {
             const photoKeys = Object.keys(light.photos);
             photoKeys.forEach(key => {
               bom.areas[areaKey].photos[key] = true;
             });
+            // add new light.photos to photos 
+            Object.assign(bom.photos, light.photos);
           }          
 
-          bom.fixtures[label][areaKey] = light;
-          bom.photos = Object.assign(bom.photos, light.photos);
+          bom.fixtures[fixKey][areaKey] = light;
+
           // force update
           this.bom  = undefined;
           this.set('bom', bom);

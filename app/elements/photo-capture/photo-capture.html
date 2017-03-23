@@ -95,7 +95,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         right: 0px;
         border-radius: 50%;
         overflow: hidden;
-        background-color: var(--photo-capture-background-color, dodgerblue);
+        background-color: var(--photo-capture-background-color, inherit);
         z-index: -1;
         opacity: 0;
         -webkit-transition: opacity 0.2s ease-in;
@@ -135,7 +135,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         left: 0px;
         border-radius: 50%;
         overflow: hidden;
-        background-color: rgba(255, 255, 255, 0.8);
+        background-color: inherit;
         opacity: 0;
         transition: opacity 0.2s ease-in;
       }
@@ -163,7 +163,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     
     <iron-icon class="cameraIcon" icon="[[buttonIcon]]"></iron-icon>
-
 
     <iron-label id="camera" for="input">
       <input id="input" 
@@ -197,7 +196,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
          hidden$="[[!disableThumbnail]]" 
          on-tap="_photoTapped">
       <paper-ripple class="circle" recenters></paper-ripple>
-      <iron-icon class="cameraIcon" icon="custom-icons:camera-alt"></iron-icon>
+      <iron-icon class="cameraIcon" icon="[[buttonIcon]]"></iron-icon>
     </div>
 
 
@@ -416,6 +415,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // no need to hide the input label element
           if (this.disableViewer) { return; }
 
+          if (window.navigator.onLine) {
+            this.buttonIcon = this.cameraIcon;
+          } else {
+            this.buttonIcon = this.disconnectedIcon;
+          }
+
           this._hideSpinner();
 
           if (this.disableThumbnail) { 
@@ -534,6 +539,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // photo successfully saved to db so now use the url string as the image src
         // to save memory and cache in localstorage
         _loadImgFromSavedUrl(url) {
+          // must force iron-image to take new url even if it is the same as previously loaded
+          this.pic = undefined;
           this.pic = url;
           this._showSpinner();
         },
