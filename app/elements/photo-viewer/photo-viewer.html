@@ -244,11 +244,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.open(this._openSelectorCallback.bind(this));
         }, 
 
-
+        // photo-selector user selects a photo from the list
         _photoSelected(event) {
           // // start photo-hero entry
           // this.selected = 'photoHero';
-          this.$.fullscreenPhoto.playEntryAnimation(event.detail.photo);
+          this.$.fullscreenPhoto.playEntryAnimation(event.detail);
         }, 
 
 
@@ -266,9 +266,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _closeButtonTapped() {
           // to be run after close
           const cleanup = () => {
-            this.capture        = undefined;
-            this.label          = undefined;
-            this.photoDataArray = undefined;
+            this.label = undefined;
             this.$.photoSelector.cleanUp();
           };
 

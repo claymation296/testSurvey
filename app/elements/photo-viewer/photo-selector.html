@@ -264,13 +264,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _imageTapped(event) {
           const photo = event.model.photo;
+          const {orientation, unreachable} = photo;
           // ignore photos that are not able to load because user
           // is offline and there photo has already been saved to db
           // meaning there is no more reference in localForage
-          if (photo.unreachable) { return; }
+          if (unreachable) { return; }
+          // cloning the iron-image sizedImgDiv for better fullscreen-photo perf
+          // which avoids having to reload the image
+          const imgEl = Polymer.dom(event).rootTarget.$.img.$.sizedImgDiv;
+          const clone = Polymer.dom(imgEl).cloneNode();
 
           const selected = () => {
-            this.fire('photo-selector-photo-selected', {photo});
+            this.fire('photo-selector-photo-selected', {clone, orientation, photo});
           };
 
           this.onTap = selected;

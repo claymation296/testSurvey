@@ -270,9 +270,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const {key, savedUrl} = job;
           // this is the data for the current photo
           if (match.key === key) {
-            match.savedUrl = savedUrl;
+            match.savedUrl    = savedUrl;
+            match.orientation = 0;
           }
-          match.keys[key].savedUrl  = savedUrl;
+          match.keys[key].savedUrl     = savedUrl;
+          match.keys[key].orientation  = 0;
         },
 
         // search uSA for a given key and return the element with that key
@@ -310,15 +312,57 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // when promise is resolved or later after the photo is saved to cloud
         // from the worker dreading list
         _savedPhotoDataChanged(data) {
+          if (!data) { return; }
+
+          const photoKey = data.key;
+
           if (this.mode === 'quote') {
-            const key   = data.key;
-            const match = this._findFixtureByKey(key);
+            const match = this._findFixtureByKey(photoKey);
 
             if (match) {
               this._addPhotoToMatch(match, data);
             } else  {
-              this.dreading[key] = data;
+              this.dreading[photoKey] = data;
             }
+          } else if (this.mode === 'bom' && this.bom) {
+            const addSavedData = () => {
+              const findOwner = fixtures => {
+                const fixKeys = Object.keys(fixtures);
+                const max     = fixKeys.length - 1;
+                const index   = 0;
+
+                const find = (key, i) => {
+                  const fixture = fixtures[key];
+                  for (const area in fixture) {
+                    const photos = fixture[area].photos;
+                    for (const photo in photos) {
+                      if (photo === photoKey) { 
+                        // found a match so update its data and return it
+                        photos[photo].orientation = 0;
+                        photos[photo].savedUrl    = data.savedUrl;
+
+                        return fixture[area]; 
+                      }
+                    }
+                  }
+                  // didn't find a home so quit searching
+                  if (i === max) { return; }
+                  // keep looking
+                  return find(fixKeys[i + 1], i + 1);
+                };
+
+                return find(fixKeys[0], index);
+              };
+
+              const found = findOwner(this.bom.fixtures);
+
+              if (found && found.key === photoKey) {
+                found.orientation = 0;
+                found.savedUrl    = data.savedUrl;
+              }
+            };
+
+            this.schedule(addSavedData);
           }
         },
 

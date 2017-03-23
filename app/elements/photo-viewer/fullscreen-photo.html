@@ -34,8 +34,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         left: 50%;
         width: 100vw;
         height: 100vh;
+        opacity: 0;
+      }
+
+      .orientation0 {
         transform: translate(-50%, -50%);
-        background-color: var(--divider-color);
       }
 
       .orientation3 {
@@ -52,6 +55,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         width: 100vh;
         height: 100vw;
         transform: translate(-50%, -50%) rotate(-90deg);
+      }
+
+      .showImg {
+        opacity: 1;
       }
 
       paper-fab {
@@ -80,17 +87,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </paper-icon-button>
     	</paper-toolbar>
 
-
-      <iron-image id="img"
-                  class$="img [[_computeOrientation(photo.orientation)]]"
-                  src="[[photo.src]]"
-                  sizing="cover"
-                  preload 
-                  fade
-                  loaded="{{imageLoaded}}"
-                  error="{{imageLoadError}}">
-      </iron-image>
-
       <paper-fab id="trash" on-tap="_deletePhotoButtonTapped" icon="custom-icons:delete"></paper-fab>
 
   	</paper-scroll-header-panel>
@@ -104,7 +100,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         is: 'fullscreen-photo',
 
         behaviors: [
-          Polymer.NeonAnimatableBehavior,
           Polymer.NeonAnimationRunnerBehavior,
           window.Redaap.Behaviors.Utilities,                  
           window.Redaap.Behaviors.OnTapBehavior,              
@@ -143,6 +138,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   ],
                   timing: {duration: 200, delay: 250, easing: 'ease-out'}
                 }],
+                'fullscreenImageEntry': {
+                  name: 'fade-in-animation',
+                  // node set imperatively
+                  timing: {duration: 200, easing: 'ease-in'}
+                },
                 'fullscreenFabEntry1': [{
                   name: 'fade-in-animation',
                   node: this.$.trash,
@@ -202,20 +202,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
 
           label: String,
-
-          cachedPhoto: Object,
-
+          // clone of selector-thumbnail iron-image sizedImgDiv for instant rendering
+          cachedClone: Object,
+          // used for correct photo delete
           photo: Object,
-
-          imageLoaded: {
-            type: Boolean,
-            observer: '_imageLoaded'
-          },
-
-          imageLoadError: {
-            type: Boolean,
-            observer: '_imageLoadError'
-          }
         },
 
 
@@ -224,7 +214,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _computeOrientation(orient) {
+        _correctOrientation(orient) {
           switch (orient) {
             case 3:
               return 'orientation3';
@@ -233,31 +223,33 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             case 8:
               return 'orientation8';
             default:
-              return '';
+              return 'orientation0';
           }
         },
         
 
         _cleanup() {
-          this.photo       = undefined;
-          this.cachedPhoto = undefined;
+          Polymer.dom(this.$.panel).removeChild(this.cachedClone);
+          this.cachedClone = undefined;
           this.$.trash.style.display = 'none';
           this.close();
         },
 
-        // called by photo-viewer when user selects a photo in photo-selector
-        playEntryAnimation(photo) {
-          this.cachedPhoto = photo;
-          this.open();
-          this.cancelAnimation();
-          this.playAnimation('fullscreenEntry', 'fullscreenEntry');
+
+        _setupClone({clone, orientation}) {
+          const correctionClass = this._correctOrientation(orientation);
+          Polymer.dom(clone).classList.add('img', correctionClass);
+          this.cachedClone = clone;
         },
 
 
-        _runFabEntry() {
-          this.$.trash.style.display = 'flex';
+        // called by photo-viewer when user selects a photo in photo-selector
+        playEntryAnimation(detail) {
+          this.photo = detail.photo;
+          this._setupClone(detail);
+          this.open();
           this.cancelAnimation();
-          this.playAnimation('fullscreenFabEntry1', 'fullscreenFabEntry1');
+          this.playAnimation('fullscreenEntry', 'fullscreenEntry');
         },
 
 
@@ -270,7 +262,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _animationFinished(_, animationType) {
           switch(animationType) {
             case 'fullscreenEntry':
-              this.photo = this.cachedPhoto;
+              const fadeImage = () => {
+                this.animationConfig.fullscreenImageEntry.node = this.cachedClone;
+                Polymer.dom(this.cachedClone).classList.add('showImg');
+                this.cancelAnimation();
+                this.playAnimation('fullscreenImageEntry', 'fullscreenImageEntry');
+              };
+
+              Polymer.dom(this.$.panel).insertBefore(this.cachedClone, this.$.trash);
+              this.schedule(fadeImage);
+              break;
+            case 'fullscreenImageEntry':
+              this.$.trash.style.display = 'flex';
+              this.cancelAnimation();
+              this.playAnimation('fullscreenFabEntry1', 'fullscreenFabEntry1');
               break;
             case 'fullscreenFabEntry1':
               this.cancelAnimation();
@@ -288,27 +293,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             default:
               return;
           }
-        },
-
-
-        _showImage() {
-          window.URL.revokeObjectURL(this.photo.src);
-          // delay fab til after image fades in
-          this.async(() => {
-            this.schedule(this._runFabEntry.bind(this));
-          }, 500);
-        },
-
-
-        _imageLoaded(bool) {
-          if(!bool) { return; }
-          this.schedule(this._showImage.bind(this));
-        },
-
-
-        _imageLoadError(bool) {
-          if (!bool) { return; }
-          console.log('fullscreen-photo image load error: ', this.photo.src);
         },
 
 

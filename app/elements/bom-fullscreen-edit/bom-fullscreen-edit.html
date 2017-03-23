@@ -307,12 +307,41 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                      prevent-invalid-input>
         </paper-input>
 
+        <paper-input label="Dimmer"
+                     type="tel" 
+                     min="0"
+                     maxLength="4" 
+                     value="{{light.dimmer}}"
+                     allowed-pattern="[0-9]"
+                     prevent-invalid-input>
+        </paper-input>
 
-        <div class="inputLabel">Controls/Sensors</div>
-        <paper-checkbox checked="{{light.controls.dimmer}}">Dimmer</paper-checkbox>
-        <paper-checkbox checked="{{light.controls.timer}}">Timer</paper-checkbox>
-        <paper-checkbox checked="{{light.controls.motion}}">Occupancy Sensor</paper-checkbox>
-        <paper-checkbox checked="{{light.controls.light}}">Daylight Sensor</paper-checkbox>
+        <paper-input label="Timer"
+                     type="tel" 
+                     min="0"
+                     maxLength="4" 
+                     value="{{light.timer}}"
+                     allowed-pattern="[0-9]"
+                     prevent-invalid-input>
+        </paper-input>
+
+        <paper-input label="Occupancy Sensor"
+                     type="tel" 
+                     min="0"
+                     maxLength="4" 
+                     value="{{light.motion}}"
+                     allowed-pattern="[0-9]"
+                     prevent-invalid-input>
+        </paper-input>
+
+        <paper-input label="Daylight Sensor"
+                     type="tel" 
+                     min="0"
+                     maxLength="4" 
+                     value="{{light.ambient}}"
+                     allowed-pattern="[0-9]"
+                     prevent-invalid-input>
+        </paper-input>
 
 
         <paper-button id="deleteButton"
@@ -493,7 +522,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               tally3: undefined
             }])
           },
-
+          // only need to force caller to update on back button tap if edits have been made
           edited: {
             type: Boolean,
             value: true
@@ -525,8 +554,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         observers: [
+          // control edited val and close button state
           '_lightChanged(light.*)',
-          '_orientationChanged(light.orientation)'
+          // photo orientation correction
+          '_orientationChanged(light.orientation)',
+          // used to add area key and fixture key to each photo's data which is
+          // used by lighting main to update savedUrls as they come in late
+          '_keyChanged(light.key)'
         ],
         // animation config setup since headerContainer is dynamically
         // created by paper-scroll-header-panel
@@ -537,6 +571,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const headerBg = Polymer.dom(this.$.panel).node.$.headerBg;
           this.backgroundImagePlaceholder = document.createElement('div');
           this.backgroundImage            = document.createElement('div');
+          this.backgroundImagePlaceholder.style.transition = 'opacity 0.3s ease-out';
+          this.backgroundImage.style.transition            = 'opacity 0.3s ease-out';
           // initial styles for both divs with no orientation correction
           this._setupBackgroundImageDiv(this.backgroundImagePlaceholder);
           this._setupBackgroundImageDiv(this.backgroundImage);
@@ -569,7 +605,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _computeEditState: setting => setting === 'new',
-
         // change the toolbar colors to reflect the differenct between adding a new fixture
         // and editing an existing one
         _settingChanged(setting) {
@@ -585,7 +620,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.updateStyles();
         },
 
-
+        // control edited val and close button state
         _lightChanged(light) {
           if (!light.base || !light.base.qty) { return; }
           // ignore init (this.edited initalizes as true then set to false after entry animation)
@@ -595,6 +630,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           this.edited = true;
           this.$.closeButton.makeCheck();
+        },
+
+        // add area and fixture keys to each new photo's data
+        _keyChanged(key) {
+          if (!key) { return; }
+
+          const nameToKey = str => str.split(' ').join('_');
+          const areaKey   = nameToKey(this.area);
+          const fixKey    = nameToKey(this.light.label);
+          Object.assign(this.light.photos[key], {area: areaKey, fixture: fixKey});
         },
 
 
@@ -629,6 +674,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _correctOrientation(elements, num = 0) {
           const config = {
             0: {height: '100%',  pos: 'center center', rotate: '0'},
+            1: {height: '100%',  pos: 'center center', rotate: '0'},
             3: {height: '100%',  pos: 'center center', rotate: '180'},
             6: {height: '100vw', pos: 'center right',  rotate: '90'},
             8: {height: '100vw', pos: 'center left',   rotate: '-90'}
@@ -650,28 +696,32 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _setPlaceholderBackground(url) {
+          const show = () => {
+            this.backgroundImagePlaceholder.style.opacity = '1';
+          };
+
           this.backgroundImagePlaceholder.style.backgroundImage = `url(${url})`;
-          this.backgroundImagePlaceholder.style.transition      = 'opacity 0.3s ease-out';
-          this.backgroundImagePlaceholder.style.opacity         = '1';
+          this.schedule(show);
         },
 
 
         _resetPlaceholderBackground() {
-          this.backgroundImagePlaceholder.style.backgroundImage = 'none';
-          this.backgroundImagePlaceholder.style.transition      = '';
-          this.backgroundImagePlaceholder.style.opacity         = '0';
+          this.backgroundImagePlaceholder.style.opacity = '0';
         },
 
 
         _setExternalSrcBackground(url) {
+          const show = () => {
+            this.backgroundImage.style.opacity = '1';
+          };
+
           this.backgroundImage.style.backgroundImage = `url(${url})`;
-          this.backgroundImage.style.opacity         = '1';
+          this.schedule(show);
         },
 
 
         _resetExternalSrcBackground() {
-          this.backgroundImage.style.backgroundImage = 'none';
-          this.backgroundImage.style.opacity         = '0';
+          this.backgroundImage.style.opacity = '0';
         },
         // photo-capture placeholder event
         // controls header background img placeholder
