@@ -182,7 +182,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	const tot = fixKeys.reduce((prevTot, currFix) => {
         		const areaKeys = Object.keys(bom.fixtures[currFix]);
         		const qty = areaKeys.reduce((prevQty, currArea) => 
-        									prevQty += bom.fixtures[currFix][currArea].qty, 0);
+        									prevQty += Number(bom.fixtures[currFix][currArea].qty), 0);
         		prevTot += qty;
         		return prevTot;
         	}, 0);

@@ -367,7 +367,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _bomChanged(obj) {
-          if (!obj || !obj.base || !this.bomArray) { return; }
+          if (!obj || !obj.base || !this.bomArray || !window.Redaap.areaEdit) { return; }
           // find the element that is being edited and send the new data to area-edit
           const newData = this.bomArray.find(entry => entry.name === this.currentEditArea);
           // force area-edit repeater to update edits

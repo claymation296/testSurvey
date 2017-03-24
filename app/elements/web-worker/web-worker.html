@@ -204,7 +204,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           switch (func) {
             case 'user':
               this.set('currentUser', job.output);
-              window.Redaap.appSecurity.checkCurrentUser(this.currentUser);
+              // woker may load before dom is ready
+              this.async(() => {
+                window.Redaap.appSecurity.checkCurrentUser(this.currentUser);
+              }, 50);
               break;
             // set current user when login, signup or logout return
             case 'login':
@@ -545,7 +548,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             // // then(() => undefined).
 
-            // // testing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            // // testing without filling up test server!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             // then(() => {
             //   return new Promise(resolve => this.async(() => resolve(), 10000));

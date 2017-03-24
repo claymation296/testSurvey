@@ -178,7 +178,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                      hidden$="[[_computeEditState(setting)]]">
         </paper-input>
 
-        <paper-dropdown-menu label="Number of Lamps">
+        <paper-dropdown-menu label="Number of Lamps per Fixture">
           <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.lamps}}">
             <paper-item id="1">1</paper-item>
             <paper-item id="2">2</paper-item>
@@ -246,12 +246,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         <paper-dropdown-menu label="Mount Type">
           <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.mount}}">
+            <paper-item id="none">None</paper-item>
             <paper-item id="pendant">Pendant</paper-item>
             <paper-item id="chain">Chain</paper-item>
             <paper-item id="cable">Cable</paper-item>
             <paper-item id="slip">Slip Fitter</paper-item>
             <paper-item id="square">Square Arm</paper-item>
             <paper-item id="trunnion">Trunnion/Swivel</paper-item>
+            <paper-item id="custom">Custom</paper-item>
           </paper-listbox>
         </paper-dropdown-menu>
 

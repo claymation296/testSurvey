@@ -645,12 +645,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           this.$.bomSend.showBomSpinner(true);
 
-          console.log('bom: ', this.bom);
-
-          // this.async(() => {
-          //   this.$.bomSend.showBomSpinner(false);
-          // }, 2000);
-
           window.Redaap.webWorker.
             sendBom(this.bom, this.client).
             then(() => {
