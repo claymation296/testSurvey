@@ -632,11 +632,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _sendBom() {
+          if (!this.bom || !this.bom.areas) {
+            this.warn('Please complete the survey first');
+            return;
+          }
 
-          // TODO:
-          //      check that bom has at least one area and one fixture first
-
-
+          const areaCount = Object.keys(this.bom.areas).length;
+          if (!areaCount) {
+            this.warn('Please complete the survey first');
+            return;
+          }
 
           if (!this.clientValid) {
             this._navigateBackToAccountForm();
