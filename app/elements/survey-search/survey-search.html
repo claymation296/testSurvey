@@ -55,8 +55,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         is: 'survey-search',
 
         behaviors: [
-          Polymer.NeonAnimatableBehavior,
-          Polymer.NeonAnimationRunnerBehavior
+          Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.Utilities
         ],
 
         properties: {
@@ -92,6 +92,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: String,
             notify: true
           },
+          // lighting mode: 'quote'/'bom'
+          mode: String,
           // control neon-animated-pages
           selected: {
             type: Number,
@@ -255,6 +257,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // called by search icon button in main-toolbar-buttons.html
         openSearch() {
+
+          if (this.mode === 'bom') {
+            this.warn('Bill of Materials Search still under development');
+            return;
+          }
+
+
           // stamp dom which triggers the entry animation once it is done stamping
           this.set('showThisElement', true);
         },

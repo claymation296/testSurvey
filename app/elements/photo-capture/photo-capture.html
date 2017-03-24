@@ -310,6 +310,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // capture instance
         updateThumbnail({key, orientation, placeholder, url}) {
           // the order of operations is very important here
+          this.orientation = undefined;
           this.set('orientation', orientation);
           if (placeholder && !url) {
             this.set('placeholder', placeholder);
@@ -415,12 +416,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // no need to hide the input label element
           if (this.disableViewer) { return; }
 
-          if (window.navigator.onLine) {
-            this.buttonIcon = this.cameraIcon;
-          } else {
-            this.buttonIcon = this.disconnectedIcon;
-          }
-
           this._hideSpinner();
 
           if (this.disableThumbnail) { 
@@ -462,6 +457,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _imageLoaded(bool) {
           if (!bool) { return; }
+          this.buttonIcon = this.cameraIcon;
           // saved/processed photos no longer need orientation correction
           this.set('orientation', 0);
           // fire the external src only after the file has been loaded into the browser

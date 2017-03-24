@@ -263,7 +263,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const fillWithUnderscores = str => str.split(' ').join('_');
           const areaKey = fillWithUnderscores(area);
           const fixKey  = fillWithUnderscores(light.label);
-          const bom     = this.bom;
+          let bom = this.bom;
 
 
 
@@ -272,6 +272,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           //      test for overwrites
 
 
+          if (!bom) {
+            bom = {areas: {}, fixtures: {}, photos: {}};
+          }
+
+          if (!bom.areas) {
+            bom.areas = {};
+          }
+
+          if (!bom.fixtures) {
+            bom.fixtures = {};
+          }
+
+          if (!bom.photos) {
+            bom.photos = {};
+          }
 
 
           if (!bom.areas[areaKey]) {

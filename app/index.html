@@ -35,13 +35,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <!-- Place favicon.ico in the `app/` directory -->
 
   <!-- Chrome for Android theme color -->
-  <meta name="theme-color" content="#7c0000">
+  <meta name="theme-color" content="#9E9E9E">
 
   <!-- Web Application Manifest -->
   <link rel="manifest" href="manifest.json">
 
   <!-- Tile color for Win8 -->
-  <meta name="msapplication-TileColor" content="#7c0000">
+  <meta name="msapplication-TileColor" content="#9E9E9E">
 
   <!-- Add to homescreen for Chrome on Android -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -363,7 +363,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <success-page mode="[[state.mode]]"></success-page>
 
-    <survey-search lighting-tab="{{lightingTab}}"></survey-search>
+    <survey-search lighting-tab="{{lightingTab}}" mode="[[state.mode]]"></survey-search>
 
     
 
@@ -374,7 +374,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
     
-    <!-- <paper-toast id="caching-complete"
+    <paper-toast id="caching-complete"
                  duration="6000"
                  text="REDAAP can now work offline.">
     </paper-toast>
@@ -386,7 +386,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <platinum-sw-cache default-cache-strategy="fastest"
                          cache-config-file="cache-config.json">
       </platinum-sw-cache>
-    </platinum-sw-register> -->
+    </platinum-sw-register>
 
 
 
