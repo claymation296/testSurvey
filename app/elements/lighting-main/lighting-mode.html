@@ -20,7 +20,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <style>
 
       :host {
-      	height: 100vh;
+      	height: 660px;
         position: absolute;
         top: 0px;
         left: 0px;
@@ -135,6 +135,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         behaviors: [ 
           Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.Utilities,
           window.Redaap.Behaviors.OnTapBehavior 
         ],
 
@@ -219,8 +220,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             y:       source.clientY || source.pageY,
             styles
           };
-          
-          window.Redaap.lightingRipple.enter(obj);
+
+          this.schedule.bind(this, window.Redaap.lightingRipple.enter(obj));
         },
 
 

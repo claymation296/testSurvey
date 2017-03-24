@@ -20,7 +20,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         display: none;
         width: 400vh;
         height: 400vh;
-        position: absolute;
+        position: fixed; /*must be fixed for ios*/
         border-radius: 50%;
         --ripple-color: transparent;
         background-color: var(--ripple-color);
@@ -50,7 +50,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   node: this,
                   transformFrom: 'scale(0, 0)',
                   transformTo: 'scale(1, 1)',
-                  timing: {duration: 300, easing: 'ease-in'}
+                  timing: {duration: 800, easing: 'ease-in'}
                 },
                 'exit': {
                 	name: 'fade-out-animation',
@@ -78,10 +78,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	const run = () => {
         		this.style.display = 'block';
         		this.cancelAnimation();
-        		this.playAnimation('entry', cookie);
+            this.playAnimation('entry', cookie);
         	};
 
-        	this.schedule(run);
+          this.schedule(run);
         },
 
 
@@ -91,13 +91,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	} else if (typeof cookie === 'object') {
         		if (cookie.type === 'entry') {
         			const hideLightingMode = () => {
-        				cookie.element.fireMode(cookie.mode);
-		        		this.cancelAnimation();
-		        		this.playAnimation('exit', 'exit');
+         				cookie.element.fireMode(cookie.mode);
+                // allow mode changes to propagate through app
+                this.async(() => {
+                  this.cancelAnimation();
+                  this.playAnimation('exit', 'exit');
+                }, 500);
 		        	};
 
-        			Polymer.updateStyles(cookie.styles);
-
+         			Polymer.updateStyles(cookie.styles);
         			this.schedule(hideLightingMode);
 	          }
         	}
