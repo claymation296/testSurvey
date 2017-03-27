@@ -124,6 +124,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _imageLoaded(bool) {
           if(!bool) { return; }
           this.photo.unreachable = false;
+          Polymer.dom(this.$.icon).classList.remove('showIcon');
           window.URL.revokeObjectURL(this.photo.src);
         },
 

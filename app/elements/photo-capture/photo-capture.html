@@ -148,17 +148,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         --paper-spinner-color: var(--default-primary-color);
       }
 
-    </style>    
+    </style>  
 
-    <!-- used only for error handling -->
+    <!-- placeholder load timing only -->
+    <img src="[[placeholderSrc]]"
+         on-load="_placeholderSrcLoaded"
+         style="position: absolute; opacity: 0;"> 
+    <!-- placeholder error handling only -->
+    <iron-ajax auto
+               url="[[placeholderSrc]]"
+               on-error="_placeholderSrcError">
+    </iron-ajax>
+    <!-- pic error handling only -->
     <iron-ajax auto
                url="[[pic]]"
                on-error="_picError">
-    </iron-ajax>
-    <!-- used only for error handling -->
-    <iron-ajax auto
-               url="[[placeholder]]"
-               on-error="_placeholderError">
     </iron-ajax>
 
     
@@ -178,15 +182,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
     <div id="imageTag" class="centeredAboveFileInput">
-      <iron-image class$="[[_computeOrientation(orientation)]]"
-                  hidden$="[[disableThumbnail]]"
-                  on-tap="_photoTapped"
-                  src="[[pic]]"
-                  placeholder="[[placeholder]]"
-                  sizing="cover"
-                  preload 
+      <iron-image class$="[[_computeOrientation(orientation)]]" 
                   fade
-                  loaded="{{loaded}}">
+                  hidden$="[[disableThumbnail]]"
+                  loaded="{{loaded}}"
+                  on-tap="_photoTapped"
+                  placeholder="[[placeholderSrc]]"
+                  preload
+                  sizing="cover"
+                  src="[[pic]]">
       </iron-image>
     </div>
 
@@ -219,11 +223,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         properties: {
           // saved file url sent back from db after save
         	pic: String,
+
+          loaded: {
+            type: Boolean,
+            observer: '_picLoaded'
+          },
           // image objectURL
           placeholder: {
             type: String,
-            notify: true,
-            observer: '_placeholderChanged'
+            notify: true
           },
           // passed to worker to create the photo file name prefix
           filename: String,
@@ -244,11 +252,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           savedUrl: {
             type: String,
             notify: true
-          },
-          // used to release the ObjectURL from window
-          loaded: {
-            type: Boolean,
-            observer: '_imageLoaded'
           },
           // only attempt to correct a 404 on the placeholder once per instance
           placeholderErrorRetry: {
@@ -312,7 +315,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // the order of operations is very important here
           this.orientation = undefined;
           this.set('orientation', orientation);
-          if (placeholder && !url) {
+          if (placeholder) {
             this.set('placeholder', placeholder);
           } else {
             this.set('placeholder', '#');
@@ -320,8 +323,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.set('savedUrl', url);
           // photo-capture listens for changes on its key prop
           this.set('key',      key);
-          this.fire('photo-capture-placeholder', this._makeEventPayload());
-          this._showImageTag();
         },
 
         // called by photo-viewer when user adds a new photo
@@ -339,12 +340,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // called by photo-viewer once a new photo has saved from db
         updateSavedUrl(url) {
           this.set('savedUrl', url);
-          this.fire('photo-capture-external-src', this._makeEventPayload(url));
+          this.schedule(this._load.bind(this));
         }, 
         // reset for another photo capture 
         // called by solution-view before it animates open
         resetCaptureButton() {
-          this._revokeUrl();
           this.placeholder = '#';
           this.placeholderErrorRetry = true;
           this.fire('photo-capture-placeholder',  this._makeEventPayload());
@@ -407,7 +407,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _showErrorIcon() {
           this.buttonIcon = this.disconnectedIcon;
           this._hideSpinner();
-          this._hideImageTag();
         },
 
         // raise the iron-image tag or externalSrcIconButton up above iron-label w/z-index
@@ -439,43 +438,31 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           Polymer.dom(this.$.imageTag).classList.remove('showImageTag');
         },
 
+        // need to reset the trigger before it will be used again by parent
+        _resetTrigger() {
+          // allow instant updates to placeholder and pic
+          // now that parent entry animations are complete
+          this.set('deferLoad',    false);
+          this.set('deferTrigger', false);
+        },
 
-        _revokeUrl() {
-          if (this.placeholder && this.placeholder !== '#') {
-            window.URL.revokeObjectURL(this.placeholder);
+
+        _placeholderSrcLoaded() {
+          this._resetTrigger();
+          this.fire('photo-capture-placeholder', this._makeEventPayload());
+
+          if (this.placeholderSrc && this.placeholderSrc !== '#') {
+            this._showImageTag();
+            this.async(() => {
+                window.URL.revokeObjectURL(this.placeholderSrc);
+            }, 500);
           }
         },
 
-        // need to reset the trigger before it will be used again by parent
-        _resetTrigger() {
-          // must wait to avoid infinite loop
-          this.async(() => {
-            this.set('deferTrigger', false);
-          }, 1);
-        },
-        
 
-        _imageLoaded(bool) {
-          if (!bool) { return; }
-          this.buttonIcon = this.cameraIcon;
-          // saved/processed photos no longer need orientation correction
-          this.set('orientation', 0);
-          // fire the external src only after the file has been loaded into the browser
-          // using iron-image for load timing wether it is hidden or not
-          this.fire('photo-capture-external-src', this._makeEventPayload(this.pic));
-          this._showImageTag();
-          // then wait for the background-image css to take so there is not a flicker
-          // between switching from placeholder to main background div in parent
-          this.async(() => {
-            this._revokeUrl();
-            this.placeholder = '#';
-            this._resetTrigger();
-          }, 500);
-        },
-
-
-        _placeholderError(event) {
+        _placeholderSrcError(event) {
           const status = event.detail.request.status;
+          this._resetTrigger();
           // Not Found
           // if user has refreshed the browser, the current 
           // temp url will no longer work so issue a new one
@@ -488,17 +475,34 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }
           }
         },
+        
+
+        _picLoaded(bool) {
+          if (!bool) { return; }
+          // reset offline error icon
+          this.buttonIcon = this.cameraIcon;
+          // saved/processed photos no longer need orientation correction
+          this.set('orientation', 0);
+          // fire the external src only after the file has been loaded into the browser
+          // using iron-image for load timing wether it is hidden or not
+          this.fire('photo-capture-external-src', this._makeEventPayload(this.pic));
+          this._showImageTag();
+          // then wait for the background-image css to take so there is not a flicker
+          // between switching from placeholder to main background div in parent
+          this.async(() => {
+            this.placeholderSrc = '#';
+            this._resetTrigger();
+          }, 500);
+        },
 
 
         _picError(event) {
           const status = event.detail.request.status;
           // ERR_INTERNET_DISCONNECTED
           if (status === 0) {
-            // reset iron-image src so it will display placeholder again
-            this.pic = '#';
-            if (this.placeholder && this.placeholder !== '#') { return; }
             this._showErrorIcon();
           }
+          this._resetTrigger();
         },
         // allow an instant preview based directly off the file
         // until it has had a chance to be saved to db
@@ -508,7 +512,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           const setPlaceholder = url => {
             if (url) {
-              this.pic = '#';
               this.set('placeholder', url);
               // locally saved photos no longer have orientation data
               // and are processed in Jimp with the correct orientation
@@ -519,7 +522,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 this.set(`keys.${key}.orientation`, 0); 
                 this.set(`keys.${key}.placeholder`, url);
               }
-              this._showImageTag();
+              this._loadPlaceholderSrc();
             } else if (!window.navigator.onLine) {
               this._showErrorIcon();
             } else {
@@ -534,7 +537,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
         // photo successfully saved to db so now use the url string as the image src
         // to save memory and cache in localstorage
-        _loadImgFromSavedUrl(url) {
+        _loadSavedUrl(url) {
           // must force iron-image to take new url even if it is the same as previously loaded
           this.pic = undefined;
           this.pic = url;
@@ -542,21 +545,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _loadImgFromTempUrl() {
+        _loadPlaceholderSrc() {
           if (this.pic) {
             this.pic = '#';
           }
+          // force update
+          this.placeholderSrc        = undefined;
+          this.placeholderSrc        = this.placeholder;
           this.placeholderErrorRetry = true;
-          this.fire('photo-capture-placeholder', this._makeEventPayload());
-          this._showImageTag();
         },
 
-
+        // load decoupled from savedUrl and placeholder incase deferLoad is used
         _load() {
           if (this.savedUrl) {
-            this._loadImgFromSavedUrl(this.savedUrl);
+            this._loadSavedUrl(this.savedUrl);
           } else if (this.placeholder && this.placeholder !== '#') {
-            this._loadImgFromTempUrl();
+            this._loadPlaceholderSrc();
           } else {
             this.resetCaptureButton();
           }
@@ -567,21 +571,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (!bool) { return; }
 
           if(this.deferLoad) {
-            // allow instant updates to placeholder and pic
-            // now that parent entry animations are complete
-            this.set('deferLoad', false);
-            this._load();
-            // in case the file is still empty so reset the trigger since
-            // a picture was not loaded in
-            this._resetTrigger();
+            const defer = () => {
+              this._resetTrigger();
+              this._load();
+            };
+            this.schedule(defer);
           }
-        },
-
-
-        _placeholderChanged() {
-          this.async(() => {
-            this._revokeUrl();
-          }, 500);
         },
 
 
@@ -624,7 +619,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.set('placeholder', url);
           this.set('orientation', orientation);
           this.set('key',         key);
-          this._showImageTag();
         },
         
 

@@ -224,8 +224,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             // expected format and initial valuse for bom fixture
             const fixObj = {
               ambient: '',
+              area: this.areaName,
               base: '',
-              catagory: '',
+              catagory: this.catagory,
               color: '',
               contactors: '',
               days: '',
@@ -236,7 +237,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               icon: '',
               kelvin: '',
               key: '',
-              label: '',
               lamps: 1,
               motion: '',
               mount: '',
@@ -247,14 +247,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               qty: 0,
               savedUrl: '',
               timer: '',
-              type: '',
+              type: event.model.item.name,
               volts: '',
               watts: ''
             };
 
-        		const label    = event.model.item.name;
-        		const newLight = Object.assign(fixObj, {label});
-            window.Redaap.bomFullscreen.init(this, 'new', this.areaName, newLight);
+            window.Redaap.bomFullscreen.init(this, 'new', this.areaName, fixObj);
           };
         	
           this.onTap = open;
