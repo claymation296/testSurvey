@@ -318,7 +318,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         deleteBomFixture(area, light) {
           const makeKey = str => str.split(' ').join('_');
           const areaKey = makeKey(area);
-          const fixKey  = makeKey(light.label);
+          const fixKey  = makeKey(light.type);
           const bom     = this.bom;
           delete bom.areas[areaKey].fixtures[fixKey];
 

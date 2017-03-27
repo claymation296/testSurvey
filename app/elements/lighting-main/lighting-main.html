@@ -325,11 +325,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this.dreading[photoKey] = data;
             }
           } else if (this.mode === 'bom' && this.bom) {
+            
             const addSavedData = () => {
               const findOwner = fixtures => {
                 const fixKeys = Object.keys(fixtures);
                 const max     = fixKeys.length - 1;
                 const index   = 0;
+                // no fixtures saved
+                if (max < 0) { return; }
 
                 const find = (key, i) => {
                   const fixture = fixtures[key];
@@ -346,7 +349,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     }
                   }
                   // didn't find a home so quit searching
-                  if (i === max) { return; }
+                  if (i >= max) { return; }
                   // keep looking
                   return find(fixKeys[i + 1], i + 1);
                 };

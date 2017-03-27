@@ -108,20 +108,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       .lastButton {
         left: 50%;
         transform: translate(-50%, 0px);
+        margin: 64px 0px;
       }
 
       #deleteButton {
-        margin: 64px 0px;
         color: var(--text-primary-color);
         background-color: var(--dark-primary-color);
       }
 
       #addTallyButton {
-        margin: 16px 0px 64px 0px;
         color: var(--default-primary-color);
+      }
+
+      #iosBottomOfPageFix {
+        padding-top: 64px;
       }
       
     </style>
+
+    <!-- used for image load timing for toolbar background fade in -->
+    <img src="[[backgroundUrl]]"
+         on-load="_backgroundUrlLoaded"
+         style="position: absolute; opacity: 0;">
+
 
     <paper-scroll-header-panel id="panel" 
                                header-state="{{headerState}}"
@@ -159,7 +168,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                    hidden$="[[!light.icon]]">
         </iron-icon>
 
-        <span id="bottomTitle" class="bottom dialogTitle noSelect">[[light.label]]</span>
+        <span id="bottomTitle" class="bottom dialogTitle noSelect">[[light.type]]</span>
 
         <div id="total" class="bottom total">[[light.qty]]</div>
 
@@ -374,6 +383,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           Add Tally Row
         </paper-button>
 
+
+        <div id="iosBottomOfPageFix"></div>
+
       </div>    
 
     </paper-scroll-header-panel>
@@ -558,8 +570,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         observers: [
           // control edited val and close button state
           '_lightChanged(light.*)',
-          // photo orientation correction
-          '_orientationChanged(light.orientation)',
           // used to add area key and fixture key to each photo's data which is
           // used by lighting main to update savedUrls as they come in late
           '_keyChanged(light.key)'
@@ -573,8 +583,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const headerBg = Polymer.dom(this.$.panel).node.$.headerBg;
           this.backgroundImagePlaceholder = document.createElement('div');
           this.backgroundImage            = document.createElement('div');
-          this.backgroundImagePlaceholder.style.transition = 'opacity 0.3s ease-out';
-          this.backgroundImage.style.transition            = 'opacity 0.3s ease-out';
           // initial styles for both divs with no orientation correction
           this._setupBackgroundImageDiv(this.backgroundImagePlaceholder);
           this._setupBackgroundImageDiv(this.backgroundImage);
@@ -600,8 +608,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	this.index 			  = index;
           this.$.total.style.display = 'flex';
           this.$.closeButton.makeX();
-          this._resetPlaceholderBackground();
-          this._resetExternalSrcBackground();
+
+          this._resetBackgroundElement('placeholder');
+          this._resetBackgroundElement('src');
         	this.schedule(this.open.bind(this, callback));
         },
 
@@ -640,7 +649,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           const nameToKey = str => str.split(' ').join('_');
           const areaKey   = nameToKey(this.area);
-          const fixKey    = nameToKey(this.light.label);
+          const fixKey    = nameToKey(this.light.type);
           Object.assign(this.light.photos[key], {area: areaKey, fixture: fixKey});
         },
 
@@ -673,7 +682,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _correctOrientation(elements, num = 0) {
+        _correctOrientation(num = 0) {
           const config = {
             0: {height: '100%',  pos: 'center center', rotate: '0'},
             1: {height: '100%',  pos: 'center center', rotate: '0'},
@@ -681,62 +690,66 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             6: {height: '100vw', pos: 'center right',  rotate: '90'},
             8: {height: '100vw', pos: 'center left',   rotate: '-90'}
           };
+
           const {height, pos, rotate} = config[num];
-
-          elements.forEach(element => {
-            element.style.height             = height;
-            element.style.backgroundPosition = pos;
-            element.style.transform          = `rotate(${rotate}deg)`;
-          });
+          const el = this.backgroundImagePlaceholder;
+          el.style.height             = height;
+          el.style.backgroundPosition = pos;
+          el.style.transform          = `rotate(${rotate}deg)`;
         },
 
-        // photo-capture image orientation correction for both background divs
-        _orientationChanged(orientation) {
-          const elements = [this.backgroundImage, this.backgroundImagePlaceholder];
-          this._correctOrientation(elements, orientation);
-        },
-
-
-        _setPlaceholderBackground(url) {
-          const show = () => {
+        // hidden img tag at top of local dom on-load event
+        _backgroundUrlLoaded() {
+          if (this.backgroundType === 'placeholder') {
             this.backgroundImagePlaceholder.style.opacity = '1';
-          };
-
-          this.backgroundImagePlaceholder.style.backgroundImage = `url(${url})`;
-          this.schedule(show);
-        },
-
-
-        _resetPlaceholderBackground() {
-          this.backgroundImagePlaceholder.style.opacity = '0';
-        },
-
-
-        _setExternalSrcBackground(url) {
-          const show = () => {
+          } else if (this.backgroundType === 'src') {
             this.backgroundImage.style.opacity = '1';
-          };
-
-          this.backgroundImage.style.backgroundImage = `url(${url})`;
-          this.schedule(show);
+          }
         },
 
 
-        _resetExternalSrcBackground() {
-          this.backgroundImage.style.opacity = '0';
+        _getBackgroundElement(type) {
+          return type === 'src' ? this.backgroundImage : this.backgroundImagePlaceholder;
+        },
+ 
+
+        _setBackgroundUrl(type, url) {
+          const el = this._getBackgroundElement(type);
+
+          el.style.transition      = 'opacity 0.3s ease-out';
+          el.style.backgroundImage = `url(${url})`;
+          // use hidden img tag for proper load timing
+          // force update
+          this.backgroundUrl  = undefined;
+          this.backgroundUrl  = url;
+          this.backgroundType = type;
+        },
+
+
+        _resetBackgroundElement(type) {
+          const el = this._getBackgroundElement(type);
+
+          el.style.transition = 'none';
+          el.style.opacity    = '0';
         },
         // photo-capture placeholder event
         // controls header background img placeholder
         // placeholder is set first before the img file has had time to be saved to db
         // it is removed 500ms after main background div src has been set to avoid flicker
         _placeHolderSrcFromPhotoCapture(event) {
-          const placeholder = event.detail.placeholder;
+          const {orientation, placeholder} = event.detail;
+
+
+          console.log('bom-fullscreen-edit placeholder event: ', placeholder);
+
+
 
           if (placeholder && placeholder !== '#') {
-            this._resetExternalSrcBackground();
-            this._setPlaceholderBackground(placeholder);
+            this._resetBackgroundElement('src');
+            this._correctOrientation(orientation);
+            this._setBackgroundUrl('placeholder', placeholder);
           } else {
-            this._resetPlaceholderBackground();
+            this._resetBackgroundElement('placeholder');
           }
         },
         // photo-capture external-src event
@@ -746,9 +759,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const url = event.detail.externalSrc;
           
           if (url) {
-            this._setExternalSrcBackground(url);
+            this._setBackgroundUrl('src', url);
           } else {
-            this._resetExternalSrcBackground();
+            this._resetBackgroundElement('src');
           }
         },
         // fired from inputs-repeater child element each time user adds tally data
