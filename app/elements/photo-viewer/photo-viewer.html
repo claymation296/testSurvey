@@ -161,6 +161,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           window.Redaap.webWorker.removeUserDeletedPhoto(keyToDelete);
           // remove the key and value from list of saved keys
           delete currentKeys[keyToDelete];
+          // force update to update photo-capture badge state
+          this.capture.keys = undefined;
+          this.capture.set('keys', currentKeys);
           // Object keys are arranged in ascending order
           const remainingKeys = Object.keys(currentKeys);
           // if photo to delete is also the current thumbnail

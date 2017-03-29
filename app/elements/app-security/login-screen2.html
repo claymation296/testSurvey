@@ -513,6 +513,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           } else {
             this.fire('login',  {pw: this.password});
           }
+          this.password = '';
         },
         // called from cancel button
         _cancel() {

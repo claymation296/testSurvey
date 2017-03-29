@@ -10,27 +10,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 'use strict';
 
 // Include Gulp & tools we'll use
-var gulp = require('gulp');
-var $ = require('gulp-load-plugins')();
-var del = require('del');
-var runSequence = require('run-sequence');
-var browserSync = require('browser-sync');
-var reload = browserSync.reload;
-var merge = require('merge-stream');
-var path = require('path');
-var fs = require('fs');
-var glob = require('glob');
-var historyApiFallback = require('connect-history-api-fallback');
-var packageJson = require('./package.json');
-var crypto = require('crypto');
-var polybuild = require('polybuild');
-
-var gulpMatch = require('gulp-match');
-
-
+const gulp               = require('gulp');
+const $                  = require('gulp-load-plugins')();
+const del                = require('del');
+const runSequence        = require('run-sequence');
+const browserSync        = require('browser-sync');
+const reload             = browserSync.reload;
+const merge              = require('merge-stream');
+const path               = require('path');
+const fs                 = require('fs');
+const glob               = require('glob');
+const historyApiFallback = require('connect-history-api-fallback');
+const packageJson        = require('./package.json');
+const crypto             = require('crypto');
+const polybuild          = require('polybuild');
+const gulpMatch          = require('gulp-match'); // used to ignore transpiling min.js files
+const cache              = require('gulp-cache'); // 'gulp clear' task added 3/27/2017
 
 
-var AUTOPREFIXER_BROWSERS = [
+
+
+const AUTOPREFIXER_BROWSERS = [
   'ie >= 10',
   'ie_mob >= 10',
   'ff >= 30',
@@ -110,16 +110,45 @@ gulp.task('jshint', function () {
     .pipe($.if(!browserSync.active, $.jshint.reporter('fail')));
 });
 
+
+
+
+
+// // Optimize images
+// gulp.task('images', function () {
+//   return gulp.src('app/images/**/*')
+//     .pipe($.cache($.imagemin({
+//       progressive: true,
+//       interlaced: true
+//     })))
+//     .pipe(gulp.dest('dist/images'))
+//     .pipe($.size({title: 'images'}));
+// });
+
+
+// fixes bug where images/touch arent being carried over to dist
+// caused by an issue with image caching
+// 3/27/2017
 // Optimize images
 gulp.task('images', function () {
   return gulp.src('app/images/**/*')
-    .pipe($.cache($.imagemin({
+    .pipe($.imagemin({
       progressive: true,
       interlaced: true
-    })))
+    }))
     .pipe(gulp.dest('dist/images'))
     .pipe($.size({title: 'images'}));
 });
+
+
+// use 'gulp clear' to clear image cache incase images/touch arent being
+// copied over to dist
+gulp.task('clear', done => cache.clearAll(done));
+
+
+
+
+
 
 // Copy all files at the root level (app)
 gulp.task('copy', function () {
@@ -359,6 +388,7 @@ gulp.task('serve:dist', ['default'], function () {
 //     'vulcanize-elements', 'rename-elements', 'cache-config',
 //     cb);
 // });
+
 
 
 // Build production files, the default task

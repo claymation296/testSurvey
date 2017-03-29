@@ -307,7 +307,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         is: 'email-options',
 
         behaviors: [
-          Polymer.NeonAnimatableBehavior,
           Polymer.NeonAnimationRunnerBehavior,
           window.Redaap.Behaviors.Utilities,                    
           window.Redaap.Behaviors.OnTapBehavior,                
@@ -341,7 +340,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               };
             }
           },
-          // do not show 'Saving Photos...' if they are done 
+          // do not show 'Saving Photos...' if photos are done 
           // uploading by the time user opens this page
           hideProgress: {
             type: Boolean,

@@ -269,12 +269,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // is offline and there photo has already been saved to db
           // meaning there is no more reference in localForage
           if (unreachable) { return; }
-          // cloning the iron-image sizedImgDiv for better fullscreen-photo perf
-          // which avoids having to reload the image
-          const imgEl = Polymer.dom(event).rootTarget.$.img.$.sizedImgDiv;
-          const clone = Polymer.dom(imgEl).cloneNode();
 
           const selected = () => {
+            // cloning the iron-image sizedImgDiv for better fullscreen-photo perf
+            // which avoids having to reload the image
+            // Polymer.dom(event).rootTarget does not work on iOS here
+            const imgEl = event.model._nodes[0].$.img.$.sizedImgDiv;
+            const clone = Polymer.dom(imgEl).cloneNode();
             this.fire('photo-selector-photo-selected', {clone, orientation, photo});
           };
 

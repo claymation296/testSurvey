@@ -257,37 +257,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.close(callback);
         },
 
+
+        _fillWithUnderscores: str => str.split(' ').join('_'),
+
         
         _bomTypeSave(event) {
-          const {area, light} = event.detail;
-          const fillWithUnderscores = str => str.split(' ').join('_');
-          const areaKey = fillWithUnderscores(area);
-          const fixKey  = fillWithUnderscores(light.type);
-          let bom = this.bom;
-
-
-
-
-          // TODO:
-          //      test for overwrites
-
-
-          if (!bom) {
-            bom = {areas: {}, fixtures: {}, photos: {}};
-          }
-
-          if (!bom.areas) {
-            bom.areas = {};
-          }
-
-          if (!bom.fixtures) {
-            bom.fixtures = {};
-          }
-
-          if (!bom.photos) {
-            bom.photos = {};
-          }
-
+          const light   = event.detail.light;
+          const areaKey = this._fillWithUnderscores(light.area);
+          const fixKey  = this._fillWithUnderscores(light.type);
+          const bom     = this.bom;
 
           if (!bom.areas[areaKey]) {
             bom.areas[areaKey] = {};
@@ -304,8 +282,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (!bom.fixtures[fixKey]) {
             bom.fixtures[fixKey] = {};
           }
-          
-          bom.areas[areaKey].fixtures[fixKey] = true;
+          // check for duplicate entries and save each dup as a unique fixture
+          const previouslySavedFixture = bom.areas[areaKey].fixtures[fixKey];
+
+          if (previouslySavedFixture) {
+            const getDuplicateKey = (index, duplicate)  => {
+              const newFixKey = `${fixKey}(${index})`;
+              // does not already exist
+              if (!duplicate[newFixKey]) {
+                return newFixKey;
+              }
+              return getDuplicateKey(index + 1, duplicate);
+            };
+
+            const uniqueFixKey = getDuplicateKey(1, bom.areas[areaKey].fixtures);
+            bom.areas[areaKey].fixtures[uniqueFixKey] = true;
+            bom.fixtures[uniqueFixKey]                = {};
+            bom.fixtures[uniqueFixKey][areaKey]       = light;
+          } else {
+            bom.areas[areaKey].fixtures[fixKey] = true;
+            bom.fixtures[fixKey][areaKey]       = light;
+          }          
 
           if (light.photos) {
             const photoKeys = Object.keys(light.photos);
@@ -314,12 +311,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             });
             // add new light.photos to photos 
             Object.assign(bom.photos, light.photos);
-          }          
-
-          bom.fixtures[fixKey][areaKey] = light;
+          }
 
           // force update
-          this.bom  = undefined;
+          this.bom = undefined;
           this.set('bom', bom);
           this.$.typeSelector.resetSelectionIndex();
           this.$.typeSelector.reset();
