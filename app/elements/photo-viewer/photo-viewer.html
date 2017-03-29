@@ -88,7 +88,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // photo-selector user takes a new photo
           'photo-selector-new-photo-placeholder':  '_newPhotoPlaceholder',
           // photo-selector user takes a new photo
-          'photo-selector-new-photo-external-src': '_newPhotoExternalSrc',
+          'photo-selector-new-photo-external-src': '_newPhotoSavedUrl',
           // photo-selector user selects a photo from the list
           'photo-selector-photo-selected':         '_photoSelected',
           // photo-selector close button
@@ -204,10 +204,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
         // from photo-selector
         // add new saved photo data to the element that opened photo-viewer
-        _newPhotoExternalSrc(event) {
+        _newPhotoSavedUrl(event) {
           if (!this.capture) { return; }
 
-          const {externalSrc, key, keys} = event.detail;
+          const {savedUrl, key, keys} = event.detail;
           // must match elements since this event is from the asynchronous
           // photo save to cloud db, so user may have closed this page
           // before this event fires
@@ -221,7 +221,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // no need to update photo-selector model data
           // since the data object is only being replaced, not added or deleted
           this.photoDataArray.splice(index, 1, newKeyObj);
-          this.capture.updateSavedUrl(externalSrc);
+          this.capture.updateSavedUrl(savedUrl);
           this.capture.updateKeys(key, keys);
         },
  

@@ -1,0 +1,213 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<!-- 
+host element must style its header panel as follows:
+
+paper-scroll-header-panel {
+  --paper-scroll-header-panel-full-header: {
+    background-color: transparent;
+  };
+  --paper-scroll-header-panel-condensed-header: {
+    background-color: var(--toolbar-background-color);
+  };
+  --paper-scroll-header-panel-header-container: {
+    background-color: var(--toolbar-background-color);
+  };
+  --paper-scroll-header-panel-container: {
+    display: flex;
+    justify-content: center;
+    background-color: var(--primary-background-color);
+  };
+}
+
+paper-toolbar {
+  color: var(--toolbar-color);
+  --paper-toolbar-background: transparent;
+} 
+-->
+
+
+
+
+<dom-module id="toolbar-background-image">
+  <template>
+    <style>
+
+      :host {
+      	width: 0px;
+        height: 0px;
+        position: absolute;
+        opacity: 0;
+        overflow: hidden;
+        z-index: -1;
+        pointer-events: none;
+      }
+      
+    </style>
+
+    <!-- used for image load timing for toolbar background fade in -->
+    <img src="[[backgroundUrl]]"
+         on-load="_backgroundUrlLoaded">
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'toolbar-background-image',
+
+        properties: {
+
+        	panel: {
+        		type: Object,
+        		observer: '_panelChanged'
+        	},
+
+        	backgroundImagePlaceholder: Object,
+
+					backgroundImage: Object,
+
+					backgroundUrl: String
+        },
+
+
+        listeners: {
+          // fired by photo-capture once a temporary url has been passed back from worker
+          'photo-capture-placeholder':  '_placeHolderSrcFromPhotoCapture',
+          // fired by photo-capture once a url has been passed back from db
+          'photo-capture-external-src': '_externalSrcFromPhotoCapture'
+        },
+        // animation config setup since headerContainer is dynamically
+        // created by paper-scroll-header-panel
+        _panelChanged(panel) {
+        	if (!panel) { return; }
+      		// must create two divs inside the header backgound div in order
+          // to correct the image orientation
+          // one for placeholder ObjectURL and the other is for the saved url from db
+          const headerBg = Polymer.dom(panel).node.$.headerBg;
+          this.backgroundImagePlaceholder = document.createElement('div');
+          this.backgroundImage            = document.createElement('div');
+          // initial styles for both divs with no orientation correction
+          this._setupBackgroundImgStyles(this.backgroundImagePlaceholder);
+          this._setupPlaceholderBackground(this.backgroundImagePlaceholder);
+          this._setupBackgroundImgStyles(this.backgroundImage);
+          // add them to header background
+          Polymer.dom(headerBg).appendChild(this.backgroundImagePlaceholder);
+          Polymer.dom(headerBg).appendChild(this.backgroundImage);
+        },
+
+
+        reset() {
+        	this._resetBackgroundElement('placeholder');
+          this._resetBackgroundElement('src');
+        },
+
+        // initial styles for both background divs that are appended to header panel background
+        _setupBackgroundImgStyles(element) {
+          element.style.height             = '100%';
+          element.style.position           = 'relative';
+          element.style.backgroundSize     = 'cover';
+          element.style.backgroundPosition = 'center center';
+          element.style.opacity            = '0';
+        },
+
+        // initial styles for placeholder div that is appended to header panel background
+        _setupPlaceholderBackground(element) {
+          element.style.width    = '100%';
+          element.style.position = 'absolute';
+          element.style.top      = '50%';
+        },
+
+
+        _correctPlaceholderOrientation(num = 0) {
+          const config = {
+            0: {height: '100%',  rotate: '0'},
+            1: {height: '100%',  rotate: '0'},
+            3: {height: '100%',  rotate: '180'},
+            6: {height: '100vw', rotate: '90'},
+            8: {height: '100vw', rotate: '-90'}
+          };
+
+          const {height, rotate} = config[num];
+          const el               = this.backgroundImagePlaceholder;
+          el.style.height        = height;
+          el.style.transform     = `translate(0px, -50%) rotate(${rotate}deg)`;
+        },
+
+        // hidden img tag at top of local dom on-load event
+        _backgroundUrlLoaded() {
+          if (this.backgroundType === 'placeholder') {
+            this.backgroundImagePlaceholder.style.opacity = '1';
+            window.URL.revokeObjectURL(this.backgroundUrl);
+          } else if (this.backgroundType === 'src') {
+            this.backgroundImage.style.opacity = '1';
+          }
+        },
+
+
+        _getBackgroundElement(type) {
+          return type === 'src' ? this.backgroundImage : this.backgroundImagePlaceholder;
+        },
+ 
+
+        _setBackgroundUrl(type, url) {
+          const el = this._getBackgroundElement(type);
+
+          el.style.transition      = 'opacity 0.3s ease-out';
+          el.style.backgroundImage = `url(${url})`;
+          // use hidden img tag for proper load timing
+          // force update
+          this.backgroundUrl  = undefined;
+          this.backgroundUrl  = url;
+          this.backgroundType = type;
+        },
+
+
+        _resetBackgroundElement(type) {
+          const el = this._getBackgroundElement(type);
+
+          el.style.transition = 'none';
+          el.style.opacity    = '0';
+        },
+        // photo-capture placeholder event
+        // controls header background img placeholder
+        // placeholder is set first before the img file has had time to be saved to db
+        // it is removed 500ms after main background div src has been set to avoid flicker
+        setPlaceholder(event) {
+          const {orientation, placeholder} = event.detail;
+
+          if (placeholder && placeholder !== '#') {
+            this._resetBackgroundElement('src');
+            this._correctPlaceholderOrientation(orientation);
+            this._setBackgroundUrl('placeholder', placeholder);
+          } else {
+            this._resetBackgroundElement('placeholder');
+          }
+        },
+        // photo-capture external-src event
+        // controls header background img
+        // is set once the img file has been saved to db and then reloaded into browser
+        setSavedUrl(event) {
+          const url = event.detail.savedUrl;
+                    
+          if (url) {
+            this._setBackgroundUrl('src', url);
+          } else {
+            this._resetBackgroundElement('src');
+          }
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

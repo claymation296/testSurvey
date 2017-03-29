@@ -550,41 +550,41 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             // // testing without filling up test server!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            // then(() => {
-            //   return new Promise(resolve => this.async(() => resolve(), 1000));
-            // }).
-            // then(() => {
+            then(() => {
+              return new Promise(resolve => this.async(() => resolve(), 1000));
+            }).
+            then(() => {
 
-            //   const saved = {
-            //     blob: undefined,
-            //     extension: 'jpeg',
-            //     file: undefined,
-            //     fileName: 'Candelabra',
-            //     func: 'fileProcessed',
-            //     key,
-            //     savedName: '24ef0ab62af8823104274d53f62be399_candelabra.jpeg',
-            //     savedUrl: 'https://test.redaap.net/parse/files/tY6Sbi9gcEzSqfNWXydt6pkAliMCUnT2fs8OVYAe/24ef0ab62af8823104274d53f62be399_candelabra.jpeg'
-            //   };
+              const saved = {
+                blob: undefined,
+                extension: 'jpeg',
+                file: undefined,
+                fileName: 'Candelabra',
+                func: 'fileProcessed',
+                key,
+                savedName: '24ef0ab62af8823104274d53f62be399_candelabra.jpeg',
+                savedUrl: 'https://test.redaap.net/parse/files/tY6Sbi9gcEzSqfNWXydt6pkAliMCUnT2fs8OVYAe/24ef0ab62af8823104274d53f62be399_candelabra.jpeg'
+              };
 
-            //   this.set('savedPhotoData', saved);
+              this.set('savedPhotoData', saved);
 
-            //   return saved;
-            // }).
-
-
-
-
-
-            then(()     => this._dispatch(saveJob)).
-            then(saved  => {
-              // not using events because this element is at top level (index.html)
-              // top down set photo data (lighting-main -> children)
-              if (saved) {
-                this.set('savedPhotoData', saved);
-              }
-              // bottom up set photo data (photo-capture -> parent)
               return saved;
             }).
+
+
+
+
+
+            // then(()     => this._dispatch(saveJob)).
+            // then(saved  => {
+            //   // not using events because this element is at top level (index.html)
+            //   // top down set photo data (lighting-main -> children)
+            //   if (saved) {
+            //     this.set('savedPhotoData', saved);
+            //   }
+            //   // bottom up set photo data (photo-capture -> parent)
+            //   return saved;
+            // }).
             catch(error => console.log('save photo error in web-worker: ', error));
         },
 

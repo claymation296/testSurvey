@@ -14,8 +14,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
 <link rel="import" href="../redaap-behaviors/open-close-fullscreen-behavior.html">
 <link rel="import" href="../redaap-behaviors/expand-collapse-classes-behavior.html">
-<link rel="import" href="../close-save-button/close-save-button.html">
+<link rel="import" href="../toolbar-background-image/toolbar-background-image.html">
 <link rel="import" href="../photo-capture/photo-capture.html">
+<link rel="import" href="../close-save-button/close-save-button.html">
 <link rel="import" href="../notes-page/notes-button.html">
 <link rel="import" href="../card-inputs/inputs-repeater.html">
 
@@ -126,10 +127,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       
     </style>
 
-    <!-- used for image load timing for toolbar background fade in -->
-    <img src="[[backgroundUrl]]"
-         on-load="_backgroundUrlLoaded"
-         style="position: absolute; opacity: 0;">
+
+    <toolbar-background-image id="backgroundImg" panel="[[panel]]"></toolbar-background-image>
 
 
     <paper-scroll-header-panel id="panel" 
@@ -513,6 +512,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               };
             }
           },
+          // for toolbar-background-image ref
+          panel: Object,
           // the element that called init to send edited data back to
           caller: Object,
 
@@ -555,15 +556,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         listeners: {
-          'neon-animation-finish':      '_bomFullscreenAnimationFinished',
+          'neon-animation-finish':            '_bomFullscreenAnimationFinished',
           // fired by photo-capture once a temporary url has been passed back from worker
-          'photo-capture-placeholder':  '_placeHolderSrcFromPhotoCapture',
+          'photo-capture-placeholder-loaded': '_photoCapturePlaceholder',
           // fired by photo-capture once a url has been passed back from db
-          'photo-capture-external-src': '_externalSrcFromPhotoCapture',
+          'photo-capture-saved-url-loaded':   '_photoCaptureSavedUrl',
           // fired by close-save-button
-          'close-save-button-tapped':   '_bomCloseButtonTapped',
+          'close-save-button-tapped':         '_bomCloseButtonTapped',
           // fired from inputs-repeater
-          'inputs-repeater-tally-totalled': '_tallyTotalled',
+          'inputs-repeater-tally-totalled':   '_tallyTotalled',
         },
 
 
@@ -574,22 +575,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // used by lighting main to update savedUrls as they come in late
           '_keyChanged(light.key)'
         ],
-        // animation config setup since headerContainer is dynamically
-        // created by paper-scroll-header-panel
-        ready() {
-          // must create two divs inside the header backgound div in order
-          // to correct the image orientation
-          // one for placeholder ObjectURL and the other is for the saved url from db
-          const headerBg = Polymer.dom(this.$.panel).node.$.headerBg;
-          this.backgroundImagePlaceholder = document.createElement('div');
-          this.backgroundImage            = document.createElement('div');
-          // initial styles for both divs with no orientation correction
-          this._setupBackgroundImgStyles(this.backgroundImagePlaceholder);
-          this._setupPlaceholderBackground(this.backgroundImagePlaceholder);
-          this._setupBackgroundImgStyles(this.backgroundImage);
-          // add them to header background
-          Polymer.dom(headerBg).appendChild(this.backgroundImagePlaceholder);
-          Polymer.dom(headerBg).appendChild(this.backgroundImage);
+
+
+        attached() {
+          this.async(() => {
+            // toolbar-background-image panel ref
+            this.panel = this.$.panel;
+          });
         },
 
 
@@ -609,10 +601,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	this.index 			  = index;
           this.$.total.style.display = 'flex';
           this.$.closeButton.makeX();
-
-          this._resetBackgroundElement('placeholder');
-          this._resetBackgroundElement('src');
+          this.$.backgroundImg.reset();
         	this.schedule(this.open.bind(this, callback));
+        },
+
+
+        _photoCapturePlaceholder(event) {
+          this.$.backgroundImg.setPlaceholder(event);
+        },
+
+        _photoCaptureSavedUrl(event) {
+          this.$.backgroundImg.setSavedUrl(event);
         },
 
 
@@ -664,101 +663,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.$.total.style.display = 'flex';
             this.cancelAnimation();
             this.playAnimation('bomEditTotalEntry', 'bomEditTotalEntry');
-          }
-        },
-
-        // initial styles for both background divs that are appended to header panel background
-        _setupBackgroundImgStyles(element) {
-          element.style.height             = '100%';
-          element.style.position           = 'relative';
-          element.style.backgroundSize     = 'cover';
-          element.style.backgroundPosition = 'center center';
-          element.style.opacity            = '0';
-        },
-
-        // initial styles for placeholder div that is appended to header panel background
-        _setupPlaceholderBackground(element) {
-          element.style.width    = '100%';
-          element.style.position = 'absolute';
-          element.style.top      = '50%';
-        },
-
-
-        _correctPlaceholderOrientation(num = 0) {
-          const config = {
-            0: {height: '100%',  rotate: '0'},
-            1: {height: '100%',  rotate: '0'},
-            3: {height: '100%',  rotate: '180'},
-            6: {height: '100vw', rotate: '90'},
-            8: {height: '100vw', rotate: '-90'}
-          };
-
-          const {height, rotate} = config[num];
-          const el               = this.backgroundImagePlaceholder;
-          el.style.height        = height;
-          el.style.transform     = `translate(0px, -50%) rotate(${rotate}deg)`;
-        },
-
-        // hidden img tag at top of local dom on-load event
-        _backgroundUrlLoaded() {
-          if (this.backgroundType === 'placeholder') {
-            this.backgroundImagePlaceholder.style.opacity = '1';
-            window.URL.revokeObjectURL(this.backgroundUrl);
-          } else if (this.backgroundType === 'src') {
-            this.backgroundImage.style.opacity = '1';
-          }
-        },
-
-
-        _getBackgroundElement(type) {
-          return type === 'src' ? this.backgroundImage : this.backgroundImagePlaceholder;
-        },
- 
-
-        _setBackgroundUrl(type, url) {
-          const el = this._getBackgroundElement(type);
-
-          el.style.transition      = 'opacity 0.3s ease-out';
-          el.style.backgroundImage = `url(${url})`;
-          // use hidden img tag for proper load timing
-          // force update
-          this.backgroundUrl  = undefined;
-          this.backgroundUrl  = url;
-          this.backgroundType = type;
-        },
-
-
-        _resetBackgroundElement(type) {
-          const el = this._getBackgroundElement(type);
-
-          el.style.transition = 'none';
-          el.style.opacity    = '0';
-        },
-        // photo-capture placeholder event
-        // controls header background img placeholder
-        // placeholder is set first before the img file has had time to be saved to db
-        // it is removed 500ms after main background div src has been set to avoid flicker
-        _placeHolderSrcFromPhotoCapture(event) {
-          const {orientation, placeholder} = event.detail;
-
-          if (placeholder && placeholder !== '#') {
-            this._resetBackgroundElement('src');
-            this._correctPlaceholderOrientation(orientation);
-            this._setBackgroundUrl('placeholder', placeholder);
-          } else {
-            this._resetBackgroundElement('placeholder');
-          }
-        },
-        // photo-capture external-src event
-        // controls header background img
-        // is set once the img file has been saved to db and then reloaded into browser
-        _externalSrcFromPhotoCapture(event) {
-          const url = event.detail.externalSrc;
-          
-          if (url) {
-            this._setBackgroundUrl('src', url);
-          } else {
-            this._resetBackgroundElement('src');
           }
         },
         // fired from inputs-repeater child element each time user adds tally data

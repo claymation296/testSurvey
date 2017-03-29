@@ -11,8 +11,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="replacement-array.html">
 <link rel="import" href="solution-content.html">
+<link rel="import" href="../toolbar-background-image/toolbar-background-image.html">
 <link rel="import" href="../photo-capture/photo-capture.html">
 <link rel="import" href="../notes-page/notes-button.html">
+<link rel="import" href="../redaap-behaviors/utilities.html">
 <link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
 
 
@@ -69,6 +71,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
     </style>
+
+
+    <toolbar-background-image id="backgroundImg" panel="[[panel]]"></toolbar-background-image>
+
 
     <replacement-array replacements="{{allReplacementsArray}}"></replacement-array>
 
@@ -140,7 +146,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           Polymer.NeonAnimatableBehavior,
           Polymer.NeonAnimationRunnerBehavior,
           Polymer.NeonSharedElementAnimationBehavior,
-          window.window.Redaap.Behaviors.OnTapBehavior 
+          window.Redaap.Behaviors.Utilities,
+          window.Redaap.Behaviors.OnTapBehavior 
         ],
 
         properties: {
@@ -204,6 +211,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               };
             }
           },
+          // for toolbar-background-image ref
+          panel: Object,
           // only fire data out to main-page if user closed this element with a save
           // rather than closing button
           readyToFireData: Boolean,
@@ -238,60 +247,36 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         
         
         listeners: {
-          'neon-animation-finish':      '_animationFinished',
+          'neon-animation-finish':            '_solutionViewAnimationFinished',
           // fired by photo-capture once a temporary url has been passed back from worker
-          'photo-capture-placeholder':  '_placeHolderSrcFromPhotoCapture',
+          'photo-capture-placeholder-loaded': '_photoCapturePlaceholder',
           // fired by photo-capture once a url has been passed back from db
-          'photo-capture-external-src': '_externalSrcFromPhotoCapture'
-        },
-
-
-        observers: [
-          '_orientationChanged(existingFixture.orientation)'
-        ],
-        // animation config setup since headerContainer is dynamically
-        // created by paper-scroll-header-panel
-        ready() {
-          // for animation config setup
-          const header   = Polymer.dom(this.$.panel).node.$.headerContainer;
-          // must create two divs inside the header backgound div in order
-          // to correct the image orientation
-          // one for placeholder ObjectURL and the other is for the saved url from db
-          const headerBg = Polymer.dom(this.$.panel).node.$.headerBg;
-          this.backgroundImagePlaceholder = document.createElement('div');
-          this.backgroundImage            = document.createElement('div');
-          // initial styles for both divs with no orientation correction
-          this._setupBackgroundImageDiv(this.backgroundImagePlaceholder);
-          this._setupBackgroundImageDiv(this.backgroundImage);
-          // add them to header background
-          Polymer.dom(headerBg).appendChild(this.backgroundImagePlaceholder);
-          Polymer.dom(headerBg).appendChild(this.backgroundImage);
-          // must animate entire header not just paper-toolbar
-          this.animationConfig.toolbar[0].node   = header;
-          this.animationConfig.preCancel[0].node = header;
+          'photo-capture-saved-url-loaded':   '_photoCaptureSavedUrl'
         },
         // get reference to light-tally custom element that is inside main-page
         // in order to call light-tally's updateUSA() method
         attached() {
           this.async(() => {
+            // toolbar-background-image panel ref
+            this.panel = this.$.panel;
+            // animation config setup since headerContainer is dynamically
+            // created by paper-scroll-header-panel
+            const header          = Polymer.dom(this.panel).node.$.headerContainer;
             const lightingMainDom = Polymer.dom(window.Redaap.lightingMain);
-            this.areaPageCustomElement = lightingMainDom.node.$.areaPage;
+            this.areaPageCustomElement             = lightingMainDom.node.$.areaPage;
+            // must animate entire header not just paper-toolbar
+            this.animationConfig.toolbar[0].node   = header;
+            this.animationConfig.preCancel[0].node = header;
           });
         },
 
-        // initial styles for both background divs that are appended to header panel background
-        _setupBackgroundImageDiv(element) {
-          element.style.height             = '100%';
-          element.style.position           = 'absolute';
-          element.style.top                = '0px';
-          element.style.bottom             = '0px';
-          element.style.left               = '0px';
-          element.style.right              = '0px';
-          element.style.backgroundRepeat   = 'no-repeat';
-          element.style.backgroundSize     = 'cover';
-          element.style.backgroundPosition = 'center center';
-          element.style.transform          = 'rotate(0deg)';
-          element.style.opacity            = '0';
+        // photo-capture placeholder event
+        _photoCapturePlaceholder(event) {
+          this.$.backgroundImg.setPlaceholder(event);
+        },
+        // photo-capture saved url event
+        _photoCaptureSavedUrl(event) {
+          this.$.backgroundImg.setSavedUrl(event);
         },
 
         // lower the number of elements / layers in dom
@@ -318,13 +303,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // animation completes
           this.hideFake    = true;
           this.hideToolbar = true;
+          this.$.backgroundImg.reset();
           this.$.capture.resetCaptureButton();
 
-          window.requestAnimationFrame(this._runToolbarAnimation.bind(this));
+          this.schedule.bind(this, this._runToolbarAnimation());
         },
 
         // after user cancels the picker wait to close until after 'preCancel' animation finishes
-        _animationFinished(_, animationType) {
+        _solutionViewAnimationFinished(_, animationType) {
           switch(animationType) {
             case 'preCancel':
               this.hideFake = false;
@@ -340,79 +326,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               break;
             default:
               return;
-          }
-        },
-
-
-        _correctOrientation(elements, num = 1) {
-          const config = {
-            1: {height: '100%',  pos: 'center center', rotate: '0'},
-            3: {height: '100%',  pos: 'center center', rotate: '180'},
-            6: {height: '100vw', pos: 'center right',  rotate: '90'},
-            8: {height: '100vw', pos: 'center left',   rotate: '-90'}
-          };
-          const {height, pos, rotate} = config[num];
-
-          elements.forEach(element => {
-            element.style.height             = height;
-            element.style.backgroundPosition = pos;
-            element.style.transform          = `rotate(${rotate}deg)`;
-          });
-        },
-
-        // photo-capture image orientation correction for both background divs
-        _orientationChanged(orientation) {
-          const elements = [this.backgroundImage, this.backgroundImagePlaceholder];
-          this._correctOrientation(elements, orientation);
-        },
-
-
-        _setPlaceholderBackground(url) {
-          this.backgroundImagePlaceholder.style.backgroundImage = `url(${url})`;
-          this.backgroundImagePlaceholder.style.transition      = 'opacity 0.3s ease-out';
-          this.backgroundImagePlaceholder.style.opacity         = '1';
-        },
-
-
-        _resetPlaceholderBackground() {
-          this.backgroundImagePlaceholder.style.backgroundImage = 'none';
-          this.backgroundImagePlaceholder.style.transition      = '';
-          this.backgroundImagePlaceholder.style.opacity         = '0';
-        },
-
-
-        _setExternalSrcBackground(url) {
-          this.backgroundImage.style.backgroundImage = `url(${url})`;
-          this.backgroundImage.style.opacity         = '1';
-        },
-
-
-        _resetExternalSrcBackground() {
-          this.backgroundImage.style.backgroundImage = 'none';
-          this.backgroundImage.style.opacity         = '0';
-        },
-        // photo-capture placeholder event
-        // controls header background img placeholder
-        // placeholder is set first before the img file has had time to be saved to db
-        // it is removed 500ms after main background div src has been set to avoid flicker
-        _placeHolderSrcFromPhotoCapture(event) {
-          const url = event.detail.placeholder;
-          if (url && url !== '#') {
-            this._resetExternalSrcBackground();
-            this._setPlaceholderBackground(url);
-          } else {
-            this._resetPlaceholderBackground();
-          }
-        },
-        // photo-capture external-src event
-        // controls header background img
-        // is set once the img file has been saved to db and then reloaded into browser
-        _externalSrcFromPhotoCapture(event) {
-          const url = event.detail.externalSrc;
-          if (url) {
-            this._setExternalSrcBackground(url);
-          } else {
-            this._resetExternalSrcBackground();
           }
         },
 
@@ -437,7 +350,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // fire up to solution-page
           // so it can control further calculations 
           // based off of animation timing so they arent janked
-          window.requestAnimationFrame(this.fire.bind(this, 'close'));
+          this.schedule.bind(this, this.fire('close'));
         },
 
         // change exit animation base on user selecting save or tapping the close icon button

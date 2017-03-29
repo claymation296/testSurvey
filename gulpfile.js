@@ -111,43 +111,22 @@ gulp.task('jshint', function () {
 });
 
 
-
-
-
-// // Optimize images
-// gulp.task('images', function () {
-//   return gulp.src('app/images/**/*')
-//     .pipe($.cache($.imagemin({
-//       progressive: true,
-//       interlaced: true
-//     })))
-//     .pipe(gulp.dest('dist/images'))
-//     .pipe($.size({title: 'images'}));
-// });
-
-
-// fixes bug where images/touch arent being carried over to dist
-// caused by an issue with image caching
-// 3/27/2017
 // Optimize images
 gulp.task('images', function () {
   return gulp.src('app/images/**/*')
-    .pipe($.imagemin({
+    .pipe($.cache($.imagemin({
       progressive: true,
       interlaced: true
-    }))
+    })))
     .pipe(gulp.dest('dist/images'))
     .pipe($.size({title: 'images'}));
 });
 
 
-// use 'gulp clear' to clear image cache incase images/touch arent being
-// copied over to dist
+// fixes bug where images/touch arent being carried over to dist
+// caused by an issue with image caching
+// 3/27/2017
 gulp.task('clear', done => cache.clearAll(done));
-
-
-
-
 
 
 // Copy all files at the root level (app)
@@ -390,9 +369,10 @@ gulp.task('serve:dist', ['default'], function () {
 // });
 
 
-
 // Build production files, the default task
-gulp.task('default', ['clean'], function (cb) {
+// added 'clear' task 3/29/2017 because images/touch were not being picked up by build
+// caused by an error in gulp-cache
+gulp.task('default', ['clean', 'clear'], function (cb) {
   // Uncomment 'cache-config' after 'rename-index' if you are going to use service workers.
   runSequence(
     ['copy', 'styles'],

@@ -11,8 +11,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
  photo-caputre example usage
 
     events 
-      'photo-capture-placeholder'
-      'photo-capture-external-src'
+      'photo-capture-placeholder-loaded'
+      'photo-capture-saved-url-loaded'
 
 
 
@@ -157,6 +157,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           top: 30px;
           right: 12px;
           transition: opacity 0.2s ease-in;
+          pointer-events: none;
         };
         --paper-badge-opacity: 0;
       }
@@ -341,11 +342,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         ],
 
 
-        detached() {
-          // allow gc
-          this.pic = undefined;
-          this.fire('photo-capture-placeholder', this._makeEventPayload());
-        },
+        // detached() {
+        //   // allow gc
+        //   this.pic = undefined;
+        //   this.fire('photo-capture-placeholder-loaded', this._makeEventPayload());
+        // },
+
+
+
         // called by photo-viewer if user updates the photo pertaining to this
         // capture instance
         updateThumbnail({key, orientation, placeholder, url}) {
@@ -384,8 +388,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         resetCaptureButton() {
           this.placeholder = '#';
           this.placeholderErrorRetry = true;
-          this.fire('photo-capture-placeholder',  this._makeEventPayload());
-          this.fire('photo-capture-external-src', this._makeEventPayload());
+          this.fire('photo-capture-placeholder-loaded', this._makeEventPayload());
+          this.fire('photo-capture-saved-url-loaded',   this._makeEventPayload());
           this._hideImageTag();
         },
         
@@ -414,13 +418,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // helper func
-        _makeEventPayload(externalSrc) {
+        _makeEventPayload(savedUrl) {
           return {
-            externalSrc,
             key:         this.key,
             keys:        this.keys,
             orientation: this.orientation,
-            placeholder: this.placeholder
+            placeholder: this.placeholder,
+            savedUrl
           };
         },
 
@@ -486,7 +490,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _placeholderSrcLoaded() {
           this._resetTrigger();
-          this.fire('photo-capture-placeholder', this._makeEventPayload());
+          this.fire('photo-capture-placeholder-loaded', this._makeEventPayload());
 
           if (this.placeholderSrc && this.placeholderSrc !== '#') {
             this._showImageTag();
@@ -522,7 +526,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.set('orientation', 0);
           // fire the external src only after the file has been loaded into the browser
           // using iron-image for load timing wether it is hidden or not
-          this.fire('photo-capture-external-src', this._makeEventPayload(this.pic));
+          this.fire('photo-capture-saved-url-loaded', this._makeEventPayload(this.pic));
           this._showImageTag();
           // then wait for the background-image css to take so there is not a flicker
           // between switching from placeholder to main background div in parent
