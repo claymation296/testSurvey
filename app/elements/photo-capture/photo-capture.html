@@ -148,6 +148,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         --paper-spinner-color: var(--default-primary-color);
       }
 
+      paper-badge {
+        --paper-badge: {
+          width: 12px;
+          height: 12px;
+          font-size: 10px;
+          position: relative;
+          top: 30px;
+          right: 12px;
+          transition: opacity 0.2s ease-in;
+        };
+        --paper-badge-opacity: 0;
+      }
+
+      .showBadge {
+        --paper-badge-opacity: 1;
+      }
+
     </style>  
 
     <!-- placeholder load timing only -->
@@ -166,47 +183,62 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </iron-ajax>
 
     
-    <iron-icon class="cameraIcon" icon="[[buttonIcon]]"></iron-icon>
 
-    <iron-label id="camera" for="input">
-      <input id="input" 
-             class="cameraInput"
-             iron-label-target
-             type="file" 
-             accept="image/*"
-             on-change="_userSelectedPictureFile"/>   
+    <div id="captureButton">
 
-      <paper-ripple class="circle" recenters></paper-ripple>
-      
-    </iron-label>
-
-
-    <div id="imageTag" class="centeredAboveFileInput">
-      <iron-image class$="[[_computeOrientation(orientation)]]" 
-                  fade
-                  hidden$="[[disableThumbnail]]"
-                  loaded="{{loaded}}"
-                  on-tap="_photoTapped"
-                  placeholder="[[placeholderSrc]]"
-                  preload
-                  sizing="cover"
-                  src="[[pic]]">
-      </iron-image>
-    </div>
-
-
-    <div id="externalSrcIconButton" 
-         class="centeredAboveFileInput"
-         hidden$="[[!disableThumbnail]]" 
-         on-tap="_photoTapped">
-      <paper-ripple class="circle" recenters></paper-ripple>
       <iron-icon class="cameraIcon" icon="[[buttonIcon]]"></iron-icon>
+
+      <iron-label id="camera" for="input">
+        <input id="input" 
+               class="cameraInput"
+               iron-label-target
+               type="file" 
+               accept="image/*"
+               on-change="_userSelectedPictureFile"/>   
+
+        <paper-ripple class="circle" recenters></paper-ripple>
+        
+      </iron-label>
+
+
+      <div id="imageTag" class="centeredAboveFileInput">
+        <iron-image class$="[[_computeOrientation(orientation)]]" 
+                    fade
+                    hidden$="[[disableThumbnail]]"
+                    loaded="{{loaded}}"
+                    on-tap="_photoTapped"
+                    placeholder="[[placeholderSrc]]"
+                    preload
+                    sizing="cover"
+                    src="[[pic]]">
+        </iron-image>
+      </div>
+
+
+      <div id="externalSrcIconButton" 
+           class="centeredAboveFileInput"
+           hidden$="[[!disableThumbnail]]" 
+           on-tap="_photoTapped">
+        <paper-ripple class="circle" recenters></paper-ripple>
+        <iron-icon class="cameraIcon" icon="[[buttonIcon]]"></iron-icon>
+      </div>
+
+
+      <div id="loading" class="loading" hidden$="[[!showSpinner]]">
+        <paper-spinner-lite alt="Loading photo..." active="[[showSpinner]]"></paper-spinner-lite>
+      </div>
+
+
+
     </div>
 
 
-    <div id="loading" class="loading" hidden$="[[!showSpinner]]">
-      <paper-spinner-lite alt="Loading photo..." active="[[showSpinner]]"></paper-spinner-lite>
-    </div>
+    <paper-badge id="captureBadge" 
+                 for="captureButton"
+                 label="[[badgeCount]]">
+    </paper-badge>
+
+
 
   </template>
 
@@ -302,6 +334,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             notify: true
           }
         },
+
+        // used for badge state and count
+        observers: [
+          '_keysChanged(keys.*)'
+        ],
 
 
         detached() {
@@ -583,6 +620,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _keyChanged() {
           if (this.deferLoad) { return; }
           this.schedule(this._load.bind(this));
+        },
+
+        // used for badge state and count
+        _keysChanged(keys) {
+          if (this.disableViewer) { return; }
+
+          if (keys.base) {
+            const length = Object.keys(keys.base).length;
+            this.badgeCount = length;
+            if (length) {
+              Polymer.dom(this.$.captureBadge).classList.add('showBadge');
+            } else {
+              Polymer.dom(this.$.captureBadge).classList.remove('showBadge');
+            }
+          } else {
+            this.badgeCount = 0;
+            Polymer.dom(this.$.captureBadge).classList.remove('showBadge');
+          }
+          this.$.captureBadge.updatePosition();
+          this.updateStyles();
         },
 
 

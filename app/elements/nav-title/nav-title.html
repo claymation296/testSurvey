@@ -84,6 +84,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           	type: String,
           	value: 'home'
           },
+
+          mode: String,
           // passed out to app for display at top of toolbar
           title: String,
           // temporary holder of computed title during animation 
@@ -107,10 +109,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 this.newTitle = 'Client';
                 break;
               case 'signs':
-                this.newTitle = signageTab === 'signagePage' ? 'Sign Selector' : 'Sign Pricing';
+                this.newTitle = signageTab === 'signagePage' ? 'Selector' : 'Pricing';
                 break;
               case 'lights':
-                this.newTitle = lightingTab === 'areaPage' ? 'Light Areas' : 'Light Pricing';
+                if (this.mode === 'quote') {
+                  this.newTitle = lightingTab === 'areaPage' ? 'Areas' : 'Pricing';
+                } else if (this.mode === 'bom') {
+                  this.newTitle = lightingTab === 'areaPage' ? 'Areas' : 'Send';
+                }
                 break;
               case 'contact':
                 this.newTitle = 'Contact';

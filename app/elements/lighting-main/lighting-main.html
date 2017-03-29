@@ -57,6 +57,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <bom-send id="bomSend" 
                 bom="[[bom]]"
                 client="[[client]]"
+                computed-tab="[[computedTab]]"
+                queue-size="[[queueSize]]"
                 reverse-animation="[[reverseAnimation]]">
       </bom-send>
 
@@ -114,6 +116,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Object,
             observer: '_savedPhotoDataChanged'
           },
+          // data bound from web-worker to bom-send
+          queueSize: Number,
           // saved photo data that is waiting for the user to save
           // their current work
           dreading: {

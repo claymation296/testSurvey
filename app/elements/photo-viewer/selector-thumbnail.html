@@ -143,6 +143,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const status = event.detail.request.status;
           if (!this.errorRetry) { return; }
 
+
+
+          console.log('selector-thumbnail status: ', status, this.photo.src);
+
+
+
+
           this.errorRetry = false;
           // Not Found
           // ObjectUrl invalid so issue a new one
@@ -161,7 +168,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               getUrl(this.photo.key).
               then(setSrc).
               catch(error => console.log(error));
-
+          // ERR_INTERNET_DISCONNECTED
           } else if (status === 0) {
             this._showErrorIcon();
           }

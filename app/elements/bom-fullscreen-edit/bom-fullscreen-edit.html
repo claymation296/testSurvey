@@ -147,7 +147,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         <photo-capture id="capture" 
-                       filename="[[light.label]]"
+                       filename="[[light.type]]"
                        keys="{{light.photos}}"
                        orientation="{{light.orientation}}"
                        placeholder="{{light.placeholder}}"
@@ -584,8 +584,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.backgroundImagePlaceholder = document.createElement('div');
           this.backgroundImage            = document.createElement('div');
           // initial styles for both divs with no orientation correction
-          this._setupBackgroundImageDiv(this.backgroundImagePlaceholder);
-          this._setupBackgroundImageDiv(this.backgroundImage);
+          this._setupBackgroundImgStyles(this.backgroundImagePlaceholder);
+          this._setupPlaceholderBackground(this.backgroundImagePlaceholder);
+          this._setupBackgroundImgStyles(this.backgroundImage);
           // add them to header background
           Polymer.dom(headerBg).appendChild(this.backgroundImagePlaceholder);
           Polymer.dom(headerBg).appendChild(this.backgroundImage);
@@ -667,41 +668,42 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // initial styles for both background divs that are appended to header panel background
-        _setupBackgroundImageDiv(element) {
+        _setupBackgroundImgStyles(element) {
           element.style.height             = '100%';
-          element.style.position           = 'absolute';
-          element.style.top                = '0px';
-          element.style.bottom             = '0px';
-          element.style.left               = '0px';
-          element.style.right              = '0px';
-          element.style.backgroundRepeat   = 'no-repeat';
+          element.style.position           = 'relative';
           element.style.backgroundSize     = 'cover';
           element.style.backgroundPosition = 'center center';
-          element.style.transform          = 'rotate(0deg)';
           element.style.opacity            = '0';
         },
 
+        // initial styles for placeholder div that is appended to header panel background
+        _setupPlaceholderBackground(element) {
+          element.style.width    = '100%';
+          element.style.position = 'absolute';
+          element.style.top      = '50%';
+        },
 
-        _correctOrientation(num = 0) {
+
+        _correctPlaceholderOrientation(num = 0) {
           const config = {
-            0: {height: '100%',  pos: 'center center', rotate: '0'},
-            1: {height: '100%',  pos: 'center center', rotate: '0'},
-            3: {height: '100%',  pos: 'center center', rotate: '180'},
-            6: {height: '100vw', pos: 'center right',  rotate: '90'},
-            8: {height: '100vw', pos: 'center left',   rotate: '-90'}
+            0: {height: '100%',  rotate: '0'},
+            1: {height: '100%',  rotate: '0'},
+            3: {height: '100%',  rotate: '180'},
+            6: {height: '100vw', rotate: '90'},
+            8: {height: '100vw', rotate: '-90'}
           };
 
-          const {height, pos, rotate} = config[num];
-          const el = this.backgroundImagePlaceholder;
-          el.style.height             = height;
-          el.style.backgroundPosition = pos;
-          el.style.transform          = `rotate(${rotate}deg)`;
+          const {height, rotate} = config[num];
+          const el               = this.backgroundImagePlaceholder;
+          el.style.height        = height;
+          el.style.transform     = `translate(0px, -50%) rotate(${rotate}deg)`;
         },
 
         // hidden img tag at top of local dom on-load event
         _backgroundUrlLoaded() {
           if (this.backgroundType === 'placeholder') {
             this.backgroundImagePlaceholder.style.opacity = '1';
+            window.URL.revokeObjectURL(this.backgroundUrl);
           } else if (this.backgroundType === 'src') {
             this.backgroundImage.style.opacity = '1';
           }
@@ -739,14 +741,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _placeHolderSrcFromPhotoCapture(event) {
           const {orientation, placeholder} = event.detail;
 
-
-          console.log('bom-fullscreen-edit placeholder event: ', placeholder);
-
-
-
           if (placeholder && placeholder !== '#') {
             this._resetBackgroundElement('src');
-            this._correctOrientation(orientation);
+            this._correctPlaceholderOrientation(orientation);
             this._setBackgroundUrl('placeholder', placeholder);
           } else {
             this._resetBackgroundElement('placeholder');

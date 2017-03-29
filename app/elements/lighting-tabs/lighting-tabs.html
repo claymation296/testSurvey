@@ -109,7 +109,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	// bound from lighting-main
         	userSelectedArray: Array,
           // passed in from account-form via main-page if all inputs are complete and valid
-          clientValid: Boolean,
+          clientValid: {
+            type: Boolean,
+            observer: '_clientValidChanged'
+          },
           // bound from area-tab to control quote generation flow
           talliesValid: {
             type: Boolean,
@@ -156,14 +159,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.debounce('lightingTabsDebounce', () => {
             const hide = () => {
               // hide quote badge as default to prevent it from an initial flash
-              // if uSA is empty or undefined
+              // if uSA or bom is empty or undefined
               if (this.mode && this.mode === 'bom') {
                 this._applyHideClass(true, this.$$('#bomSendBadge'));
                 return;
               }
               this._applyHideClass(true, this.$$('#quoteBadge'));
             };
-
 
             if (this.route === 'lights') {
               this._show();
@@ -180,9 +182,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             } else {
               this.showQuoteTabs = false;
             }
-            this._show();
-          } else {
-            this._hide();
           }
         },
 
@@ -206,6 +205,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (bool === undefined || oldBool === undefined) { return; }
           
           this._applyHideClass(!bool, this.$$('#quoteBadge'));
+        },
+
+
+        _clientValidChanged(bool) {
+          this._applyHideClass(!bool, this.$$('#bomSendBadge'));
         },
 
         // common badge state code
@@ -242,7 +246,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.async(() => {
             // so user cannot access tabs
             const hideTabs = () => this.style.display = 'none';
-
             this.schedule(hideTabs);
           }, 200);
         },
