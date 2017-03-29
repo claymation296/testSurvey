@@ -50,7 +50,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   node: this,
                   transformFrom: 'scale(0, 0)',
                   transformTo: 'scale(1, 1)',
-                  timing: {duration: 600, easing: 'ease-in'}
+                  timing: {duration: 700, easing: 'ease-in'}
                 },
                 'exit': {
                 	name: 'fade-out-animation',
@@ -80,8 +80,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         		this.cancelAnimation();
             this.playAnimation('entry', cookie);
         	};
-
-          this.schedule(run);
+          // async for animation fine tuning
+          this.async(() => {
+            this.schedule(run);
+          }, 100);
         },
 
 
