@@ -12,6 +12,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../redaap-behaviors/utilities.html">
 <link rel="import" href="../redaap-behaviors/open-close-fullscreen-behavior.html">
 <link rel="import" href="../redaap-behaviors/expand-collapse-classes-behavior.html">
+<link rel="import" href="../photo-upload-progress/photo-upload-progress.html">
 
 
 <dom-module id="email-options">
@@ -34,30 +35,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         margin: 0px auto;
       }
 
-      .uploadProgress {
-        position: relative;
-        margin-top: 32px;
-        padding: 0px 16px 32px 16px;
-        border-bottom: 2px solid #e8e8e8;
-        opacity: 0;
-        -webkit-transition: opacity 0.2s ease-out;
-                transition: opacity 0.2s ease-out;
-      }
-
-      .showProgress {
-        opacity: 1
-      }
-
-      paper-spinner-lite {
-        top: 6px;
-        margin-left: 16px;
-      }
-
-      paper-progress {
-        width: 100%;
-        margin-top: 16px;
-        --paper-progress-transition-duration: 0.2s;
-        --paper-progress-active-color: var(--default-primary-color);
+      #progress {
+        padding: 16px 16px 0px 16px;
       }
 
       #docs {
@@ -77,8 +56,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       .expanderTransitions {
-        -webkit-transition: transform 0.3s ease-out;
-                transition: transform 0.3s ease-out;
+        transition: transform 0.3s ease-out;
       }
 
       #attachments {
@@ -227,14 +205,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                            icon="custom-icons:close">
         </paper-icon-button> 
       </paper-toolbar>
-         
-      <div id="uploadProgress" class="uploadProgress showProgress" hidden$="[[hideProgress]]">
-        <div class="centered">
-          <span class="dialogTitle">Saving Photos...</span> 
-          <paper-spinner-lite active="[[showSpinner]]"></paper-spinner-lite>
-          <paper-progress value="[[uploadProgress]]"></paper-progress>
-        </div>
+
+
+
+      <div id="progress">
+
+        <photo-upload-progress initial-queue-size="[[initialQueueSize]]" 
+                               queue-size="[[queueSize]]"
+                               remaining-elements="[[remainingElements]]">
+        </photo-upload-progress>
+
       </div>
+
+
 
 
       <div id="docs" class="centered">
@@ -271,21 +254,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <div id="buttons">
         <paper-button id="saveButton" 
                       on-tap="_saveButtonTapped"
-                      disabled="[[!hideProgress]]"
+                      disabled="[[disableBtns]]"
                       raised>
           <iron-icon icon="custom-icons:save"></iron-icon>
           Save For Later
         </paper-button>
         <paper-button id="reviewButton" 
                       on-tap="_reviewButtonTapped"
-                      disabled="[[!hideProgress]]" 
+                      disabled="[[disableBtns]]" 
                       raised>
           <iron-icon icon="custom-icons:assignment-turned-in"></iron-icon>
           Engineering Review
         </paper-button>
         <paper-button id="sendButton" 
                       on-tap="_sendButtonTapped" 
-                      disabled="[[!hideProgress]]"
+                      disabled="[[disableBtns]]"
                       raised>
           <iron-icon icon="custom-icons:send"></iron-icon>
           Send To Client
@@ -340,27 +323,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               };
             }
           },
-          // do not show 'Saving Photos...' if photos are done 
-          // uploading by the time user opens this page
-          hideProgress: {
-            type: Boolean,
-            value: false
-          },
           // data bound to web-worker
           queueSize: Number,
           // cached queue size at time of opening this
           initialQueueSize: Number,
-          // paper-progress value
-          uploadProgress: {
-            type: Number,
-            computed: '_computeUploadProgress(queueSize, initialQueueSize)',
-            observer: '_uploadProgressChanged'
-          },
-          // bound to spinner active prop
-          showSpinner: {
-            type: Boolean,
-            value: true
-          },
+          // must inform photo-upload-progress of elements below it
+          // for its custom slide-up animation
+          remainingElements: Array,
+          // disable button if photos are still uploading
+          disableBtns: Boolean,
           // paper checkbox
           brochureChecked: Boolean,
           // paper checkbox
@@ -393,9 +364,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           capture: String
         },
 
-        // initialize signaturePad.js
+
+        listeners: {
+          'photo-upload-progress-disable-button': '_setBtnDisableState'
+        },
+
+        
         attached() {
           this.async(() => {
+            this.remainingCards = [this.$.docs, this.$.buttons];
+            // initialize signaturePad.js
             this.signaturePad = new SignaturePad(this.$$('#signature'), { // jshint ignore:line
               backgroundColor: '#e8e8e8',
               penColor: '#610000'
@@ -403,48 +381,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           });
         },
 
-        // return a percentage of upload completness based on the queue and recyled queue lengths
-        _computeUploadProgress(queueSize, initialQueueSize = 1) {
-          const percent = (1 - (queueSize / initialQueueSize)) * 100;
-          return percent;
-        },
-
-        // web-worker fileUpload progress
-        _uploadProgressChanged(progress) {
-          if (progress === 100) {
-            let removeListener;
-
-            const afterHide = event => {
-              event.preventDefault();
-              event.stopPropagation();
-              event.stopImmediatePropagation();
-
-              if (event.propertyName === 'opacity') {
-                this.showSpinner = false;
-                this.hideProgress = true;
-                removeListener();
-                // collapse distance === to the total height of '#uploadProgress' element
-                const newY = 85;
-                const remainingCards = [this.$.docs, this.$.buttons];
-                this.ecClassesSlideRemainingCards(remainingCards, newY, 'expanderTransitions');
-              }
-            };
-
-            removeListener = () => {
-              this.$.uploadProgress.removeEventListener('transitionend', afterHide, false);
-            };
-            // fade out the progress element
-            this.$.uploadProgress.addEventListener('transitionend', afterHide, false);
-            Polymer.dom(this.$.uploadProgress).classList.remove('showProgress');
-          }
-        },
-
         // called by quote-fab
         init() {
-          this.set('initialQueueSize', this.queueSize);
-          this.hideProgress = this.initialQueueSize ? false : true;
+          this.initialQueueSize = this.queueSize ? this.queueSize : undefined;
           this.schedule(this.open.bind(this));
         },
+
+        // photo-upload-progress event
+        _setBtnDisableState(event) {
+          this.disableBtns = event.detail.disable;
+        },
+
 
         _runSignatureExpanderAnimation(reverse, callback) {
           this.ecClassesInit(this.$.expander, 'expanded', reverse);
@@ -530,11 +477,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // this._process() helper
         _showEmailSpinner() {
+          
+          const showSpinner = () => {
+            Polymer.dom(this.$.loading).classList.add('showEmailSpinner');
+          };
           // show the loading spinner then fade it in
           this.hideLoading = false;
-          this.async(() => {
-            Polymer.dom(this.$.loading).classList.add('showEmailSpinner');
-          }, 1);
+          this.schedule(showSpinner);
         },
 
         // reset state after this.close animation finishes
@@ -569,11 +518,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _backButtonTapped() {
-          const back = () => {
-            this.close();
-          };
-
-          this.onTap = back;
+          this.onTap = this.close.bind(this);
         },
 
 

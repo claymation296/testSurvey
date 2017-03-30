@@ -38,6 +38,11 @@ paper-toolbar {
 
 
 
+<link rel="import" href="../redaap-behaviors/utilities.html">
+
+
+
+
 <dom-module id="toolbar-background-image">
   <template>
     <style>
@@ -64,6 +69,8 @@ paper-toolbar {
     (function() {
       Polymer({
         is: 'toolbar-background-image',
+
+        behaviors: [ window.Redaap.Behaviors.Utilities ], 
 
         properties: {
 
@@ -143,13 +150,24 @@ paper-toolbar {
           el.style.transform     = `translate(0px, -50%) rotate(${rotate}deg)`;
         },
 
+
+        _showImage(element) {
+          element.style.opacity = '1';
+        },
+
         // hidden img tag at top of local dom on-load event
         _backgroundUrlLoaded() {
           if (this.backgroundType === 'placeholder') {
-            this.backgroundImagePlaceholder.style.opacity = '1';
             window.URL.revokeObjectURL(this.backgroundUrl);
+            // generous helping of wait time to not squash smooth fade-in
+            this.async(() => {
+              this.schedule.bind(this, this._showImage(this.backgroundImagePlaceholder));
+            }, 50);
           } else if (this.backgroundType === 'src') {
-            this.backgroundImage.style.opacity = '1';
+            // generous helping of wait time to not squash smooth fade-in
+            this.async(() => {
+              this.schedule.bind(this, this._showImage(this.backgroundImage));
+            }, 50);
           }
         },
 

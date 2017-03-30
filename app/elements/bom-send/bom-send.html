@@ -8,7 +8,11 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 -->
 
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
 <link rel="import" href="../redaap-behaviors/tab-page-animation-behavior.html">
+<link rel="import" href="../photo-upload-progress/photo-upload-progress.html">
 
 
 <dom-module id="bom-send">
@@ -81,36 +85,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       .showSpinner {
         opacity: 1;
       }
-
-      .progressCentered {
-        width: 100%;
-        max-width: 460px;
-        margin: 0px auto;
-      }
-
-      .uploadProgress {
-        position: relative;
-        padding-bottom: 32px;
-        opacity: 0;
-        transition: opacity 0.2s ease-out;
-      }
-
-      .showProgress {
-        opacity: 1
-      }
-
-      paper-spinner-lite {
-        top: 6px;
-        margin-left: 16px;
-      }
-
-      paper-progress {
-        width: 100%;
-        margin-top: 16px;
-        --paper-progress-transition-duration: 0.2s;
-        --paper-progress-active-color: var(--default-primary-color);
-      }
-
+      /*
+      photo-upload-progress uses ExpandCollapseClassesBehavior to slide elements that are below it after it removes itself from the dom, so the transition class definition must be available here to add to these elements
+      */
       .expanderTransitions {
         transition: transform 0.3s ease-out;
       }
@@ -120,13 +97,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <paper-card heading="Bill of Materials">
     	<div class="card-content">
 
-        <div id="uploadProgress" class="uploadProgress showProgress" hidden$="[[hideProgress]]">
-          <div class="progressCentered">
-            <span class="dialogTitle">Saving Photos...</span> 
-            <paper-spinner-lite active="[[showProgressSpinner]]"></paper-spinner-lite>
-            <paper-progress value="[[uploadProgress]]"></paper-progress>
-          </div>
-        </div>
+        <photo-upload-progress initial-queue-size="[[initialQueueSize]]" 
+                               queue-size="[[queueSize]]"
+                               remaining-elements="[[remainingElements]]">
+        </photo-upload-progress>
 
         <div id="belowProgress">
 
@@ -165,7 +139,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	<div class="card-actions">
         		<paper-button id="sendButton" 
                           on-tap="_sendBomButtonTapped"
-                          disabled="[[!hideProgress]]"
+                          disabled="[[disableSendBtn]]"
                           raised>
               <iron-icon icon="custom-icons:send"></iron-icon>
               Send BOM
@@ -192,10 +166,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         is: 'bom-send',
         // track window resizes and page animation
         behaviors: [
-          Polymer.IronResizableBehavior, 
           window.Redaap.Behaviors.Utilities,
-          window.Redaap.Behaviors.TabPageAnimationBehavior, 
-          window.Redaap.Behaviors.ExpandCollapseClassesBehavior 
+          window.Redaap.Behaviors.OnTapBehavior,
+          window.Redaap.Behaviors.TabPageAnimationBehavior
         ], 
 
         properties: {
@@ -203,76 +176,43 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	bom: Object,
 
         	client: Object,
-          // from lighting-main
+          // from lighting-main used to compute initialQueueSize
           computedTab: String,
-          // do not show 'Saving Photos...' if photos are done 
-          // uploading by the time user opens this page
-          hideProgress: {
-            type: Boolean,
-            value: false
-          },
-          // data bound from web-worker
-          queueSize: Number,
           // cached queue size at time of opening this
           initialQueueSize: {
             type: Number,
             computed: '_computeInitialQueueSize(computedTab)'
           },
-          // paper-progress value
-          uploadProgress: {
-            type: Number,
-            computed: '_computeUploadProgress(queueSize, initialQueueSize)',
-            observer: '_uploadProgressChanged'
-          },
-          // bound to spinner active prop
-          showProgressSpinner: {
-            type: Boolean,
-            value: true
-          }
+          // data bound from web-worker
+          queueSize: Number,
+          // must inform photo-upload-progress of elements below it
+          // for its custom slide-up animation
+          remainingElements: Array,
+
+          disableSendBtn: Boolean
+        },
+
+
+        listeners: {
+          'photo-upload-progress-disable-button': '_setSendBtnDisableState'
+        },
+
+
+        attached() {
+          this.async(() => {
+            this.remainingElements = [this.$.belowProgress];
+          });
+        },
+
+
+        _setSendBtnDisableState(event) {
+          this.disableSendBtn = event.detail.disable;
         },
 
 
         _computeInitialQueueSize(tab) {
-          const initialQueueSize = tab === 'bomSend' ? this.queueSize : undefined;
-          this.hideProgress = initialQueueSize ? false : true;
+          const initialQueueSize = (tab === 'bomSend' && this.queueSize) ? this.queueSize : undefined;
           return initialQueueSize;
-        },
-
-        // return a percentage of upload completness based on the queue and recyled queue lengths
-        _computeUploadProgress(queueSize, initialQueueSize = 1) {
-          const percent = (1 - (queueSize / initialQueueSize)) * 100;
-          return percent;
-        },
-
-        // web-worker fileUpload progress
-        _uploadProgressChanged(progress) {
-
-          if (progress === 100) {
-            let removeListener;
-
-            const afterHide = event => {
-              event.preventDefault();
-              event.stopPropagation();
-              event.stopImmediatePropagation();
-
-              if (event.propertyName === 'opacity') {
-                this.showProgressSpinner = false;
-                this.hideProgress        = true;
-                removeListener();
-                // collapse distance === to the total height of '#uploadProgress' element
-                const newY = 85;
-                const remainingElements = [this.$.belowProgress];
-                this.ecClassesSlideRemainingCards(remainingElements, newY, 'expanderTransitions');
-              }
-            };
-
-            removeListener = () => {
-              this.$.uploadProgress.removeEventListener('transitionend', afterHide, false);
-            };
-            // fade out the progress element
-            this.$.uploadProgress.addEventListener('transitionend', afterHide, false);
-            Polymer.dom(this.$.uploadProgress).classList.remove('showProgress');
-          }
         },
 
         // called by main-page
@@ -291,6 +231,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.schedule.bind(this, this.$.loading.classList.remove('displaySpinner'));
           }, 300);
         },
+
 
         _computeAreaCount: bom => bom ? Object.keys(bom.areas).length : 0,
 
@@ -314,7 +255,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _sendBomButtonTapped() {
-        	this.fire('bom-send-button-tapped');
+          const fire = () => {
+            this.fire('bom-send-button-tapped');
+          };
+
+          this.onTap = fire;
         }
 
       });
