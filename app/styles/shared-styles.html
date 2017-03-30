@@ -124,24 +124,22 @@
           position: relative;
           left: 4px;
           bottom: 2px;
-          -webkit-transform: scale(1);
-                  transform: scale(1);
-          -webkit-transition: transform 0.3s ease-out;
-                  transition: transform 0.3s ease-out;
+          transform: scale(1);
+          transition: transform 0.3s ease-out;
         };
       }
 
       /*tab badges*/
       .hideBadge {
         --paper-badge: {
-          -webkit-transform: scale(0);
-                  transform: scale(0);
-          /* Polymer styles shim hack 
-             transition needed in both .badge class and here
-             in order to transition when applying and removing
-             the .hideBadge class 9/20/2016 */
-          -webkit-transition: transform 0.3s ease-out;
-                  transition: transform 0.3s ease-out;
+          transform: scale(0);
+          /* 
+          Polymer styles shim hack 
+          transition needed in both .badge class and here
+          in order to transition when applying and removing
+          the .hideBadge class 9/20/2016 
+          */
+          transition: transform 0.3s ease-out;
         };
       }
 
