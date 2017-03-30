@@ -204,10 +204,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.schedule.bind(this, this.splice('photos', index, 1));
         },
 
-
+        // called by photo-viewer _newPhotoPlaceholder()
         updateAdd(obj, src) {
-          const photoObj = Object.assign({src}, obj);
-          this.schedule.bind(this, this.unshift('photos', photoObj));
+          const addNewPhoto = () => {
+            const photoObj = Object.assign({src}, obj);
+            this.unshift('photos', photoObj);
+          }
+          
+          this.schedule(addNewPhoto);
         },
 
         // called by photo-viewer on close

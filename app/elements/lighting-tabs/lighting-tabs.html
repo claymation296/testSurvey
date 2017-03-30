@@ -23,8 +23,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         justify-content: center;
         position: absolute;
         left: 0px;
-      	-webkit-transition: opacity 0.2s ease-in-out;
-		            transition: opacity 0.2s ease-in-out;
+		    transition: opacity 0.2s ease-in-out;
       }
 
     </style>
@@ -175,12 +174,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _modeChanged(mode) {
+        _modeChanged(mode, oldMode) {
           if (mode) {
             if (mode === 'quote') {
               this.showQuoteTabs = true;
             } else {
               this.showQuoteTabs = false;
+            }
+            // if user clears app and stays in same mode
+            if (!oldMode) {
+              this._show();
             }
           }
         },
@@ -209,7 +212,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _clientValidChanged(bool) {
-          this._applyHideClass(!bool, this.$$('#bomSendBadge'));
+          if (bool && this.bomBadgeCount) {
+            this._applyHideClass(false, this.$$('#bomSendBadge'));
+          } else {
+            this._applyHideClass(true, this.$$('#bomSendBadge'));
+          }
         },
 
         // common badge state code
@@ -291,8 +298,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           if (!count) {
             this._hideAreaTabBadge(true);
+            this._applyHideClass(true, this.$$('#bomSendBadge'));
           } else {
             this._hideAreaTabBadge(false);
+            if (this.clientValid) {
+              this._applyHideClass(false, this.$$('#bomSendBadge'));
+            }
           }
 
           return count;

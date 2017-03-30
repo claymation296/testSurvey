@@ -156,7 +156,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           position: relative;
           top: 30px;
           right: 12px;
-          transition: opacity 0.2s ease-in;
+          transition: opacity 0.3s ease-in;
           pointer-events: none;
         };
         --paper-badge-opacity: 0;
@@ -626,24 +626,45 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.schedule(this._load.bind(this));
         },
 
+        // _keysChanged curry arg
+        _setBadgeOpacity(str) {
+          if (str === 'fadeIn') {
+            Polymer.dom(this.$.captureBadge).classList.add('showBadge');
+          } else {
+            Polymer.dom(this.$.captureBadge).classList.remove('showBadge');
+          }
+          this.$.captureBadge.updateStyles();
+        },
+
+        // _keysChanged curryable
+        _fadeBadge: (str, func) => func(str),
+
         // used for badge state and count
         _keysChanged(keys) {
           if (this.disableViewer) { return; }
-
-          if (keys.base) {
-            const length = Object.keys(keys.base).length;
-            this.badgeCount = length;
-            if (length) {
-              Polymer.dom(this.$.captureBadge).classList.add('showBadge');
-            } else {
-              Polymer.dom(this.$.captureBadge).classList.remove('showBadge');
-            }
-          } else {
-            this.badgeCount = 0;
+          // quickly hide badge if there are no keys
+          if (!keys.base) {
+            this.badgeCount  = 0;
             Polymer.dom(this.$.captureBadge).classList.remove('showBadge');
+            this.$.captureBadge.updateStyles();
+            return;
           }
-          this.$.captureBadge.updatePosition();
-          this.updateStyles();
+          // gracefully fade badge in or out
+          this.debounce('photoCaptureBadgeDebounce', () => {
+            let curriedFadeBadge;
+            const curried   = this.curry(this._fadeBadge);
+            const length    = Object.keys(keys.base).length;
+            this.badgeCount = length;
+
+            if (length) {
+              curriedFadeBadge = curried('fadeIn');
+            } else {
+              curriedFadeBadge = curried('fadeOut');
+            }
+
+            this.$.captureBadge.updatePosition();
+            this.schedule.bind(this, curriedFadeBadge(this._setBadgeOpacity.bind(this)));
+          }, 300);
         },
 
 

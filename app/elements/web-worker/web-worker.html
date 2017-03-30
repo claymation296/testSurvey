@@ -22,10 +22,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <!-- need localstorage outside of worker since it is not available to the worker environment -->
     <iron-localstorage name="redaap-dbStorageController"
-      value="{{dbData}}"
-      on-iron-localstorage-load="_getCurrentUser"
-      on-iron-localstorage-load-empty="_getCurrentUser"
-      error-message="{{localStorageError}}">
+                       value="{{dbData}}"
+                       on-iron-localstorage-load="_getCurrentUser"
+                       on-iron-localstorage-load-empty="_getCurrentUser"
+                       error-message="{{localStorageError}}">
     </iron-localstorage>
 
   </template>
@@ -551,7 +551,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             // // testing without filling up test server!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             then(() => {
-              return new Promise(resolve => this.async(() => resolve(), 1000));
+              return new Promise(resolve => this.async(() => resolve(), 8000));
             }).
             then(() => {
 
@@ -567,6 +567,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               };
 
               this.set('savedPhotoData', saved);
+
+              this.set('queueSize', this.queueSize ? this.queueSize -= 1 : 0);
 
               return saved;
             }).
