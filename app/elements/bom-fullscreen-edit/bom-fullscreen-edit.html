@@ -13,12 +13,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../redaap-behaviors/utilities.html">
 <link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
 <link rel="import" href="../redaap-behaviors/open-close-fullscreen-behavior.html">
-<link rel="import" href="../redaap-behaviors/expand-collapse-classes-behavior.html">
 <link rel="import" href="../toolbar-background-image/toolbar-background-image.html">
 <link rel="import" href="../photo-capture/photo-capture.html">
 <link rel="import" href="../close-save-button/close-save-button.html">
 <link rel="import" href="../notes-page/notes-button.html">
-<link rel="import" href="../card-inputs/inputs-repeater.html">
+<link rel="import" href="bom-edit-inputs.html">
 
 
 
@@ -87,43 +86,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     0 1px 5px 0 rgba(0, 0, 0, 0.12),
                     0 3px 1px -2px rgba(0, 0, 0, 0.2);
       }
-
-      #content {
-        width: 220px;
-        margin: 32px 0px;
-      }
-
-      paper-dropdown-menu {
-        display: block;
-      }
-
-      .inputLabel {
-        margin-top: 32px;
-      }
-
-      paper-checkbox {
-        display: block;
-        margin: 16px 0px;
-      }
-
-      .lastButton {
-        left: 50%;
-        transform: translate(-50%, 0px);
-        margin: 64px 0px;
-      }
-
-      #deleteButton {
-        color: var(--text-primary-color);
-        background-color: var(--dark-primary-color);
-      }
-
-      #addTallyButton {
-        color: var(--default-primary-color);
-      }
-
-      #iosBottomOfPageFix {
-        padding-top: 64px;
-      }
       
     </style>
 
@@ -173,220 +135,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       </paper-toolbar>
 
-      <div id="content">
 
-        <paper-input label="Fixture Quantity"
-                     class="inputs"
-                     type="tel" 
-                     min="0"
-                     maxLength="5" 
-                     value="{{light.qty}}"
-                     allowed-pattern="[0-9]"
-                     prevent-invalid-input
-                     hidden$="[[_computeEditState(setting)]]">
-        </paper-input>
+      <bom-edit-inputs id="editInputs" 
+                       light="{{light}}" 
+                       setting="[[setting]]">
+      </bom-edit-inputs>
 
-        <paper-dropdown-menu label="Number of Lamps per Fixture">
-          <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.lamps}}">
-            <paper-item id="1">1</paper-item>
-            <paper-item id="2">2</paper-item>
-            <paper-item id="3">3</paper-item>
-            <paper-item id="4">4</paper-item>
-            <paper-item id="6">6</paper-item>
-            <paper-item id="8">8</paper-item>
-            <paper-item id="10">10</paper-item>
-          </paper-listbox>
-        </paper-dropdown-menu>
-
-
-        <paper-input label="Wattage"
-                     type="tel" 
-                     min="0"
-                     maxLength="4" 
-                     value="{{light.watts}}"
-                     allowed-pattern="[0-9]"
-                     prevent-invalid-input>
-          <div suffix>W</div>
-        </paper-input>
-
-        <paper-dropdown-menu label="Color Temperature (Kelvin)">
-          <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.kelvin}}">
-            <paper-item id="2700">2700K</paper-item>
-            <paper-item id="3000">3000K</paper-item>
-            <paper-item id="3500">3500K</paper-item>
-            <paper-item id="4000">4000K</paper-item>
-            <paper-item id="4500">4500K</paper-item>
-            <paper-item id="5000">5000K</paper-item>
-          </paper-listbox>
-        </paper-dropdown-menu>
-
-        <paper-dropdown-menu label="Input Voltage">
-          <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.volts}}">
-            <paper-item id="120">120V</paper-item>
-            <paper-item id="208">208V</paper-item>
-            <paper-item id="240">240V</paper-item>
-            <paper-item id="277">277V</paper-item>
-            <paper-item id="480">480V</paper-item>
-          </paper-listbox>
-        </paper-dropdown-menu>
-
-        <paper-dropdown-menu label="Fixture Color">
-          <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.color}}">
-            <paper-item id="white">White</paper-item>
-            <paper-item id="grey">Grey</paper-item>
-            <paper-item id="black">Black</paper-item>
-            <paper-item id="bronze">Bronze</paper-item>
-            <paper-item id="custom">Custom</paper-item>
-          </paper-listbox>
-        </paper-dropdown-menu>
-
-
-        <paper-input label="Base Type"
-                     autocapitalize
-                     required 
-                     maxLength="30" 
-                     char-counter
-                     allowed-pattern="[0-9a-zA-Z\s]"
-                     prevent-invalid-input 
-                     value="{{light.base}}">
-        </paper-input>
-
-
-        <paper-dropdown-menu label="Mount Type">
-          <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.mount}}">
-            <paper-item id="none">None</paper-item>
-            <paper-item id="pendant">Pendant</paper-item>
-            <paper-item id="chain">Chain</paper-item>
-            <paper-item id="cable">Cable</paper-item>
-            <paper-item id="slip">Slip Fitter</paper-item>
-            <paper-item id="square">Square Arm</paper-item>
-            <paper-item id="trunnion">Trunnion/Swivel</paper-item>
-            <paper-item id="custom">Custom</paper-item>
-          </paper-listbox>
-        </paper-dropdown-menu>
-
-
-        <paper-input label="Mounting Height"
-                     type="tel" 
-                     min="0"
-                     maxLength="3" 
-                     value="{{light.height}}"
-                     allowed-pattern="[0-9]"
-                     prevent-invalid-input>
-          <div suffix>ft</div>
-        </paper-input>
-
-
-        <paper-input label="Hours of Operation"
-                     type="tel" 
-                     min="0"
-                     maxLength="2" 
-                     value="{{light.hours}}"
-                     allowed-pattern="[0-9]"
-                     prevent-invalid-input>
-          <div suffix>hours per day</div>
-        </paper-input>
-
-        <paper-input label="Operating Days"
-                     type="tel" 
-                     min="0"
-                     maxLength="1" 
-                     value="{{light.days}}"
-                     allowed-pattern="[0-9]"
-                     prevent-invalid-input>
-          <div suffix>days per week</div>
-        </paper-input>
-
-
-        <paper-input label="Contactor Quantity (exterior only)"
-                     type="tel" 
-                     min="0"
-                     maxLength="2" 
-                     value="{{light.contactors}}"
-                     allowed-pattern="[0-9]"
-                     prevent-invalid-input>
-        </paper-input>
-
-
-        <paper-input label="Emergency Backup Quantity"
-                     type="tel" 
-                     min="0"
-                     maxLength="4" 
-                     value="{{light.emergency}}"
-                     allowed-pattern="[0-9]"
-                     prevent-invalid-input>
-        </paper-input>
-
-        <paper-input label="Dimmer"
-                     type="tel" 
-                     min="0"
-                     maxLength="4" 
-                     value="{{light.dimmer}}"
-                     allowed-pattern="[0-9]"
-                     prevent-invalid-input>
-        </paper-input>
-
-        <paper-input label="Timer"
-                     type="tel" 
-                     min="0"
-                     maxLength="4" 
-                     value="{{light.timer}}"
-                     allowed-pattern="[0-9]"
-                     prevent-invalid-input>
-        </paper-input>
-
-        <paper-input label="Occupancy Sensor"
-                     type="tel" 
-                     min="0"
-                     maxLength="4" 
-                     value="{{light.motion}}"
-                     allowed-pattern="[0-9]"
-                     prevent-invalid-input>
-        </paper-input>
-
-        <paper-input label="Daylight Sensor"
-                     type="tel" 
-                     min="0"
-                     maxLength="4" 
-                     value="{{light.ambient}}"
-                     allowed-pattern="[0-9]"
-                     prevent-invalid-input>
-        </paper-input>
-
-
-        <paper-button id="deleteButton"
-                      class="lastButton"
-                      on-tap="_deleteButtonTapped"
-                      raised
-                      hidden$="[[_computeEditState(setting)]]">
-          <iron-icon icon="custom-icons:delete"></iron-icon>
-          delete fixture
-        </paper-button>
-
-
-        <div class="inputLabel" 
-             hidden$="[[!_computeEditState(setting)]]">
-             Fixture Quantity: [[light.qty]]
-        </div>
-
-        <inputs-repeater array="[[tallies]]" 
-                         hidden$="[[!_computeEditState(setting)]]">
-        </inputs-repeater>
-
-        <paper-button id="addTallyButton" 
-                      class="lastButton"
-                      on-tap="_addTallyButtonTapped"
-                      raised
-                      hidden$="[[!_computeEditState(setting)]]">
-          <iron-icon icon="custom-icons:add"></iron-icon>
-          Add Tally Row
-        </paper-button>
-
-
-        <div id="iosBottomOfPageFix"></div>
-
-      </div>    
-
+      
     </paper-scroll-header-panel>
 
   </template>
@@ -397,10 +152,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         is: 'bom-fullscreen-edit',
 
         behaviors: [
+          Polymer.NeonAnimationRunnerBehavior,
         	window.Redaap.Behaviors.Utilities,
           window.Redaap.Behaviors.OnTapBehavior,
-          window.Redaap.Behaviors.OpenCloseFullscreenBehavior, 
-          window.Redaap.Behaviors.ExpandCollapseClassesBehavior 
+          window.Redaap.Behaviors.OpenCloseFullscreenBehavior
         ],
 
         properties: {
@@ -442,11 +197,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   timing: {duration: 200, delay: 100, easing: 'ease-in'}
                 }, {
                   name: 'slide-from-bottom-animation',
-                  node: this.$.content,
+                  node: this.$.editInputs,
                   timing: {duration: 700, easing: 'ease-out'}
                 }, {
                   name: 'fade-in-animation',
-                  node: this.$.content,
+                  node: this.$.editInputs,
                   timing: {duration: 100, delay: 600, easing: 'ease-out'}
                 }, {
                   name: 'scale-up-animation',
@@ -475,13 +230,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   node: this.$.total,
                   timing: {duration: 100, delay: 50, easing: 'ease-in'}
                 }],
-                'bomEditAddBtn': {
-                  name: 'transform-animation',
-                  transformFrom: 'translate(-50%, 0px)',
-                  transformTo: 'translate(-50%, 60px)',
-                  node: this.$.addTallyButton,
-                  timing: {duration: 300, easing: 'ease-out'}
-                },
                 'bomEditBack': [{
                   name: 'slide-left-animation',
                   node: this,
@@ -527,16 +275,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           light: Object,
 
           index: Number,
-
-          tallies: {
-            type: Array,
-            value: () => ([{
-              tally0: undefined, 
-              tally1: undefined, 
-              tally2: undefined, 
-              tally3: undefined
-            }])
-          },
           // only need to force caller to update on back button tap if edits have been made
           edited: {
             type: Boolean,
@@ -563,8 +301,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           'photo-capture-saved-url-loaded':   '_photoCaptureSavedUrl',
           // fired by close-save-button
           'close-save-button-tapped':         '_bomCloseButtonTapped',
-          // fired from inputs-repeater
-          'inputs-repeater-tally-totalled':   '_tallyTotalled',
+          // fired by bom-edit-inputs delete fixture button
+          'bom-edit-inputs-delete':           '_deleteFixture'
         },
 
 
@@ -613,9 +351,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _photoCaptureSavedUrl(event) {
           this.$.backgroundImg.setSavedUrl(event);
         },
-
-
-        _computeEditState: setting => setting === 'new',
         // change the toolbar colors to reflect the differenct between adding a new fixture
         // and editing an existing one
         _settingChanged(setting) {
@@ -648,9 +383,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (!key) { return; }
 
           const nameToKey = str => str.split(' ').join('_');
-          const areaKey   = nameToKey(this.area);
-          const fixKey    = nameToKey(this.light.type);
-          Object.assign(this.light.photos[key], {area: areaKey, fixture: fixKey});
+          const areaKey = nameToKey(this.area);
+          const catKey  = nameToKey(this.light.catagory);
+          const fixKey  = nameToKey(this.light.type);
+          Object.assign(this.light.photos[key], {area: areaKey, catagory: catKey, fixture: fixKey});
         },
 
 
@@ -665,67 +401,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.playAnimation('bomEditTotalEntry', 'bomEditTotalEntry');
           }
         },
-        // fired from inputs-repeater child element each time user adds tally data
-        // add count to solutions
-        _tallyTotalled(event) {
-          const total = event.detail.total;
-          this.set('light.qty', total);
-        },
-
-        // called by add button
-        _addTallyRow() {
-          this.push('tallies', {
-            tally0: undefined, 
-            tally1: undefined,
-            tally2: undefined,
-            tally3: undefined
-          });
-        },
-
-        
-        _addTallyButtonTapped() {
-          const add = () => {
-            this.cancelAnimation();
-            this.playAnimation('bomEditAddBtn', 'bomEditAddBtn');
-          };
-
-          this.onTap = add;
-        },
-
-
-        _reset() {
-          this.tallies = [{
-            tally0: undefined, 
-            tally1: undefined, 
-            tally2: undefined, 
-            tally3: undefined
-          }];
-        },
 
 
         _bomFullscreenAnimationFinished(_, animationType) {
           if (animationType === 'bomEditBack') {
-            this._reset();
+            this.$.editInputs.reset();
             this.reset();
           } else if (animationType === 'bomEditDelete') {
             this.caller.bomFullscreenDelete(this.index);
-            this._reset();
+            this.$.editInputs.reset();
             this.reset();
           } else if (animationType === 'bomEditTotalExit') {
             this.$.total.style.display = 'none';
-          } else if (animationType === 'bomEditAddBtn') {
-            this._addTallyRow();
           }
         },
 
 
-        _deleteButtonTapped() {
-          const del = () => {
-            this.cancelAnimation();
-            this.playAnimation('bomEditDelete', 'bomEditDelete');
-          };
-
-          this.onTap = del;
+        _deleteFixture() {
+          this.cancelAnimation();
+          this.playAnimation('bomEditDelete', 'bomEditDelete');
         },
 
 
@@ -772,7 +466,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           const closeCaller = () => {
             const callback = () => {
-              this._reset();
+              this.$.editInputs.reset();
             };
 
             this.caller.bomFullscreenClose(this.light, this.close.bind(this, callback));
