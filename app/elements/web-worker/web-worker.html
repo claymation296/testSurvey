@@ -224,15 +224,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this._removeSaved(job.output);
               break;
             case 'photo':
-              this.set('queueSize', this.queueSize += 1);
+              this.set('queueSize', this.queueSize + 1);
               break;
             case 'savePhoto':
               // only decrement if queueSize is greater than 0, aka truthy
-              this.set('queueSize', this.queueSize ? this.queueSize -= 1 : 0);
+              this.set('queueSize', this.queueSize ? this.queueSize - 1 : 0);
               break;
             case 'resolved':
               // only decrement if queueSize is greater than 0, aka truthy
-              this.set('queueSize', this.queueSize ? this.queueSize -= 1 : 0);
+              this.set('queueSize', this.queueSize ? this.queueSize - 1 : 0);
               this._saveResolvedJob(job);
               break;
             case 'fileForUrl':
@@ -568,7 +568,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
               this.set('savedPhotoData', saved);
 
-              this.set('queueSize', this.queueSize ? this.queueSize -= 1 : 0);
+              this.set('queueSize', this.queueSize ? this.queueSize - 1 : 0);
 
               return saved;
             }).
