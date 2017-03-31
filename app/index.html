@@ -95,7 +95,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   
   <template is="dom-bind" id="app">
 
-
+    
     <app-state state="{{state}}"></app-state>
 
     <web-worker saved-photo-data="{{savedPhotoData}}" queue-size="{{queueSize}}"></web-worker>
@@ -251,7 +251,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                            route="{{route}}"
                            saved-photo-data="[[savedPhotoData]]"
                            selected-pricing="{{selectedPricing}}"
-                           tallies-valid="{{state.talliesValid}}"
                            user-selected-array="{{state.userSelectedArray}}"
                            version="{{version}}">
             </lighting-main>
