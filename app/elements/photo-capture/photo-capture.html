@@ -65,6 +65,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         overflow: hidden;
       }
 
+      #hiddenImgTag {
+        width: 0px;
+        height: 0px;
+        position: absolute;
+        opacity: 0;
+        overflow: hidden;
+        z-index: -1;
+        pointer-events: none;
+      }
+
+      #captureButton {
+        background-color: inherit;
+      }
+
       iron-label {
         position: absolute;
         top: 0px;
@@ -98,8 +112,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         background-color: var(--photo-capture-background-color, inherit);
         z-index: -1;
         opacity: 0;
-        -webkit-transition: opacity 0.2s ease-in;
-                transition: opacity 0.2s ease-in;
+        transition: opacity 0.2s ease-in;
       }
 
       .showImageTag {
@@ -169,9 +182,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </style>  
 
     <!-- placeholder load timing only -->
-    <img src="[[placeholderSrc]]"
-         on-load="_placeholderSrcLoaded"
-         style="position: absolute; opacity: 0;"> 
+    <img id="hiddenImgTag" 
+         src="[[placeholderSrc]]"
+         on-load="_placeholderSrcLoaded"> 
     <!-- placeholder error handling only -->
     <iron-ajax auto
                url="[[placeholderSrc]]"
@@ -195,12 +208,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                iron-label-target
                type="file" 
                accept="image/*"
-               on-change="_userSelectedPictureFile"/>   
-
+               on-change="_userSelectedPictureFile"/> 
         <paper-ripple class="circle" recenters></paper-ripple>
-        
       </iron-label>
-
 
       <div id="imageTag" class="centeredAboveFileInput">
         <iron-image class$="[[_computeOrientation(orientation)]]" 
@@ -215,7 +225,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </iron-image>
       </div>
 
-
       <div id="externalSrcIconButton" 
            class="centeredAboveFileInput"
            hidden$="[[!disableThumbnail]]" 
@@ -223,13 +232,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <paper-ripple class="circle" recenters></paper-ripple>
         <iron-icon class="cameraIcon" icon="[[buttonIcon]]"></iron-icon>
       </div>
-
-
-      <div id="loading" class="loading" hidden$="[[!showSpinner]]">
-        <paper-spinner-lite alt="Loading photo..." active="[[showSpinner]]"></paper-spinner-lite>
-      </div>
-
-
 
     </div>
 
@@ -239,6 +241,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  label="[[badgeCount]]">
     </paper-badge>
 
+
+    <div id="loading" class="loading" hidden$="[[!showSpinner]]">
+      <paper-spinner-lite alt="Loading photo..." active="[[showSpinner]]"></paper-spinner-lite>
+    </div>
 
 
   </template>
@@ -432,8 +438,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _showSpinner() {
           if (this.disableThumbnail) { return; }
 
+          const fadeIn = () => {
+            Polymer.dom(this.$.loading).classList.add('fadeInLoading');
+          };
+          
           this.showSpinner = true;
-          Polymer.dom(this.$.loading).classList.add('fadeInLoading');
+          this.schedule(fadeIn);
         },
 
 
@@ -456,13 +466,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // no need to hide the input label element
           if (this.disableViewer) { return; }
 
-          this._hideSpinner();
-
           if (this.disableThumbnail) { 
             Polymer.dom(this.$.externalSrcIconButton).classList.add('showImageTag');
-            return; 
+          } else {
+            Polymer.dom(this.$.imageTag).classList.add('showImageTag');
           }
-          Polymer.dom(this.$.imageTag).classList.add('showImageTag');
+
+          const show = () => {
+            this._hideSpinner();            
+          };
+
+          this.async(() => {
+            this.schedule(show);   
+          }, 300);       
         },
 
 
@@ -489,15 +505,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _placeholderSrcLoaded() {
-          this._resetTrigger();
-          this.fire('photo-capture-placeholder-loaded', this._makeEventPayload());
+          const loaded = () => {
+            this._resetTrigger();
+            this.fire('photo-capture-placeholder-loaded', this._makeEventPayload());
 
-          if (this.placeholderSrc && this.placeholderSrc !== '#') {
-            this._showImageTag();
-            this.async(() => {
+            if (this.placeholderSrc && this.placeholderSrc !== '#') {
+              this._showImageTag();
+              this.async(() => {
                 window.URL.revokeObjectURL(this.placeholderSrc);
-            }, 500);
-          }
+              }, 500);
+            }
+          };
+          
+          this.schedule(loaded);
         },
 
 
@@ -520,20 +540,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _picLoaded(bool) {
           if (!bool) { return; }
-          // reset offline error icon
-          this.buttonIcon = this.cameraIcon;
-          // saved/processed photos no longer need orientation correction
-          this.set('orientation', 0);
-          // fire the external src only after the file has been loaded into the browser
-          // using iron-image for load timing wether it is hidden or not
-          this.fire('photo-capture-saved-url-loaded', this._makeEventPayload(this.pic));
-          this._showImageTag();
-          // then wait for the background-image css to take so there is not a flicker
-          // between switching from placeholder to main background div in parent
-          this.async(() => {
-            this.placeholderSrc = '#';
-            this._resetTrigger();
-          }, 500);
+
+          const loaded = () => {
+            // reset offline error icon
+            this.buttonIcon = this.cameraIcon;
+            // saved/processed photos no longer need orientation correction
+            this.set('orientation', 0);
+            // fire the external src only after the file has been loaded into the browser
+            // using iron-image for load timing wether it is hidden or not
+            this.fire('photo-capture-saved-url-loaded', this._makeEventPayload(this.pic));
+            this._showImageTag();
+            // then wait for the background-image css to take so there is not a flicker
+            // between switching from placeholder to main background div in parent
+            this.async(() => {
+              this.placeholderSrc = '#';
+              this._resetTrigger();
+            }, 500);
+          };
+
+          this.schedule(loaded);
         },
 
 

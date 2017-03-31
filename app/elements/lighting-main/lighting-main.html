@@ -298,6 +298,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // find a home for saved photo data each time the uSA is changed
         _newFixtureAdded() {
           this.debounce('emptyDreadingDebounce', () => {
+            // any edits to the uSA after the data has been sent to the cloud
+            // makes the quote invalid
+            this.set('talliesValid', false);
             // iterate over dreading list looking for the key
             // that matches the saved data
             for (const key in this.dreading) {

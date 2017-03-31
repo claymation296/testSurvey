@@ -32,25 +32,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <paper-tabs selected="{{lightingTab}}" attr-for-selected="tabname" selected-class="selectedTab">
           <span class="flex"></span>
           <paper-tab tabname="areaPage">
-            <iron-icon id="areaTabIcon" icon="custom-icons:room"></iron-icon>
+            <iron-icon id="quoteAreaTabIcon" icon="custom-icons:room"></iron-icon>
             <span class="tabLabel">Areas</span>
           </paper-tab>
           <span class="flex"></span>
           <paper-tab tabname="quoteSelector">
-            <iron-icon id="quoteTabIcon" icon="custom-icons:assignment"></iron-icon>
+            <iron-icon id="quotePricingTabIcon" icon="custom-icons:assignment"></iron-icon>
             <span class="tabLabel">Pricing</span>
           </paper-tab>
           <span class="flex"></span>
         </paper-tabs>
 
-        <paper-badge id="areaBadge" 
+        <paper-badge id="quoteAreaBadge" 
                      class="badge"
-                     for="areaTabIcon" 
-                     label="[[badgeCount]]">
+                     for="quoteAreaTabIcon" 
+                     label="[[quoteBadgeCount]]">
         </paper-badge>
-        <paper-badge id="quoteBadge" 
+        <paper-badge id="quotePricingBadge" 
                      class="badge"
-                     for="quoteTabIcon" 
+                     for="quotePricingTabIcon" 
                      icon="custom-icons:check">
         </paper-badge>
       </template>
@@ -112,20 +112,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Boolean,
             observer: '_clientValidChanged'
           },
-          // bound from area-tab to control quote generation flow
-          talliesValid: {
-            type: Boolean,
-            notify: true
-          },
 
           bomBadgeCount: {
             type: Number,
             computed: '_computeBomBadgeCount(bom.*)'
           },
           // display the number of cards/fixtures in area-tab badge
-          badgeCount: {
+          quoteBadgeCount: {
             type: Number,
-            computed: '_computeBadgeCount(userSelectedArray.*)'
+            computed: '_computeQuoteBadgeCount(userSelectedArray.*)'
           },
           // pull in the main menu routing string
           // hide tabs unless on 'home' page
@@ -133,15 +128,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: String,
             observer: '_routeChanged'
           },
-          // tab badge state
-          // observing valid and talliesValid
-          quoteBadgeState: {
-            type: Boolean,
-            value: false,
-            computed: '_computeQuoteBadgeState(clientValid, talliesValid)',
-            observer: '_setQuoteBadgeState'
-          },
-
+          // lighting modes 'quote'/'bom'
           mode: {
             type: String,
             observer: '_modeChanged'
@@ -163,12 +150,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 this._applyHideClass(true, this.$$('#bomSendBadge'));
                 return;
               }
-              this._applyHideClass(true, this.$$('#quoteBadge'));
+              this._applyHideClass(true, this.$$('#quotePricingBadge'));
             };
 
-            if (this.route === 'lights') {
-              this._show();
-            }
+            this._show();
             this.schedule(hide);
           }, 10);
         },
@@ -200,32 +185,30 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.schedule(apply);
         },
 
-        // watch valid and tallies valid to determine whether to show/hide quote badge
-        _computeQuoteBadgeState: (clientValid, talliesValid) => clientValid && talliesValid,
-        // tab badge state
-        // the badge displays when the quote is ready to be sent off ie. clientValid and talliesValid
-        _setQuoteBadgeState(bool, oldBool) {
-          if (bool === undefined || oldBool === undefined) { return; }
-          
-          this._applyHideClass(!bool, this.$$('#quoteBadge'));
-        },
-
 
         _clientValidChanged(bool) {
-          if (bool && this.bomBadgeCount) {
-            this._applyHideClass(false, this.$$('#bomSendBadge'));
+          if (bool) {
+            if (this.quoteBadgeCount) {
+              this._applyHideClass(false, this.$$('#quotePricingBadge'));
+            } else if (this.bomBadgeCount) {
+              this._applyHideClass(false, this.$$('#bomSendBadge'));
+            }
           } else {
-            this._applyHideClass(true, this.$$('#bomSendBadge'));
+            if (this.showQuoteTabs) {
+              this._applyHideClass(true, this.$$('#quotePricingBadge'));
+            } else {
+              this._applyHideClass(true, this.$$('#bomSendBadge'));
+            }
           }
         },
 
         // common badge state code
-        _hideAreaTabBadge(bool) {
+        _hideAreaTabBadges(bool) {
           this.debounce('badgeDebounce', () => {
-            if (!this.badgeCount) {
-              this._applyHideClass(true, this.$$('#areaBadge'));
+            if (!this.quoteBadgeCount) {
+              this._applyHideClass(true, this.$$('#quoteAreaBadge'));
             } else {
-              this._applyHideClass(bool, this.$$('#areaBadge'));
+              this._applyHideClass(bool, this.$$('#quoteAreaBadge'));
             }
 
             if (!this.bomBadgeCount) {
@@ -237,10 +220,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // control transitions of account and quote badges on route changes
-        _hideQuoteTabBadges(bool) {
+        _hideQuotePricingTabBadge(bool) {
           this.debounce('otherBadgesDebounce', () => {
-            if (this.talliesValid) {
-              this._applyHideClass(bool, this.$$('#quoteBadge'));
+            if (this.quoteBadgeCount) {
+              this._applyHideClass(bool, this.$$('#quotePricingBadge'));
             }
           }, 100);
         },
@@ -248,8 +231,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _hide() {
           this.style.opacity = '0';
-          this._hideQuoteTabBadges(true);
-          this._hideAreaTabBadge(true);
+          this._hideQuotePricingTabBadge(true);
+          this._hideAreaTabBadges(true);
           this.async(() => {
             // so user cannot access tabs
             const hideTabs = () => this.style.display = 'none';
@@ -259,14 +242,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _show() {
-          if (!this.mode) { return; }
+          if (!this.mode || this.route !== 'lights') { return; }
 
           const showTabs = () => {
             this.style.display = 'flex';
             this.async(() => {
               this.style.opacity = '1';
-              this._hideQuoteTabBadges(false);
-              this._hideAreaTabBadge(false);
+              this._hideQuotePricingTabBadge(false);
+              this._hideAreaTabBadges(false);
             }, 1);
           };
           // wait for other tabs to hide
@@ -297,10 +280,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const count = array.length;
 
           if (!count) {
-            this._hideAreaTabBadge(true);
+            this._hideAreaTabBadges(true);
             this._applyHideClass(true, this.$$('#bomSendBadge'));
           } else {
-            this._hideAreaTabBadge(false);
+            this._hideAreaTabBadges(false);
             if (this.clientValid) {
               this._applyHideClass(false, this.$$('#bomSendBadge'));
             }
@@ -310,10 +293,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // display the number of saved fixtures in a badge over the 'Saved Fixtures' tab
-        _computeBadgeCount(array) {
-          // any edits to the uSA after the data has been sent to the cloud
-          // makes the quote invalid
-          this.set('talliesValid', false);
+        _computeQuoteBadgeCount(array) {
           // make sure we are dealing with an array
           if (Array.isArray(array.base)) {
           	// displayed number in area badge
@@ -322,16 +302,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             // hide the badge upon first load or reload of the site
             // with a clean survey ie. userSelectedArray === []
             if (length) {
-              this._hideAreaTabBadge(false);
+              this._hideAreaTabBadges(false);
               return length;
             } else {
-              this._hideAreaTabBadge(true);              
+              this._hideAreaTabBadges(true);              
               // set length to null for animation purposes
               // otherwise the text '0' appears for a brief instant before the badge fades out
               return null;
             }
           }
-          this._hideAreaTabBadge(true);
+          this._hideAreaTabBadges(true);
           return null;
         }
 
