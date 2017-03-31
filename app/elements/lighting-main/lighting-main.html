@@ -191,11 +191,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Boolean,
             notify: true
           },
-          // bound from light-tally to control quote generation flow
-          talliesValid: {
-            type: Boolean,
-            notify: true
-          },
+          // bound to quote-selector to control quote generation flow
+          talliesValid: Boolean,
           // control naivation back to account-form if not completed
           route: {
             type: String,

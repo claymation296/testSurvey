@@ -20,9 +20,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       :host {
       	display: flex;
-        justify-content: center;
-        position: absolute;
-        left: 0px;
 		    transition: opacity 0.2s ease-in-out;
       }
 
@@ -115,12 +112,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           bomBadgeCount: {
             type: Number,
-            computed: '_computeBomBadgeCount(bom.*)'
+            computed: '_computeBomBadgeCount(bom.*)',
+            observer: '_bomBadgeCountChanged'
           },
           // display the number of cards/fixtures in area-tab badge
           quoteBadgeCount: {
             type: Number,
-            computed: '_computeQuoteBadgeCount(userSelectedArray.*)'
+            computed: '_computeQuoteBadgeCount(userSelectedArray.*)',
+            observer: '_quoteBadgeCountChanged'
           },
           // pull in the main menu routing string
           // hide tabs unless on 'home' page
@@ -140,17 +139,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           'dom-change': '_ifTemplateDomChanged'
         },
 
-
+        // set initial state after stamping
         _ifTemplateDomChanged() {
           this.debounce('lightingTabsDebounce', () => {
             const hide = () => {
               // hide quote badge as default to prevent it from an initial flash
               // if uSA or bom is empty or undefined
               if (this.mode && this.mode === 'bom') {
-                this._applyHideClass(true, this.$$('#bomSendBadge'));
+                this._setBomAreaBadgeState();
+                this._setBomSendBadgeState();
                 return;
               }
-              this._applyHideClass(true, this.$$('#quotePricingBadge'));
+              this._setQuoteAreaBadgeState();
+              this._setQuotePricingBadgeState();
             };
 
             this._show();
@@ -177,6 +178,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _applyHideClass(bool, badge) {
           if (!badge) { return; }
           const apply = () => {
+            // tab styles in shared-styles.html
             this.toggleClass('hideBadge', bool, badge);
             badge.updatePosition();
             this.updateStyles();
@@ -186,53 +188,51 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _clientValidChanged(bool) {
-          if (bool) {
-            if (this.quoteBadgeCount) {
-              this._applyHideClass(false, this.$$('#quotePricingBadge'));
-            } else if (this.bomBadgeCount) {
-              this._applyHideClass(false, this.$$('#bomSendBadge'));
-            }
+        _setQuoteAreaBadgeState() {
+          if (this.quoteBadgeCount) {
+            this._applyHideClass(false, this.$$('#quoteAreaBadge'));
           } else {
-            if (this.showQuoteTabs) {
-              this._applyHideClass(true, this.$$('#quotePricingBadge'));
-            } else {
-              this._applyHideClass(true, this.$$('#bomSendBadge'));
-            }
+            this._applyHideClass(true, this.$$('#quoteAreaBadge'));
           }
         },
 
-        // common badge state code
-        _hideAreaTabBadges(bool) {
-          this.debounce('badgeDebounce', () => {
-            if (!this.quoteBadgeCount) {
-              this._applyHideClass(true, this.$$('#quoteAreaBadge'));
-            } else {
-              this._applyHideClass(bool, this.$$('#quoteAreaBadge'));
-            }
 
-            if (!this.bomBadgeCount) {
-              this._applyHideClass(true, this.$$('#bomAreaBadge'));
-            } else {
-              this._applyHideClass(bool, this.$$('#bomAreaBadge'));
-            }
-          }, 100);
+        _setQuotePricingBadgeState() {
+          if (this.clientValid && this.quoteBadgeCount) {
+            this._applyHideClass(false, this.$$('#quotePricingBadge'));
+          } else {
+            this._applyHideClass(true, this.$$('#quotePricingBadge'));
+          }
         },
 
-        // control transitions of account and quote badges on route changes
-        _hideQuotePricingTabBadge(bool) {
-          this.debounce('otherBadgesDebounce', () => {
-            if (this.quoteBadgeCount) {
-              this._applyHideClass(bool, this.$$('#quotePricingBadge'));
-            }
-          }, 100);
+
+        _setBomAreaBadgeState() {
+          if (this.bomBadgeCount) {
+            this._applyHideClass(false, this.$$('#bomAreaBadge'));
+          } else {
+            this._applyHideClass(true, this.$$('#bomAreaBadge'));
+          }
+        },
+
+
+        _setBomSendBadgeState() {
+          if (this.clientValid && this.bomBadgeCount) {
+            this._applyHideClass(false, this.$$('#bomSendBadge'));
+          } else {
+            this._applyHideClass(true, this.$$('#bomSendBadge'));
+          }
+        },
+
+
+        _clientValidChanged() {
+          this._setQuotePricingBadgeState();
+          this._setBomSendBadgeState();
         },
         
 
         _hide() {
           this.style.opacity = '0';
-          this._hideQuotePricingTabBadge(true);
-          this._hideAreaTabBadges(true);
+          // wait for fade-out transition
           this.async(() => {
             // so user cannot access tabs
             const hideTabs = () => this.style.display = 'none';
@@ -248,8 +248,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.style.display = 'flex';
             this.async(() => {
               this.style.opacity = '1';
-              this._hideQuotePricingTabBadge(false);
-              this._hideAreaTabBadges(false);
             }, 1);
           };
           // wait for other tabs to hide
@@ -269,50 +267,39 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _computeBomBadgeCount(obj) {
-          if (!obj) { return; }
+          if (!obj) { return 0; }
 
           const base = Object.getOwnPropertyDescriptor(obj, 'base');
 
-          if (!base.value) { return; }
+          if (!base.value) { return 0; }
 
           const areas = base.value.areas;
           const array = Object.keys(areas);
           const count = array.length;
 
-          if (!count) {
-            this._hideAreaTabBadges(true);
-            this._applyHideClass(true, this.$$('#bomSendBadge'));
-          } else {
-            this._hideAreaTabBadges(false);
-            if (this.clientValid) {
-              this._applyHideClass(false, this.$$('#bomSendBadge'));
-            }
-          }
-
           return count;
+        },
+
+
+        _bomBadgeCountChanged() {
+          this._setBomAreaBadgeState();
+          this._setBomSendBadgeState();
         },
 
         // display the number of saved fixtures in a badge over the 'Saved Fixtures' tab
         _computeQuoteBadgeCount(array) {
           // make sure we are dealing with an array
-          if (Array.isArray(array.base)) {
-          	// displayed number in area badge
-            const length = array.base.length;
-            // hide the badge if length is less than 1
-            // hide the badge upon first load or reload of the site
-            // with a clean survey ie. userSelectedArray === []
-            if (length) {
-              this._hideAreaTabBadges(false);
-              return length;
-            } else {
-              this._hideAreaTabBadges(true);              
-              // set length to null for animation purposes
-              // otherwise the text '0' appears for a brief instant before the badge fades out
-              return null;
-            }
-          }
-          this._hideAreaTabBadges(true);
-          return null;
+          if (!Array.isArray(array.base)) { return 0; }
+        	// displayed number in quote area badge
+          const count = array.base.length;
+
+          return count;
+        },
+
+
+        _quoteBadgeCountChanged() {
+          this._setQuoteAreaBadgeState();
+          this._setQuotePricingBadgeState();
         }
 
 
