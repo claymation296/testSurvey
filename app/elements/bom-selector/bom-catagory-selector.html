@@ -265,7 +265,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const light   = event.detail.light;
           const areaKey = this._fillWithUnderscores(light.area);
           const fixKey  = this._fillWithUnderscores(light.type);
-          const bom     = this.bom;
+          let bom       = this.bom;
+
+          if (!bom) {
+            bom = {areas: {}, fixtures: {}, photos: {}};
+          }
 
           if (!bom.areas[areaKey]) {
             bom.areas[areaKey] = {};

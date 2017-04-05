@@ -369,9 +369,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // photo that has been resolved after failed attempts
-        _saveResolvedJob(job) {
+        _saveResolvedJob(saved) {
           // not using events because this element is at top level (index.html)
-          this.set('savedPhotoData', job);
+          this.set('savedPhotoData', saved);
         },
 
         // file used to create a new objectUrl when the current one 404's
@@ -454,6 +454,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // called by lighting-main
         save(data) {
           return this._startJob('save', data);
+        },
+
+        // called by lighting-main
+        processQueue() {
+          return this._startJob('processQueue');
         },
 
         // called by lighting-main
@@ -548,7 +553,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             // then(() => undefined).
 
-            // // testing without filling up test server!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+            // testing without filling up test server!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             then(() => {
               return new Promise(resolve => this.async(() => resolve(), 8000));
@@ -587,6 +594,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             //   // bottom up set photo data (photo-capture -> parent)
             //   return saved;
             // }).
+
+
+
             catch(error => console.log('save photo error in web-worker: ', error));
         },
 

@@ -92,17 +92,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         		this.style.display = 'none';
         	} else if (typeof cookie === 'object') {
         		if (cookie.type === 'entry') {
+
+              const playExit = () => {
+                this.cancelAnimation();
+                this.playAnimation('exit', 'exit');
+              };
+
         			const hideLightingMode = () => {
          				cookie.element.fireMode(cookie.mode);
                 // allow mode changes to propagate through app
                 this.async(() => {
-                  this.cancelAnimation();
-                  this.playAnimation('exit', 'exit');
-                }, 500);
+                  this.schedule(playExit);
+                }, 800);
 		        	};
 
-         			Polymer.updateStyles(cookie.styles);
-        			this.schedule(hideLightingMode);
+              this.async(() => {
+                this.schedule(hideLightingMode);
+              }, 50);
 	          }
         	}
         }

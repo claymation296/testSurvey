@@ -104,7 +104,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         <div id="belowProgress">
 
-      		<div class="client">
+      		<div class="client" hidden$="[[!client.companyName]]">
   	        <div class="dialogTitle bottomMargin">Prepared For</div>
   	        <div>[[client.companyName]]</div>
   	        <div hidden$="[[!client.address]]">[[client.address]]</div>
@@ -181,7 +181,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // cached queue size at time of opening this
           initialQueueSize: {
             type: Number,
-            computed: '_computeInitialQueueSize(computedTab)'
+            computed: '_computeInitialQueueSize(computedTab)',
+            observer: '_initialQueueSizeChanged'
           },
           // data bound from web-worker
           queueSize: Number,
@@ -204,15 +205,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           });
         },
 
-
+        // fired by photo-upload-progress.html
         _setSendBtnDisableState(event) {
           this.disableSendBtn = event.detail.disable;
         },
-
-
+        // cannot use queueSize in this computed property here since it
+        // blocks the function from running until defined
         _computeInitialQueueSize(tab) {
           const initialQueueSize = (tab === 'bomSend' && this.queueSize) ? this.queueSize : undefined;
           return initialQueueSize;
+        },
+
+        // process web worker photo queue before allowing user to send bom
+        _initialQueueSizeChanged(size) {
+          if (!this.computedTab || !size) { return; }
+
+          if (this.computedTab === 'bomSend') {
+            this.fire('bom-send-process-photo-queue');
+          }
         },
 
         // called by main-page

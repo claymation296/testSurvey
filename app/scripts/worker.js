@@ -570,7 +570,6 @@
 	};
 
 
-
 	const sendBom = job => {
 		Db.Cloud.run('sendBom', {bom: job.bom, client: job.client}). 
       then(() => {
@@ -580,7 +579,6 @@
         errored(job, error);
       });
 	};
-
 
 
 	const surveySearch = job => {
@@ -637,6 +635,12 @@
 				break;
 			case 'save':
 				save(job);
+				break;
+			case 'processQueue':
+				// for devices that dont receive online event
+				// trigger the photo upload process for any images stored in localforage
+				// before allowing user to send bom
+				processQueue();
 				break;
 			case 'sendBom':
 				sendBom(job);
