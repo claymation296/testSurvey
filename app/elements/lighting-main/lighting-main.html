@@ -208,15 +208,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         
 
         observers: [
-          '_newFixtureAdded(userSelectedArray.*)'
+          // work through quote photo dreading list
+          '_newFixtureAddedToQuote(userSelectedArray.*)',
+          // work through bom photo dreading list
+          '_newFixtureAddedToBom(bom.*)'
         ],
 
 
         listeners: {
           // fired by lighting-mode.html
-          'lighting-mode-set':      '_lightingModeSet',
+          'lighting-mode-set':            '_lightingModeSet',
           // fired by bom-send.html
-          'bom-send-button-tapped': '_sendBom'
+          'bom-send-process-photo-queue': '_processWorkerPhotoQueue',
+          // fired by bom-send.html
+          'bom-send-button-tapped':       '_sendBom'
         },
 
 
@@ -267,8 +272,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // add saved photo data into the given element
-        _addPhotoToMatch(match, job) {
-          const {key, savedUrl} = job;
+        _addPhotoToMatch(match, data) {
+          const {key, savedUrl} = data;
           // this is the data for the current photo
           if (match.key === key) {
             match.savedUrl    = savedUrl;
@@ -293,7 +298,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
         // uSA observer
         // find a home for saved photo data each time the uSA is changed
-        _newFixtureAdded() {
+        _newFixtureAddedToQuote() {
           this.debounce('emptyDreadingDebounce', () => {
             // any edits to the uSA after the data has been sent to the cloud
             // makes the quote invalid
@@ -302,14 +307,91 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             // that matches the saved data
             for (const key in this.dreading) {
               const match = this._findFixtureByKey(key);
-              const job   = this.dreading[key]; 
+              const data  = this.dreading[key]; 
 
               if (match) {
-                this._addPhotoToMatch(match, job);
-                delete this.dreading[key];
+                this._addPhotoToMatch(match, data);
+                this._removeFromDreading(data);
               }
             }
           }, 10);
+        },
+
+        // work through the dreading list anytime user adds new fixtures
+        _newFixtureAddedToBom() {
+          this.debounce('emptyDreadingDebounce', () => {
+            // iterate over dreading list looking for the fixture photo key
+            // that matches the saved data key
+            for (const key in this.dreading) {
+              const data = this.dreading[key];
+              this._bomSavedPhotoSearch(data);
+            }
+          }, 50);
+        },
+
+
+        _removeFromDreading(data) {
+          delete this.dreading[data.key];
+        },
+
+
+        _addSavedPhotoDataToDreading(data) {
+          this.dreading[data.key] = data;
+        },
+
+
+        _bomSavedPhotoSearch(data) {
+          const photoKey = data.key;
+
+          const addSavedData = () => {
+            const findOwner = fixtures => {
+              const fixKeys = Object.keys(fixtures);
+              const max     = fixKeys.length - 1;
+              const index   = 0;
+              // no fixtures saved
+              if (max < 0) { return; }
+
+              const find = (key, i) => {
+                const fixture = fixtures[key];
+                for (const area in fixture) {
+                  const photos = fixture[area].photos;
+                  for (const photo in photos) {
+                    if (photo === photoKey) { 
+                      // return the matching light and photo
+                      return {light: fixture[area], photo: photos[photo]}; 
+                    }
+                  }
+                }
+                // didn't find a home so quit searching
+                if (i >= max) { return; }
+                // keep looking
+                return find(fixKeys[i + 1], i + 1);
+              };
+
+              return find(fixKeys[0], index);
+            };
+
+            const found = findOwner(this.bom.fixtures);
+
+            if (found) {
+              const {light, photo} = found;
+              // current saved data is also latest added photo so update the 
+              // light's displayed photo saved data as well
+              if (light.key === photoKey) {
+                light.orientation = 0;
+                light.savedUrl    = data.savedUrl;
+              }
+              // update the matching photo's saved data
+              photo.orientation = 0;
+              photo.savedUrl    = data.savedUrl;
+
+              this._removeFromDreading(data);
+            } else {
+              this._addSavedPhotoDataToDreading(data);
+            }
+          };
+
+          this.schedule(addSavedData);
         },
         // savePhotoData changed by web-worker after a photo is saved to cloud
         // db on first attempt or after a failed attempt to save to cloud 
@@ -318,58 +400,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _savedPhotoDataChanged(data) {
           if (!data) { return; }
 
-          const photoKey = data.key;
-
           if (this.mode === 'quote') {
+            const photoKey = data.key;
             const match = this._findFixtureByKey(photoKey);
 
             if (match) {
               this._addPhotoToMatch(match, data);
             } else  {
-              this.dreading[photoKey] = data;
+              this._addSavedPhotoDataToDreading(data);
             }
           } else if (this.mode === 'bom' && this.bom) {
-            
-            const addSavedData = () => {
-              const findOwner = fixtures => {
-                const fixKeys = Object.keys(fixtures);
-                const max     = fixKeys.length - 1;
-                const index   = 0;
-                // no fixtures saved
-                if (max < 0) { return; }
-
-                const find = (key, i) => {
-                  const fixture = fixtures[key];
-                  for (const area in fixture) {
-                    const photos = fixture[area].photos;
-                    for (const photo in photos) {
-                      if (photo === photoKey) { 
-                        // found a match so update its data and return it
-                        photos[photo].orientation = 0;
-                        photos[photo].savedUrl    = data.savedUrl;
-
-                        return fixture[area]; 
-                      }
-                    }
-                  }
-                  // didn't find a home so quit searching
-                  if (i >= max) { return; }
-                  // keep looking
-                  return find(fixKeys[i + 1], i + 1);
-                };
-
-                return find(fixKeys[0], index);
-              };
-
-              const found = findOwner(this.bom.fixtures);
-
-              if (found && found.key === photoKey) {
-                found.orientation = 0;
-                found.savedUrl    = data.savedUrl;
-              }
-            };
-
-            this.schedule(addSavedData);
+            this._bomSavedPhotoSearch(data);
           }
         },
 
@@ -495,7 +536,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               if (window.navigator.onLine) {
                 this.warn('Uh Oh! There was an error while trying to crunch the numbers!');
               } else {
-                this.warn('Please reconnect to the internet to get pricing');
+                this.warn('Please reconnect to the internet');
               }
             });
         },
@@ -527,6 +568,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // and by web-worker on logout
         clearSurvey() {
           const clearData = () => {
+            this.dreading = {};
             this.set('userSelectedArray', []);
             this.set('bom', {areas: {}, fixtures: {}, photos: {}});
             this.surveyDataSnapShot = undefined;
@@ -586,7 +628,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // show user an error toast and stop the spinner in email-options
         _saveError(error) {
           console.log(error);
-          this.warn('There was an unexpected error while trying to send your quote');
+
+          if (window.navigator.onLine) {
+            this.warn('There was an unexpected error while trying to send your quote');
+          } else {
+            this.warn('Please reconnect to the internet');
+          }
+
           this.async(() => {
             window.Redaap.emailOptions.saveError();
           }, 2000);
@@ -638,6 +686,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
+        // fired from bom-send in order to process any enqueued photos before sending bom
+        _processWorkerPhotoQueue() {
+          window.Redaap.webWorker.
+            processQueue().
+            catch(error => {
+              console.log(error);
+
+              if (!window.navigator.onLine) {
+                this.warn('Please reconnect to the internet');
+              }
+            });
+        },
+
+
         _sendBom() {
           if (!this.bom || !this.bom.areas) {
             this.warn('Please complete the survey first');
@@ -666,7 +728,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             catch(error => {
               console.log(error);
               this.$.bomSend.showBomSpinner(false);
-              this.warn('An unexpected error occurred while sending your survey');
+
+              if (window.navigator.onLine) {
+                this.warn('There was an unexpected error while trying to send your survey');
+              } else {
+                this.warn('Please reconnect to the internet');
+              }
             });
         }
 

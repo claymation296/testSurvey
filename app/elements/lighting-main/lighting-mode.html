@@ -145,19 +145,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             value() {
               return {
                 'entry': [{
-                  name: 'slide-from-bottom-animation',
-                  node: this,
+                  name:   'slide-from-bottom-animation',
+                  node:   this,
                   timing: {duration: 300, easing: 'ease-out'}
                 }, {
-                  name: 'transform-animation',
-                  node: this,
+                  name:            'transform-animation',
+                  node:            this,
                   transformOrigin: '50% 50%',
-                  transformFrom: 'scale(0, 0)',
-                  transformTo: 'scale(1, 1)',
-                  timing: {duration: 300, easing: 'ease-out'}
+                  transformFrom:   'scale(0, 0)',
+                  transformTo:     'scale(1, 1)',
+                  timing:          {duration: 300, easing: 'ease-out'}
                  }, {
-                  name: 'fade-in-animation',
-                  node: this,
+                  name:   'fade-in-animation',
+                  node:   this,
                   timing: {duration: 200, delay: 100, easing: 'ease-out'}
                 }]
               };
@@ -193,7 +193,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.playAnimation('entry');
         },
 
-        // called by lighting-main
+        // called by lighting-main on _modeChanged
         hide(mode) {
           this.style.display = 'none';
           // update app theme if mode is saved in app-state.html

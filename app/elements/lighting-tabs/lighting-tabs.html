@@ -10,7 +10,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
 <link rel="import" href="../redaap-behaviors/utilities.html">
-<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
 
 
 <dom-module id="lighting-tabs">
@@ -80,7 +79,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </paper-badge>
       </template>
 
-
   </template>
 
   <script>
@@ -88,10 +86,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       Polymer({
         is: 'lighting-tabs',
 
-        behaviors: [ 
-          window.Redaap.Behaviors.Utilities,
-          window.Redaap.Behaviors.OnTapBehavior 
-        ],
+        behaviors: [ window.Redaap.Behaviors.Utilities ],
 
         properties: {
         	// bound from lighting-main
@@ -142,48 +137,35 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // set initial state after stamping
         _ifTemplateDomChanged() {
           this.debounce('lightingTabsDebounce', () => {
-            const hide = () => {
-              // hide quote badge as default to prevent it from an initial flash
+
+            if (!this.mode) { return; }
+
+            const setBadgeStyles = () => {
+              // set badge styles after dom init to prevent an initial flash
               // if uSA or bom is empty or undefined
-              if (this.mode && this.mode === 'bom') {
+              if (this.mode === 'quote') {
+                this._setQuoteAreaBadgeState();
+                this._setQuotePricingBadgeState();
+              } else {
                 this._setBomAreaBadgeState();
                 this._setBomSendBadgeState();
-                return;
               }
-              this._setQuoteAreaBadgeState();
-              this._setQuotePricingBadgeState();
             };
 
-            this._show();
-            this.schedule(hide);
-          }, 10);
-        },
-
-
-        _modeChanged(mode, oldMode) {
-          if (mode) {
-            if (mode === 'quote') {
-              this.showQuoteTabs = true;
-            } else {
-              this.showQuoteTabs = false;
-            }
-            // if user clears app and stays in same mode
-            if (!oldMode) {
-              this._show();
-            }
-          }
+            this.schedule(setBadgeStyles);
+          }, 1000); // less than 1s will not correctly update initial badge position
         },
 
 
         _applyHideClass(bool, badge) {
           if (!badge) { return; }
+
           const apply = () => {
-            // tab styles in shared-styles.html
-            this.toggleClass('hideBadge', bool, badge);
-            badge.updatePosition();
-            this.updateStyles();
+            badge.updateStyles();
           };
-          
+          // tab styles in shared-styles.html
+          this.toggleClass('hideBadge', bool, badge);
+          badge.updatePosition();
           this.schedule(apply);
         },
 
@@ -192,7 +174,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (this.quoteBadgeCount) {
             this._applyHideClass(false, this.$$('#quoteAreaBadge'));
           } else {
-            this._applyHideClass(true, this.$$('#quoteAreaBadge'));
+            this._applyHideClass(true,  this.$$('#quoteAreaBadge'));
           }
         },
 
@@ -201,7 +183,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (this.clientValid && this.quoteBadgeCount) {
             this._applyHideClass(false, this.$$('#quotePricingBadge'));
           } else {
-            this._applyHideClass(true, this.$$('#quotePricingBadge'));
+            this._applyHideClass(true,  this.$$('#quotePricingBadge'));
           }
         },
 
@@ -210,7 +192,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (this.bomBadgeCount) {
             this._applyHideClass(false, this.$$('#bomAreaBadge'));
           } else {
-            this._applyHideClass(true, this.$$('#bomAreaBadge'));
+            this._applyHideClass(true,  this.$$('#bomAreaBadge'));
           }
         },
 
@@ -219,14 +201,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (this.clientValid && this.bomBadgeCount) {
             this._applyHideClass(false, this.$$('#bomSendBadge'));
           } else {
-            this._applyHideClass(true, this.$$('#bomSendBadge'));
+            this._applyHideClass(true,  this.$$('#bomSendBadge'));
           }
-        },
-
-
-        _clientValidChanged() {
-          this._setQuotePricingBadgeState();
-          this._setBomSendBadgeState();
         },
         
 
@@ -266,6 +242,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
+        _modeChanged(mode, oldMode) {
+          if (mode) {
+            if (mode === 'quote') {
+              this.showQuoteTabs = true;
+            } else {
+              this.showQuoteTabs = false;
+            }
+            // if user clears app and stays in same mode
+            if (!oldMode) {
+              this._show();
+            }
+          }
+        },
+
+
+        _clientValidChanged(_, oldValid) {
+          if (oldValid === undefined) { return; }
+          this._setQuotePricingBadgeState();
+          this._setBomSendBadgeState();
+        },
+
+
         _computeBomBadgeCount(obj) {
           if (!obj) { return 0; }
 
@@ -281,7 +279,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _bomBadgeCountChanged() {
+        _bomBadgeCountChanged(_, oldCount) {
+          if (oldCount === undefined) { return; }
           this._setBomAreaBadgeState();
           this._setBomSendBadgeState();
         },
@@ -297,7 +296,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _quoteBadgeCountChanged() {
+        _quoteBadgeCountChanged(_, oldCount) {
+          if (oldCount === undefined) { return; }
           this._setQuoteAreaBadgeState();
           this._setQuotePricingBadgeState();
         }
