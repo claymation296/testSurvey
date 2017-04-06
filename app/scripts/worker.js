@@ -5,7 +5,6 @@
 (function(self) {
 
 	self.importScripts('../bower_components/parse/parse.min.js', 'worker-exif.js', 'worker-jimp.min.js');
-	// Self.importScripts('../bower_components/parse/parse.js', 'worker-exif.js');
 
 	const Self = Object.freeze(self);
 	const Db 	 = Self.Parse; 
@@ -120,10 +119,14 @@
 
 	const privateList = () => {
 		// list === {key: job}
-		const list = {};
+		let list = {};
 
 		return {
-			get() {
+			get({key}) {
+				return list[key];
+			},
+
+			getAll() {
 				return list;
 			},
 
@@ -136,14 +139,12 @@
 			},
 
 			clear() {
-				for(const key in list) {
-					this.remove({key});
-				}
+				list = {};
 			}
 		};
 	};
 
-	// cache the job that is currently being processed between 'photo' and 'fileUpload' funcs
+	// cache the job that is currently being processed between 'photo' and 'photoUpload' funcs
 	const waiting  = privateList();
 	// cache failed jobs with files removed
 	const dreading = privateList();
@@ -405,41 +406,20 @@
 	// cache job then return url and orientation
 	// must get orientation data first because the exif data is destroyed
 	// by image processing library
-  const photo = job => {
-  	// job === {extension, file, fileName, funk, key}
-  	let {extension, file, fileName, key} = job;
-  	const blobName = file.name;
-  	const url  		 = Self.URL.createObjectURL(file);
-
+  const photoMetadata = job => {
+  	// job === {extension, file, fileName, func, key}
   	getOrientation(job).
   		then(orientation => {
+  			// waiting to be processed and saved to localforage
+  			// cache each job for file processing
+  			waiting.add(job);
+
+  			const {file, key} = job;
+  			const url = Self.URL.createObjectURL(file);
   			// dont send file back to main thread for better perf
   			const jobWithoutFile = removeFile(job);
   			// return key, orientation and url back to photo-capture via web-worker
-  			successful(jobWithoutFile, {key, orientation, url});
-
-  			processFile(file).
-  				then(blob => {
-  					// newly processed data waiting to be saved to cloud
-		  			const waitingListJob = {
-		  				extension,
-		  				blob,
-		  				fileName,
-		  				func: 'fileProcessed',
-		  				key
-		  			};
-		  			// do not include the blob in the job obj
-		  			const fileProcessedJob = {func: 'fileProcessed', key};
-		  			// cache each job for fileUpload
-		  			waiting.add(waitingListJob);
-		  			// save processed file to localForage
-		  			successful(fileProcessedJob, {blob, blobName, extension, fileName, key});
-					}).
-	  			// using a seperate catch handler to avoid uncaught errors in main-thread
-	  			// caused from a race condition with the messaging sytem
-		  		catch(error => {
-		  			errored({func: 'fileProcessed', key}, error);
-		  		});
+  			successful(jobWithoutFile, {key, orientation, url});  			
   		}).
   		catch(error => {
   			errored(job, error);
@@ -447,7 +427,47 @@
 	};
 
 
-	const fileUpload = jobsObj => {
+
+	const processPhoto = job => {
+		const {extension,	file,	fileName, key} = waiting.get(job);
+  	const blobName = file.name;
+  	waiting.remove(job);
+
+		processFile(file).
+			then(blob => {
+				// send back a new temp url based on compressed image file
+				// to maintain a small browser cache
+				const url = Self.URL.createObjectURL(blob);
+				// newly processed data waiting to be saved to cloud
+  			const waitingListJob = {
+  				blob,
+  				blobName,
+  				extension,
+  				fileName,
+  				func: 'processPhoto',
+  				key
+  			};
+  			// cache each job for save to localforage
+  			waiting.add(waitingListJob);
+  			successful(job, {key, orientation: 0, url});
+			}).
+			// using a seperate catch handler to avoid uncaught errors in main-thread
+			// caused from a race condition with the messaging sytem
+  		catch(error => {
+  			errored(job, error);
+  		});
+  };
+	// return the blob and its data from the waiting list
+	// to be saved to localforage in main thread 
+	// (iOS does not yet support webSQL or indexedDb in worker thread)
+	const savePhotoLocally = job => {
+		const cachedBlobData = waiting.get(job);
+		successful(job, cachedBlobData);
+	};
+
+
+
+	const photoUpload = jobsObj => {
 		// job === {func, blob, fileName, key, extension}
 		currentlyUploading = true;
 
@@ -466,7 +486,7 @@
 		};
 
 		const completeSuccessfulSaves = () => {
-			const dreadingList = dreading.get();
+			const dreadingList = dreading.getAll();
 
 			uploadedJobs.forEach(job => {
 				const jobIsOnDreadingList = (dreadingList[job.key]);
@@ -476,7 +496,7 @@
 					successful(resolvedJob);
 					dreading.remove(resolvedJob);
 				} else {
-					const savedJob = renameFunc(job, 'savePhoto');
+					const savedJob = renameFunc(job, 'photoUpload');
 					// send entire job as output because it is used to properly
 					// save the data into the userSelectedArray
 					successful(savedJob, job);
@@ -505,7 +525,7 @@
     	if (connectionLost) {
     		// remove failed attempts from waiting list and add them to dreading list
     		jobsWithoutFiles.forEach(job => {
-    			const failedJob = renameFunc(job, 'savePhoto');
+    			const failedJob = renameFunc(job, 'photoUpload');
     			waiting.remove(failedJob);
     			dreading.add(failedJob);
     			errored(failedJob, 'connection lost');
@@ -531,8 +551,8 @@
 		// job === {func: 'getUrl', key, fileKey}
 		getNewUrl(job).
 			then(({blob}) => blob ? Self.URL.createObjectURL(blob) : undefined).
-			then(url => successful(job, url)).
-			catch(error => errored(job, error.message));
+			then(url 			=> successful(job, url)).
+			catch(error 	=> errored(job, error.message));
 	};
 
 
@@ -618,14 +638,20 @@
 			case 'logout':
 				logout(job);
 				break;
-			case 'photo':
-				photo(job);
+			case 'photoMetadata':
+				photoMetadata(job);
 				break;
-			case 'savePhoto':
-				fileUpload(waiting.get());
+			case 'processPhoto':
+				processPhoto(job);
+				break;
+			case 'savePhotoLocally':
+				savePhotoLocally(job);
+				break;
+			case 'photoUpload':
+				photoUpload(waiting.getAll());
 				break;
 			case 'batch':
-				fileUpload(job.jobsObj);
+				photoUpload(job.jobsObj);
 				break;
 			case 'getUrl':
 				getUrl(job);

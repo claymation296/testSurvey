@@ -757,13 +757,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             const nextPromise = () => iterator.next().value;
 
             try {
-              // returned key, orient, url from worker
-              let imgData = await nextPromise(); // jshint ignore:line
-              setTempImgData(imgData);
+              // returned key, orientation and unprocessed file url from worker
+              const raw = await nextPromise(); // jshint ignore:line
+              setTempImgData(raw);
               // allow file to be gargabe collected while waiting to save to cloud
-              file        = undefined;
-              extension   = undefined;
-              imgData     = undefined;
+              file = undefined;
+              // returned new temp url of compressed image for better browser cache perf
+              const processed = await nextPromise(); // jshint ignore:line
+              setTempImgData(processed);
               // run 'savePhoto' func in web-worker/worker
               const saved = await nextPromise(); // jshint ignore:line
               // web-worker will attempt to save the data to db again if 

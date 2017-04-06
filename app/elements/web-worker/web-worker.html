@@ -223,10 +223,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             case 'removeSaved':
               this._removeSaved(job.output);
               break;
-            case 'photo':
+            case 'photoMetadata':
               this.set('queueSize', this.queueSize + 1);
               break;
-            case 'savePhoto':
+            case 'photoUpload':
               // only decrement if queueSize is greater than 0, aka truthy
               this.set('queueSize', this.queueSize ? this.queueSize - 1 : 0);
               break;
@@ -251,7 +251,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this._dbClearLocalstorage();
               break;
             // no action for the following functions
-            case 'fileProcessed':
+            case 'processPhoto':
+            case 'savePhotoLocally':
             case 'getUrl':
             case 'pricing':
             case 'save':
@@ -483,35 +484,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.blobLocalforage.clear();
         },
 
-
-        _listenPromise(job) {
-          const promise = new Promise((resolve, reject) => {
-
-            const response = event => {
-              const jobRes = event.data.job;
-
-              if (jobRes.func !== job.func) { return; }
-              // compare event key with the one that was used when the promise
-              // was originally called via closure
-              const isNotMatchingKey = jobRes.key !== job.key;
-              // ignore the event if its not the one that matches the key
-              if (isNotMatchingKey) { return; }
-
-              this.worker.removeEventListener('message', response, false);
-
-              if (event.data.status === 'success') {
-                resolve(jobRes.output);
-              } else if (event.data.status === 'error') {
-                reject(jobRes.output);
-              }
-            };
-
-            this.worker.addEventListener('message', response, false);
-          });
-
-          return promise;
-        },
-
         // called by photo-viewer
         removeUserDeletedPhoto(key) {
           const removePromises = [
@@ -536,7 +508,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const value = {blobName, extention, fileName, key};
 
           const setJobAndFilePromises = [
-            this.jobLocalforage.setItem(key, value), 
+            this.jobLocalforage.setItem(key,  value), 
             this.blobLocalforage.setItem(key, blob)
           ];
 
@@ -544,12 +516,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _setupPhotoProcessingListener(key) {
-          const processedJob = {func: 'fileProcessed', key};
-          const saveJob      = {func: 'savePhoto',     key};
+        _saveAndUploadPhoto(key) {
+          const saveLocalJob    = {func: 'savePhotoLocally', key};
+          const photoUploadJob  = {func: 'photoUpload',      key};
 
-          return this._listenPromise(processedJob).
-            then(output => this._saveOffline(output)).
+          return this._dispatch(saveLocalJob).
+            then(blobData => this._saveOffline(blobData)).
 
             // then(() => undefined).
 
@@ -557,9 +529,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             // testing without filling up test server!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            then(() => {
-              return new Promise(resolve => this.async(() => resolve(), 8000));
-            }).
+            then(() => new Promise(resolve => this.async(() => resolve(), 8000))).
             then(() => {
 
               const saved = {
@@ -567,7 +537,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 extension: 'jpeg',
                 file: undefined,
                 fileName: 'Candelabra',
-                func: 'fileProcessed',
+                func: 'photoUpload',
                 key,
                 savedName: '24ef0ab62af8823104274d53f62be399_candelabra.jpeg',
                 savedUrl: 'https://test.redaap.net/parse/files/tY6Sbi9gcEzSqfNWXydt6pkAliMCUnT2fs8OVYAe/24ef0ab62af8823104274d53f62be399_candelabra.jpeg'
@@ -584,7 +554,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
 
-            // then(()     => this._dispatch(saveJob)).
+            // then(()     => this._dispatch(photoUploadJob)).
             // then(saved  => {
             //   // not using events because this element is at top level (index.html)
             //   // top down set photo data (lighting-main -> children)
@@ -601,6 +571,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
+
         // called by photo-capture
         savePhoto(file, extension, fileName = 'unknownFileName') {
 
@@ -610,18 +581,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
           const key          = this._getKey();
-          let photoJob       = {func: 'photo', key, file, fileName, extension};
+          const photoJob     = {func: 'photoMetadata', key, file, fileName, extension};
+          const processJob   = {func: 'processPhoto',  key};
           const dispatch     = this._dispatch.bind(this);
-          const savedPromise = this._setupPhotoProcessingListener(key);
+          const savedPromise = this._saveAndUploadPhoto.bind(this);
 
           function* runPhotos() {   
             try {
-              // compress image first 
-              yield dispatch(photoJob); // return key, orient, and url
-              file     = undefined;     // allow file to be garbage collected
-              photoJob = undefined;
+              yield dispatch(photoJob);  // returns key, orientation, and temp url of original file
+              file          = undefined; // allow file to be garbage collected
+              photoJob.file = undefined;
+              yield dispatch(processJob); // returns key and temp url of processed file
 
-              return savedPromise;
+              return savedPromise(key);
             } 
             catch(error) { console.log('save photo error in web-worker generator: ', error); }
           }
