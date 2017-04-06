@@ -213,6 +213,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.schedule(addNewPhoto);
         },
 
+        // called by photo-viewer _newPhotoPlaceholder()
+        updatePlaceholder(index, src) {
+          const addNewPlaceholder = () => {
+            // must be a new object in order to re-render
+            const photoObj = Object.assign({}, this.photos[index], {src, orientation: 0});
+            this.splice('photos', index, 1, photoObj);
+          };
+          
+          this.schedule(addNewPlaceholder);
+        },
+
         // called by photo-viewer on close
         cleanUp() {
           this.photoDataArray = undefined;

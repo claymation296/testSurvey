@@ -262,9 +262,11 @@
  		return promise;
 	};
 
-
-  const makeJobsArray = obj => Object.keys(obj).map(key => obj[key]);
-
+  // filter out waiting objects that have not been processed yet
+  const makeJobsArray = obj => Object.keys(obj).
+  															 map(key => obj[key]).
+  															 filter(job => job.hasOwnProperty('blob'));
+  															 
   // helper function to create the image file name from fixture.label dynaically
 	const makeFileNamePrefix = str => str.replace(/\s+|\/+|\"+|\-+|\(+|\)+/g, '').toLowerCase();
 

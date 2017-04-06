@@ -187,6 +187,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // two events are fired each time a new photo is taken
           // ignore the second event that resets placeholder
           if (!placeholder || placeholder === '#') { return; }
+
+          const newKeyObj = keys[key];
+          // swap the uncompressed temp url for the new processed temp url
+          if (this.capture.key === key) { 
+            const index = this.photoDataArray.findIndex(obj => obj.key === key);
+            this.photoDataArray.splice(index, 1, newKeyObj);
+            this.$.photoSelector.updatePlaceholder(index, placeholder);
+          } else {
+            // place new photo to the front of the photos list
+            this.photoDataArray.unshift(newKeyObj);
+            // update the photo-selector model data
+            this.$.photoSelector.updateAdd(newKeyObj, placeholder);
+          }
           // set new data onto the element to reflect the new photo taken in photo-selector
           this.capture.updateKeys(key, keys);
           this.capture.updateThumbnail({
@@ -195,12 +208,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             placeholder,
             url: undefined
           });
-
-          const newKeyObj = keys[key];
-          // place new photo to the front of the photos list
-          this.photoDataArray.unshift(newKeyObj);
-          // update the photo-selector model data
-          this.$.photoSelector.updateAdd(newKeyObj, placeholder);
         },
         // from photo-selector
         // add new saved photo data to the element that opened photo-viewer
