@@ -725,6 +725,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.set('savedUrl',    undefined);
           this.set('placeholder', url);
           this.set('orientation', orientation);
+          // force update
+          this.key = undefined;
           this.set('key',         key);
         },
         
