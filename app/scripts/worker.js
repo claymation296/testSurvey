@@ -12,7 +12,7 @@
 	// github oliver-moran/jimp
 	const Jimp = Self.Jimp;
 	// output quality of image processing, int 0-100
-	const imageQualitySetting = 20;
+	const IMAGE_QUALITY = 20;
 
 
 	const successful = (job, output) => {
@@ -234,7 +234,7 @@
 
 	const processFile = file => {
 		const mime 	 = file.type;
- 		const reader = new FileReader(); 
+ 		const reader = new FileReader(); // Jimp does not accept raw files
     reader.readAsArrayBuffer(file);
 
     const promise = new Promise((resolve, reject) => {
@@ -245,7 +245,7 @@
 
     		Jimp.read(reader.result).
     			then(image => {
-    				image.quality(imageQualitySetting).getBuffer(mime, (err, processedBuffer) => {
+    				image.quality(IMAGE_QUALITY).getBuffer(mime, (err, processedBuffer) => {
     					if (err) {
     						reject(err);
     					}
@@ -261,6 +261,7 @@
 
  		return promise;
 	};
+
 
   // filter out waiting objects that have not been processed yet
   const makeJobsArray = obj => Object.keys(obj).
@@ -558,6 +559,11 @@
 	};
 
 
+	const revokeUrl = job => {
+		Self.URL.revokeObjectURL(job.url);
+	};
+
+
 	const pricing = job => {
 		// for devices that dont receive online event
 		processQueue();
@@ -657,6 +663,9 @@
 				break;
 			case 'getUrl':
 				getUrl(job);
+				break;
+			case 'revokeUrl':
+				revokeUrl(job);
 				break;
 			case 'pricing':
 				pricing(job);

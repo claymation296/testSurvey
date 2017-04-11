@@ -476,6 +476,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         getUrl(fileKey) {
           return this._startJob('getUrl', {fileKey});
         },
+
+
+        revokeUrl(url) {
+          const job = {func: 'revokeUrl', url};
+          this.worker.postMessage(job);
+        },
         // called by lighting-main clearSurvey method
         // user tapped on clear survey icon in main-toolbar-buttons
         // then confirms in modal
@@ -529,41 +535,41 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             // testing without filling up test server!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            // then(() => new Promise(resolve => this.async(() => resolve(), 8000))).
-            // then(() => {
+            then(() => new Promise(resolve => this.async(() => resolve(), 8000))).
+            then(() => {
 
-            //   const saved = {
-            //     blob: undefined,
-            //     extension: 'jpeg',
-            //     file: undefined,
-            //     fileName: 'Candelabra',
-            //     func: 'photoUpload',
-            //     key,
-            //     savedName: '24ef0ab62af8823104274d53f62be399_candelabra.jpeg',
-            //     savedUrl: 'https://test.redaap.net/parse/files/tY6Sbi9gcEzSqfNWXydt6pkAliMCUnT2fs8OVYAe/24ef0ab62af8823104274d53f62be399_candelabra.jpeg'
-            //   };
+              const saved = {
+                blob: undefined,
+                extension: 'jpeg',
+                file: undefined,
+                fileName: 'Candelabra',
+                func: 'photoUpload',
+                key,
+                savedName: '24ef0ab62af8823104274d53f62be399_candelabra.jpeg',
+                savedUrl: 'https://test.redaap.net/parse/files/tY6Sbi9gcEzSqfNWXydt6pkAliMCUnT2fs8OVYAe/24ef0ab62af8823104274d53f62be399_candelabra.jpeg'
+              };
 
-            //   this.set('savedPhotoData', saved);
+              this.set('savedPhotoData', saved);
 
-            //   this.set('queueSize', this.queueSize ? this.queueSize - 1 : 0);
+              this.set('queueSize', this.queueSize ? this.queueSize - 1 : 0);
 
-            //   return saved;
-            // }).
-
-
-
-
-
-            then(()     => this._dispatch(photoUploadJob)).
-            then(saved  => {
-              // not using events because this element is at top level (index.html)
-              // top down set photo data (lighting-main -> children)
-              if (saved) {
-                this.set('savedPhotoData', saved);
-              }
-              // bottom up set photo data (photo-capture -> parent)
               return saved;
             }).
+
+
+
+
+
+            // then(()     => this._dispatch(photoUploadJob)).
+            // then(saved  => {
+            //   // not using events because this element is at top level (index.html)
+            //   // top down set photo data (lighting-main -> children)
+            //   if (saved) {
+            //     this.set('savedPhotoData', saved);
+            //   }
+            //   // bottom up set photo data (photo-capture -> parent)
+            //   return saved;
+            // }).
 
 
 

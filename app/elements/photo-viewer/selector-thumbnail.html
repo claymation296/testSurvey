@@ -121,9 +121,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if(!bool) { return; }
 
           const loaded = () => {
+            this.errorRetry        = true;
             this.photo.unreachable = false;
             Polymer.dom(this.$.icon).classList.remove('showIcon');
-            window.URL.revokeObjectURL(this.photo.src);
+            window.Redaap.webWorker.revokeUrl(this.photo.src);
           };
           // must schedule in order to wait for a race condition with image load errors
           // when offline with service worker
@@ -142,17 +143,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
  
         _imgLoadError(event) {
+          if (!this.errorRetry) { return; }  
+
           const status = event.detail.request.status;
-          if (!this.errorRetry) { return; }          
-          // Not Found
+          // Not Found or ERR_INTERNET_DISCONNECTED
           // ObjectUrl invalid so issue a new one
-          if (status === 404) {
+          if (status === 404 || status === 0) {
             const setSrc = url => {
               this.errorRetry = false;
 
               if (url) {
+                this.photo.src         = url;
                 this.photo.placeholder = url;
-                this.set('photo.src', url);
+                this.photo.orientation = 0;
               }  else {
                 // photo blob not in localForage
                 this._showErrorIcon();
@@ -163,9 +166,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               getUrl(this.photo.key).
               then(setSrc).
               catch(error => console.log(error));
-          // ERR_INTERNET_DISCONNECTED
-          } else if (status === 0) {
-            this._showErrorIcon();
           }
         }
 

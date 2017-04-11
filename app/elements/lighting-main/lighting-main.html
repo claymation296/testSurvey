@@ -379,10 +379,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               // light's displayed photo saved data as well
               if (light.key === photoKey) {
                 light.orientation = 0;
+                light.placeholder = undefined;
                 light.savedUrl    = data.savedUrl;
               }
               // update the matching photo's saved data
               photo.orientation = 0;
+              photo.placeholder = undefined;
               photo.savedUrl    = data.savedUrl;
 
               this._removeFromDreading(data);
