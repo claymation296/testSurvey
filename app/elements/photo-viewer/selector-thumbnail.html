@@ -153,9 +153,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this.errorRetry = false;
 
               if (url) {
-                this.photo.src         = url;
-                this.photo.placeholder = url;
-                this.photo.orientation = 0;
+                // must use this.set method here
+                this.set('photo.src', url);
+                this.set('photo.placeholder', url);
+                this.set('photo.orientation', 0);
               }  else {
                 // photo blob not in localForage
                 this._showErrorIcon();

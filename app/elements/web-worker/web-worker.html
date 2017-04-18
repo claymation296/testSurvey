@@ -20,17 +20,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       
     </style>
 
-    <!-- need localstorage outside of worker since it is not available to the worker environment -->
-    <iron-localstorage name="redaap-dbStorageController"
-                       value="{{dbData}}"
-                       on-iron-localstorage-load="_getCurrentUser"
-                       on-iron-localstorage-load-empty="_getCurrentUser"
-                       error-message="{{localStorageError}}">
-    </iron-localstorage>
-
   </template>
-
-  <script src="../../bower_components/localforage/dist/localforage.min.js"></script>
 
   <script>
     (function() {
@@ -42,10 +32,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	worker: Object,
           // localstorage
           currentUser: Object,
-          // localforage instance for jobs
-          jobLocalforage: Object,
-          // localforage instance for blobs
-          blobLocalforage: Object,
           // data bind saved photo data out
           // not using events since this element is at top level
           savedPhotoData: {
@@ -58,26 +44,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Number,
             value: 0,
             notify: true
-          },
-          // parse requires access to localstorage from inside worker environment
-          dbData: Object,
-          // error message from iron-localstorage
-          localStorageError: {
-            type: String,
-            observer: '_localStorageError'
           }
         },
 
         // start worker
         ready() {
           if (window.Worker) {
-            // must have seperate localforage instance for blobs because
-            // they will only save properly if they are at the top level
-            // blobs dont save when nested inside an object
-            const lf             = localforage; // jshint ignore:line
-            this.jobLocalforage  = lf.createInstance({name: 'REDAAP-Jobs'});
-            this.blobLocalforage = lf.createInstance({name: 'REDAAP-Blobs'});
-
             this.worker = new Worker('scripts/worker.js');
             this.worker.addEventListener('message', event => {
               this._workerResponse(event.data);
@@ -130,14 +102,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             window.Redaap.appSecurity.currentUserError();
           }
         },
-
-        // iron-localstorage
-        _localStorageError(error) {
-          console.log(error);
-        },  
-
-
-        _blobFromFile: file => file.slice(0, file.size, file.type),
 
 
         _dispatch(job) {
@@ -215,44 +179,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this.set('currentUser', job.output);
               break;
             case 'logout':
-              this._clearAppData(job.output);
+              window.Redaap.lightingMain.clearSurvey();
+              // must use null for iron-localstorage
+              this.set('currentUser', null);
               break;
-            case 'getBatch':
-              this._getOfflineBatch();
-              break;
-            case 'removeSaved':
-              this._removeSaved(job.output);
-              break;
-            case 'photoMetadata':
+            case 'photoMetadata': 
+              // add to queue
               this.set('queueSize', this.queueSize + 1);
               break;
-            case 'photoUpload':
-              // only decrement if queueSize is greater than 0, aka truthy
+            case 'photoUpload': 
+            case 'resolved': 
+              // remove from queue
               this.set('queueSize', this.queueSize ? this.queueSize - 1 : 0);
+              // not using events because this element is at top level (index.html)
+              this.set('savedPhotoData', job);
               break;
-            case 'resolved':
-              // only decrement if queueSize is greater than 0, aka truthy
-              this.set('queueSize', this.queueSize ? this.queueSize - 1 : 0);
-              this._saveResolvedJob(job);
-              break;
-            case 'fileForUrl':
-              this._getFileForUrl(job);
-              break;
-            case 'dbGetItemAsync':
-              this._dbGetItemAsync(job);
-              break;
-            case 'dbSetItemAsync':
-              this._dbSetItemAsync(job);
-              break;
-            case 'dbRemoveItemAsync':
-              this._dbRemoveItemAsync(job);
-              break;
-            case 'dbClearLocalstorage':
-              this._dbClearLocalstorage();
+            // specifically for debugging safari which does not console.log from worker context 
+            case 'log':
+              console.log(...job.output);
               break;
             // no action for the following functions
             case 'processPhoto':
-            case 'savePhotoLocally':
             case 'getUrl':
             case 'pricing':
             case 'save':
@@ -262,172 +209,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             default:
               throw new Error('worker function not found in web-worker');
           }
-        },    
-
-        // wait for localstorage init before fetching current user data
-        // fetch current user via Parse in worker.js as soon as localstorage loads
-        _getCurrentUser() {
-          const job = {func: 'getCurrentUser'};
-          this.worker.postMessage(job);
-        },
-
-
-
-// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ worker invoked funcs ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-        // called by worker 'logout' event
-        _clearAppData(user) {
-          this.jobLocalforage.clear();
-          this.blobLocalforage.clear();
-          window.Redaap.lightingMain.clearSurvey();
-          this.set('currentUser', user);
-        }, 
-
-
-        _getOfflineBatch() {
-          const batchSize      = 3;
-          const blobPromises   = [];
-          const values         = []; // value === {func, blobName, fileName, key, extension}
-          const removePromises = [];
-
-
-          const storeValuesAndMakeBlobPromises = (value, key, iteration) => {
-            blobPromises.push(this.blobLocalforage.getItem(key));
-            values.push(value);
-            // must return something to escape out of the iterator early
-            if (iteration === batchSize) { return blobPromises; }
-          };
-
-          const getBlobs  = (promises = blobPromises) => Promise.all(promises);
-          
-          const makeJobs  = blobs => 
-                              blobs.map((blob, index) => 
-                                Object.assign({blob}, values[index]));
-
-          const makeBatchAndStoreRemovePromises = jobs => {
-            const batch = {};
-
-            jobs.forEach(job => {
-              const key  = job.key;
-              batch[key] = job;
-              removePromises.push(
-                this.jobLocalforage.removeItem(key),
-                this.blobLocalforage.removeItem(key)
-              );
-            });
-
-            return batch;
-          };
-
-          const sendBatchToWorker = jobsObj => {
-            const batchJob = {func: 'batch', jobsObj};
-            this.worker.postMessage(batchJob);
-          };
-
-          const removeRetrievedItems = () => Promise.all(removePromises);
-
-          const handleErrors         = error => console.log(error);
-
-          // iterate over stored jobs
-          this.jobLocalforage.
-            iterate(storeValuesAndMakeBlobPromises).
-            then(getBlobs).
-            then(makeJobs).
-            then(makeBatchAndStoreRemovePromises).
-            then(sendBatchToWorker).
-            then(removeRetrievedItems).
-            catch(handleErrors);          
-        },
-
-
-        _removeSaved(jobs) {
-          const removeItemPromises = [];
-
-          // remove the job and blob from localforage
-          jobs.forEach(job => {
-            const key = job.key;
-            removeItemPromises.push(
-              this.jobLocalforage.removeItem(key),
-              this.blobLocalforage.removeItem(key)
-            );
-          });
-
-          const getLocalForageLength = () => this.jobLocalforage.length();
-
-          const sendLengthToWorker = length => {
-            const removeJob = {func: 'removeDone', length};
-            this.worker.postMessage(removeJob);
-          };
-
-          const handleErrors = error => console.log(error);
-
-          
-          Promise.all(removeItemPromises).
-            then(getLocalForageLength).
-            then(sendLengthToWorker).
-            catch(handleErrors);
-        },
-
-        // photo that has been resolved after failed attempts
-        _saveResolvedJob(saved) {
-          // not using events because this element is at top level (index.html)
-          this.set('savedPhotoData', saved);
-        },
-
-        // file used to create a new objectUrl when the current one 404's
-        _getFileForUrl(job) {
-          // job === {func: 'fileForUrl', key, fileKey}
-          this.blobLocalforage.
-            getItem(job.fileKey).
-            then(blob    => Object.assign({blob}, job)).
-            then(fileJob => this.worker.postMessage(fileJob)).
-            catch(error  => console.log(error));
-        },
-
-        // Parse StorageContoller for worker
-        _dbGetItemAsync(job) {
-          // job = {func, key, path}
-          // get item and send it back to worker
-          if (this.dbData !== undefined && this.dbData !== null) {
-            if (this.dbData[job.path]) {
-              job.item = this.dbData[job.path];
-              this.worker.postMessage(job);
-              return;
-            }
-          } 
-
-          job.item = null;
-          this.worker.postMessage(job);
-        },
-
-        // Parse StorageContoller for worker
-        _dbSetItemAsync(job) {
-          // job = {func, path, value}
-          // if statement for when dbData not initialized, aka new user
-          if (this.dbData === undefined || this.dbData === null) {
-            this.dbData = {};
-          }
-          this.set(`dbData.${job.path}`, job.value);
-        },
-
-        // Parse StorageContoller for worker
-        _dbRemoveItemAsync(job) {
-          // job = {func, path}
-          // use null to delete a value as per polymer docs
-          this.set(`dbData.${job.path}`, null);
-        },
-
-        // Parse StorageContoller for worker
-        _dbClearLocalstorage() {
-          // job = {func}
-          this.set('dbData', {});
-        },
+        },  
 
 
 
 
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! main api funcs !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!     
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! main api funcs !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 
 
 
@@ -459,7 +246,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // called by lighting-main
         processQueue() {
-          return this._startJob('processQueue');
+          const job = {func: 'processQueue'};
+          this.worker.postMessage(job);
         },
 
         // called by lighting-main
@@ -486,97 +274,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // user tapped on clear survey icon in main-toolbar-buttons
         // then confirms in modal
         clearPhotoData() {
-          this.jobLocalforage.clear();
-          this.blobLocalforage.clear();
+          const job = {func: 'clearPhotos'};
+          this.worker.postMessage(job);
         },
 
         // called by photo-viewer
-        removeUserDeletedPhoto(key) {
-          const removePromises = [
-            this.jobLocalforage.removeItem(key),
-            this.blobLocalforage.removeItem(key)
-          ];
-
-          Promise.all(removePromises).
-            catch(error => console.log('localforage remove item error: ', error));
+        removeUserDeletedPhoto(keyToDelete) {
+          const job = {func: 'deletePhoto', keyToDelete};
+          this.worker.postMessage(job);
         },
-
-        // return a promise
-        _saveOffline({blob, blobName, extention, fileName, key}) {
-
-
-
-          console.log('processed file size: ', blob.size);
-
-
-          
-
-          const value = {blobName, extention, fileName, key};
-
-          const setJobAndFilePromises = [
-            this.jobLocalforage.setItem(key,  value), 
-            this.blobLocalforage.setItem(key, blob)
-          ];
-
-          return Promise.all(setJobAndFilePromises);
-        },
-
-
-        _saveAndUploadPhoto(key) {
-          const saveLocalJob    = {func: 'savePhotoLocally', key};
-          const photoUploadJob  = {func: 'photoUpload',      key};
-
-          return this._dispatch(saveLocalJob).
-            then(blobData => this._saveOffline(blobData)).
-
-            // then(() => undefined).
-
-
-
-            // testing without filling up test server!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-            then(() => new Promise(resolve => this.async(() => resolve(), 8000))).
-            then(() => {
-
-              const saved = {
-                blob: undefined,
-                extension: 'jpeg',
-                file: undefined,
-                fileName: 'Candelabra',
-                func: 'photoUpload',
-                key,
-                savedName: '24ef0ab62af8823104274d53f62be399_candelabra.jpeg',
-                savedUrl: 'https://test.redaap.net/parse/files/tY6Sbi9gcEzSqfNWXydt6pkAliMCUnT2fs8OVYAe/24ef0ab62af8823104274d53f62be399_candelabra.jpeg'
-              };
-
-              this.set('savedPhotoData', saved);
-
-              this.set('queueSize', this.queueSize ? this.queueSize - 1 : 0);
-
-              return saved;
-            }).
-
-
-
-
-
-            // then(()     => this._dispatch(photoUploadJob)).
-            // then(saved  => {
-            //   // not using events because this element is at top level (index.html)
-            //   // top down set photo data (lighting-main -> children)
-            //   if (saved) {
-            //     this.set('savedPhotoData', saved);
-            //   }
-            //   // bottom up set photo data (photo-capture -> parent)
-            //   return saved;
-            // }).
-
-
-
-            catch(error => console.log('save photo error in web-worker: ', error));
-        },
-
-
 
         // called by photo-capture
         savePhoto(file, extension, fileName = 'unknownFileName') {
@@ -586,26 +292,66 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
 
-          const key          = this._getKey();
-          const photoJob     = {func: 'photoMetadata', key, file, fileName, extension};
-          const processJob   = {func: 'processPhoto',  key};
-          const dispatch     = this._dispatch.bind(this);
-          const savedPromise = this._saveAndUploadPhoto.bind(this);
+          const key         = this._getKey();
+          const dispatch    = this._dispatch.bind(this);
+          const metadataJob = {func: 'photoMetadata', key, file, fileName, extension};
+          const processJob  = {func: 'processPhoto',  key};
+          const uploadJob   = {func: 'photoUpload',   key};
+
+
+
+
+          // const fakeUpload = () => {
+          //   return new Promise(resolve => this.async(() => resolve(), 8000)).
+          //     then(() => {
+
+          //       const saved = {
+          //         blob: undefined,
+          //         extension: 'jpeg',
+          //         file: undefined,
+          //         fileName: 'Candelabra',
+          //         func: 'photoUpload',
+          //         key,
+          //         savedName: '24ef0ab62af8823104274d53f62be399_candelabra.jpeg',
+          //         savedUrl: 'https://test.redaap.net/parse/files/tY6Sbi9gcEzSqfNWXydt6pkAliMCUnT2fs8OVYAe/24ef0ab62af8823104274d53f62be399_candelabra.jpeg'
+          //       };
+
+          //       this.set('savedPhotoData', saved);
+
+          //       this.set('queueSize', this.queueSize ? this.queueSize - 1 : 0);
+
+          //       return saved;
+          //     });
+          // };
+
+
 
           function* runPhotos() {   
             try {
-              yield dispatch(photoJob);  // returns key, orientation, and temp url of original file
-              file          = undefined; // allow file to be garbage collected
-              photoJob.file = undefined;
+              yield dispatch(metadataJob);  // returns key, orientation, and temp url of original file
+              file             = undefined; // allow file to be garbage collected
+              metadataJob.file = undefined;
               yield dispatch(processJob); // returns key and temp url of processed file
 
-              return savedPromise(key);
+
+
+              return undefined;
+
+              // return fakeUpload();
+
+
+              // return dispatch(uploadJob);
+
+
             } 
             catch(error) { console.log('save photo error in web-worker generator: ', error); }
           }
 
           return runPhotos();
         }
+
+
+
 
       });
     })();

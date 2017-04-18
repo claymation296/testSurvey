@@ -4,15 +4,33 @@
 
 (function(self) {
 
-	self.importScripts('../bower_components/parse/parse.min.js', 'worker-exif.js', 'worker-jimp.min.js');
+	self.importScripts(
+		'../bower_components/localforage/dist/localforage.min.js', 
+		'../bower_components/parse/parse.min.js', 
+		'worker-exif.js', 
+		'worker-jimp.min.js'
+	);
 
 	const Self = Object.freeze(self);
+	const Lf   = Self.localforage;
 	const Db 	 = Self.Parse; 
 	const Exif = Self.Exif;
 	// github oliver-moran/jimp
 	const Jimp = Self.Jimp;
+	// height is auto
+	const IMAGE_WIDTH   = 512;
 	// output quality of image processing, int 0-100
-	const IMAGE_QUALITY = 20;
+	const IMAGE_QUALITY = 40;
+	// number of photos to simultaneously upload to db
+	const PHOTO_UPLOAD_BATCH_SIZE = 3;
+	// must have seperate localforage instance for blobs because
+  // they will only save properly if they are at the top level
+  // blobs dont save when nested inside an object
+	const parseLocalforage = Lf.createInstance({name: 'REDAAP-Parse'});
+	const jobLocalforage   = Lf.createInstance({name: 'REDAAP-Jobs'});
+  const blobLocalforage  = Lf.createInstance({name: 'REDAAP-Blobs'});
+
+
 
 
 	const successful = (job, output) => {
@@ -28,69 +46,51 @@
 		Self.postMessage(response);
 	};
 
-	// listen for a response from web-worker.html for 
-	// async calls to main thread localstorage
-	// must use Parse.Promise for SDK compatibility
-	const awaitResponseWithParsePromise = job => {
-		const promise = new Db.Promise(resolve => {
-
-	    const response = event => {
-	      const jobRes = event.data;
-
-	      if (jobRes.func === job.func) {
-	      	// compare event key with the one that was used when the promise
-          // was originally called via closure
-          const isNotMatchingKey = jobRes.key !== job.key;
-          // ignore the event if its not the one that matches the key
-          if (isNotMatchingKey) { return; }
-
-	        Self.removeEventListener('message', response, false);
-	        resolve(jobRes.item);
-	      }
-	    };
-
-	    Self.addEventListener('message', response, false);
-	  });
-
-  	return promise;
+	// specifically for debugging safari which does not console.log from worker context
+	const log = (...message) => {
+		successful({func: 'log'}, message);
 	};
 
-
-	// custom async storage controller for Parse JS SDK
+	// custom async storage controller for Parse JS SDK to localforage integration
 	const asyncWorkerStorageController = {
 		async: 1,
 
-		getItemAsync(path) {
-			const getItemJob = {func: 'dbGetItemAsync', key: path, path};
-			successful(getItemJob);
-			// return a promise that resolves when web-worker.html returns the item from localstorage
-			// response = {func, key, path, item}
-			return awaitResponseWithParsePromise(getItemJob);
-		},
+		getItemAsync: 	 path => 
+											 new Db.Promise((resolve, reject) => 
+												 parseLocalforage.
+												 	 getItem(path).
+												 	 then(item => 
+													 	 resolve(item)).
+												 	 catch(err => 
+													 	 reject(err))),
 
-		setItemAsync(path, value) {
-			const setItemJob = {func: 'dbSetItemAsync', path, value};
-			successful(setItemJob);
+		setItemAsync: 	 (path, value) => 
+											 new Db.Promise((resolve, reject) =>
+												 parseLocalforage.
+												 	 setItem(path, value).
+												 	 then(() => 
+													 	 resolve('item set')).
+												 	 catch(err => 
+												 	 	 reject(err))),
 
-			return Db.Promise.as('item set');
-		},
+		removeItemAsync: path => 
+											 new Db.Promise((resolve, reject) =>
+										 	 	 parseLocalforage.
+										 	 	 	 removeItem(path).
+										 	 	 	 then(() => 
+										 	 	 	 	 resolve('item removed')).
+										 	 	 	 catch(err => 
+										 	 	 	 	 reject(err))),
 
-		removeItemAsync(path) {
-			const removeItemJob = {func: 'dbRemoveItemAsync', path};
-			successful(removeItemJob);
-
-			return Db.Promise.as('item removed');
-		},
-
-		clear() {
-			const clearJob = {func: 'dbClearLocalstorage'};
-			successful(clearJob);
-
-			return Db.Promise.as('localstorage cleared');
-		}
-
+		clear: 					 () => 
+					 	 					 new Db.Promise((resolve, reject) =>
+							 				 	 parseLocalforage.
+							 				 	 	 clear().
+							 				 	 	 then(() => 
+							 	 					 	 resolve('localstorage cleared')).
+							 				 	 	 catch(err => 
+							 				 	 	 	 reject(err)))
 	};
-
 
 	// start Parse Server Api
 	// used to correct missing localstorage support inside worker environment
@@ -98,13 +98,8 @@
 	Db.initialize('tY6Sbi9gcEzSqfNWXydt6pkAliMCUnT2fs8OVYAe');
 
 
-
-
 	Db.serverURL = 'https://test.redaap.net/parse'; // test
 	// Db.serverURL = 'https://redaap.net/parse'; 	// production
-
-
-
 
 
 
@@ -144,71 +139,11 @@
 		};
 	};
 
-	// cache the job that is currently being processed between 'photo' and 'photoUpload' funcs
+	// cache the job that is currently being processed between 'photoMetadata' and 'processPhoto' funcs
 	const waiting  = privateList();
 	// cache failed jobs with files removed
 	const dreading = privateList();
 
-
-	const getBatch = () => {
-		const offlineBatchJob = {func: 'getBatch'};
-		successful(offlineBatchJob);
-	};
-
-
-	const removeSavedFromQueue = jobs => {
-		const removeJob = {func: 'removeSaved'};
-		successful(removeJob, jobs);
-
-		const promise = new Promise(resolve => {
-	    const response = event => {
-	      const job = event.data;
-	      if (job.func === 'removeDone') {
-	        Self.removeEventListener('message', response, false);
-	        resolve(job.length);
-	      }
-	    };
-
-	    Self.addEventListener('message', response, false);
-	  });
-
-  	return promise;		
-	};
-
-	// listen for a response from web-worker.html for a given job
-	// takes a job with at least a func and a key
-	const awaitResponse = job => {
-		const promise = new Promise(resolve => {
-
-	    const response = event => {
-	      const jobRes = event.data;
-
-	      if (jobRes.func === job.func) {
-	      	// compare event key with the one that was used when the promise
-          // was originally called via closure
-          const isNotMatchingKey = jobRes.key !== job.key;
-          // ignore the event if its not the one that matches the key
-          if (isNotMatchingKey) { return; }
-
-	        Self.removeEventListener('message', response, false);
-	        resolve(jobRes);
-	      }
-	    };
-
-	    Self.addEventListener('message', response, false);
-	  });
-
-  	return promise;
-	};
-
-
-	const getNewUrl = job => {
-		// job === {func: 'getUrl', key, fileKey}
-		const fetchFileJob = Object.assign({}, job, {func: 'fileForUrl'});
-		successful(fetchFileJob);
-
-		return awaitResponse(fetchFileJob);
-	};
 
 
 	// use exif.js library to get image orientation
@@ -245,7 +180,11 @@
 
     		Jimp.read(reader.result).
     			then(image => {
-    				image.quality(IMAGE_QUALITY).getBuffer(mime, (err, processedBuffer) => {
+
+    				image.
+    					resize(IMAGE_WIDTH, Jimp.AUTO).
+    					quality(IMAGE_QUALITY).
+    					getBuffer(mime, (err, processedBuffer) => {
     					if (err) {
     						reject(err);
     					}
@@ -262,6 +201,18 @@
  		return promise;
 	};
 
+
+ 	const saveOffline = (value, blob) => {
+ 		const {key} = value;
+
+ 		const setJobAndFilePromises = [
+      jobLocalforage.setItem(key,  value), 
+      blobLocalforage.setItem(key, blob)
+    ];
+
+    return Promise.all(setJobAndFilePromises).
+    	then(() => blob);
+ 	};
 
   // filter out waiting objects that have not been processed yet
   const makeJobsArray = obj => Object.keys(obj).
@@ -333,10 +284,51 @@
 	};
 
 
-  const processQueue = () => {
-		if (canProcessQueue()) {
-			getBatch();
-		}
+	const getBatch = () => {
+    const blobPromises   = [];
+    const values         = []; // value === {func, blobName, fileName, key, extension}
+
+    const storeValuesAndMakeBlobPromises = (value, key, iteration) => {
+      blobPromises.push(blobLocalforage.getItem(key));
+      values.push(value);
+      // must return something to escape out of the iterator early
+      if (iteration === PHOTO_UPLOAD_BATCH_SIZE) { return blobPromises; }
+    };
+
+    const getBlobs  = (promises = blobPromises) => Promise.all(promises);
+    
+    const makeJobs  = blobs => 
+                        blobs.map((blob, index) => 
+                          Object.assign({blob}, values[index]));
+
+    const makeBatch = jobs => {
+			const batch = jobs.reduce((accumulator, job) => {
+        accumulator[job.key] = job;
+        return accumulator;
+			}, {});
+
+      return batch;
+    };
+
+    // iterate over stored jobs
+    return jobLocalforage.
+      iterate(storeValuesAndMakeBlobPromises).
+      then(getBlobs).
+      then(makeJobs).
+      then(makeBatch);          
+	};
+
+
+	const removeSavedFromQueue = jobs => {
+		const removeItemPromises = jobs.map(job => [
+			jobLocalforage.removeItem(job.key),
+      blobLocalforage.removeItem(job.key)
+		]);
+
+    const getLocalForageLength = () => jobLocalforage.length();
+    
+    return Promise.all(removeItemPromises).
+      then(getLocalForageLength);	
 	};
 
 
@@ -344,6 +336,9 @@
 
 
 //******************** main functions ****************************************
+
+
+
 
 
 
@@ -400,6 +395,12 @@
 				// clear photo job cache
 				waiting.clear();
 				dreading.clear();
+
+				const clearBoth = [jobLocalforage.clear(), blobLocalforage.clear()];
+
+        return Promise.all(clearBoth);
+      }).
+      then(() => {
 				// must use null for iron-localstorage
 				successful(job, null);
 			}, error => {
@@ -430,28 +431,28 @@
 	};
 
 
-
-	const processPhoto = job => {
+  const processPhoto = job => {
 		const {extension,	file,	fileName, key} = waiting.get(job);
   	const blobName = file.name;
   	waiting.remove(job);
 
 		processFile(file).
 			then(blob => {
+				// newly processed data waiting to be saved to cloud
+  			const offlineJob = {blobName, extension, fileName, key};
+  			return saveOffline(offlineJob, blob);
+  		}).
+  		then(blob => {
+
+
+
+  			log('processed file size: ', blob.size);
+
+
 				// send back a new temp url based on compressed image file
 				// to maintain a small browser cache
 				const url = Self.URL.createObjectURL(blob);
-				// newly processed data waiting to be saved to cloud
-  			const waitingListJob = {
-  				blob,
-  				blobName,
-  				extension,
-  				fileName,
-  				func: 'processPhoto',
-  				key
-  			};
-  			// cache each job for save to localforage
-  			waiting.add(waitingListJob);
+
   			successful(job, {key, orientation: 0, url});
 			}).
 			// using a seperate catch handler to avoid uncaught errors in main-thread
@@ -460,14 +461,6 @@
   			errored(job, error);
   		});
   };
-	// return the blob and its data from the waiting list
-	// to be saved to localforage in main thread 
-	// (iOS does not yet support webSQL or indexedDb in worker thread)
-	const savePhotoLocally = job => {
-		const cachedBlobData = waiting.get(job);
-		successful(job, cachedBlobData);
-	};
-
 
 
 	const photoUpload = jobsObj => {
@@ -503,7 +496,6 @@
 					// send entire job as output because it is used to properly
 					// save the data into the userSelectedArray
 					successful(savedJob, job);
-					waiting.remove(savedJob);
 				}
 			});
 
@@ -516,7 +508,9 @@
 		const checkQueue = queueLength => {
 			// check the queue in case user has added more photos while uploading
 			if (queueLength) {
-				processQueue();
+				getBatch().
+					then(batch => photoUpload(batch)).
+					catch(error => log(error));
 			}
     };
 
@@ -526,10 +520,9 @@
     	const connectionLost 	 = error.code ? (error.code === 100) : false;
 
     	if (connectionLost) {
-    		// remove failed attempts from waiting list and add them to dreading list
+    		// add failed attempts to dreading list
     		jobsWithoutFiles.forEach(job => {
     			const failedJob = renameFunc(job, 'photoUpload');
-    			waiting.remove(failedJob);
     			dreading.add(failedJob);
     			errored(failedJob, 'connection lost');
     		});
@@ -550,17 +543,43 @@
 	};
 
 
+  const processQueue = () => {
+		if (canProcessQueue()) {
+			getBatch().
+				then(batch => photoUpload(batch)).
+				catch(error => log(error));
+		}
+	};
+
+
 	const getUrl = job => {
 		// job === {func: 'getUrl', key, fileKey}
-		getNewUrl(job).
-			then(({blob}) => blob ? Self.URL.createObjectURL(blob) : undefined).
-			then(url 			=> successful(job, url)).
-			catch(error 	=> errored(job, error.message));
+		blobLocalforage.
+      getItem(job.fileKey).
+      then(blob   => blob ? Self.URL.createObjectURL(blob) : undefined).
+			then(url 		=> successful(job, url)).
+			catch(error => errored(job, error.message));
 	};
 
 
 	const revokeUrl = job => {
 		Self.URL.revokeObjectURL(job.url);
+	};
+
+
+	const clearPhotos = () => {
+		waiting.clear();
+		dreading.clear();
+		jobLocalforage.clear();
+    blobLocalforage.clear();
+	};
+
+
+	const deletePhoto = job => {
+		waiting.remove(job);
+		dreading.remove(job);
+		jobLocalforage.removeItem(job.keyToDelete);
+    blobLocalforage.removeItem(job.keyToDelete);
 	};
 
 
@@ -634,9 +653,6 @@
 		const func = job.func;
 
 		switch (func) {
-			case 'getCurrentUser':
-				getCurrentUser();
-				break;
 			case 'login':
 				login(job);
 				break;
@@ -652,26 +668,8 @@
 			case 'processPhoto':
 				processPhoto(job);
 				break;
-			case 'savePhotoLocally':
-				savePhotoLocally(job);
-				break;
 			case 'photoUpload':
-				photoUpload(waiting.getAll());
-				break;
-			case 'batch':
-				photoUpload(job.jobsObj);
-				break;
-			case 'getUrl':
-				getUrl(job);
-				break;
-			case 'revokeUrl':
-				revokeUrl(job);
-				break;
-			case 'pricing':
-				pricing(job);
-				break;
-			case 'save':
-				save(job);
+				processQueue();
 				break;
 			case 'processQueue':
 				// for devices that dont receive online event
@@ -679,18 +677,30 @@
 				// before allowing user to send bom
 				processQueue();
 				break;
+			case 'getUrl':
+				getUrl(job);
+				break;
+			case 'revokeUrl':
+				revokeUrl(job);
+				break;
+			case 'deletePhoto':
+				deletePhoto(job);
+				break;
+			case 'clearPhotos':
+				clearPhotos();
+				break;
+			case 'pricing':
+				pricing(job);
+				break;
+			case 'save':
+				save(job);
+				break;
 			case 'sendBom':
 				sendBom(job);
 				break;
 			case 'search':
 				surveySearch(job);
 				break;
-			case 'removeDone':
-			case 'fileForUrl':
-			case 'dbGetItemAsync':
-				// nothing to do here because these events are listened for in a seperate function
-				break;
-
 			default:
 				throw new Error('worker function not found in worker.js');
 		}
@@ -700,6 +710,7 @@
 	// listen for online event and cycle through the queue if necessary
 	Self.addEventListener('online', processQueue, false);
 
+	getCurrentUser();
 
 }(self)); // jshint ignore:line
 

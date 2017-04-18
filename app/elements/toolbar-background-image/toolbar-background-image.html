@@ -60,8 +60,8 @@ paper-toolbar {
     </style>
 
     <!-- used for image load timing for toolbar background fade in -->
-    <img src="[[backgroundUrl]]"
-         on-load="_backgroundUrlLoaded">
+    <img src="[[dummyUrl]]"
+         on-load="_dummyUrlLoaded">
 
   </template>
 
@@ -83,7 +83,7 @@ paper-toolbar {
 
 					backgroundImage: Object,
 
-					backgroundUrl: String
+					dummyUrl: String
         },
 
 
@@ -151,41 +151,37 @@ paper-toolbar {
         },
 
 
+        _getBackgroundElement(type) {
+          return type === 'src' ? this.backgroundImage : this.backgroundImagePlaceholder;
+        },
+
+
         _showImage(element) {
+          if (this.backgroundType === 'placeholder') {
+            window.Redaap.webWorker.revokeUrl(this.dummyUrl);
+          }
+
           element.style.opacity = '1';
         },
 
         // hidden img tag at top of local dom on-load event
-        _backgroundUrlLoaded() {
-          if (this.backgroundType === 'placeholder') {
-            window.URL.revokeObjectURL(this.backgroundUrl);
-            // generous helping of wait time to not squash smooth fade-in
-            this.async(() => {
-              this.schedule.bind(this, this._showImage(this.backgroundImagePlaceholder));
-            }, 50);
-          } else if (this.backgroundType === 'src') {
-            // generous helping of wait time to not squash smooth fade-in
-            this.async(() => {
-              this.schedule.bind(this, this._showImage(this.backgroundImage));
-            }, 50);
-          }
-        },
+        _dummyUrlLoaded() {
+          const el = this._getBackgroundElement(this.backgroundType);
 
-
-        _getBackgroundElement(type) {
-          return type === 'src' ? this.backgroundImage : this.backgroundImagePlaceholder;
+          el.style.transition      = 'opacity 0.3s ease-out';
+          el.style.backgroundImage = `url(${this.dummyUrl})`;
+          // generous helping of wait time to not squash smooth fade-in
+          this.async(() => {
+            this.schedule.bind(this, this._showImage(el));
+          }, 50);
         },
  
 
-        _setBackgroundUrl(type, url) {
-          const el = this._getBackgroundElement(type);
-
-          el.style.transition      = 'opacity 0.3s ease-out';
-          el.style.backgroundImage = `url(${url})`;
+        _setDummyUrl(type, url) {
           // use hidden img tag for proper load timing
           // force update
-          this.backgroundUrl  = undefined;
-          this.backgroundUrl  = url;
+          this.dummyUrl  = undefined;
+          this.dummyUrl  = url;
           this.backgroundType = type;
         },
 
@@ -206,7 +202,7 @@ paper-toolbar {
           if (placeholder && placeholder !== '#') {
             this._resetBackgroundElement('src');
             this._correctPlaceholderOrientation(orientation);
-            this._setBackgroundUrl('placeholder', placeholder);
+            this._setDummyUrl('placeholder', placeholder);
           } else {
             this._resetBackgroundElement('placeholder');
           }
@@ -218,7 +214,7 @@ paper-toolbar {
           const url = event.detail.savedUrl;
                     
           if (url) {
-            this._setBackgroundUrl('src', url);
+            this._setDummyUrl('src', url);
           } else {
             this._resetBackgroundElement('src');
           }
