@@ -11,7 +11,7 @@
     "gold-phone-input": "PolymerElements/gold-phone-input#^1.0.0",
     "gold-zip-input": "PolymerElements/gold-zip-input#^1.0.0",
     "signature_pad": "^1.5.3",
-    "localforage": "^1.4.2",
+    "localforage": "^1.5.0",
     "parse": "^1.9.2"
   },
   "devDependencies": {

@@ -68,7 +68,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     	</paper-toolbar>
 
       <div id="content" class="content">
-       	<template id="photosRepeater"
+       	<!-- <template id="photosRepeater"
                   is="dom-repeat" 
        						items="[[photos]]"
                   as="photo" 
@@ -77,7 +77,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           <selector-thumbnail photo="[[photo]]" on-tap="_imageTapped"></selector-thumbnail>
 
-        </template>
+        </template> -->
+
+
+        <iron-list items="[[photos]]" as="photo">
+          <template>
+
+            <selector-thumbnail photo="[[photo]]" on-tap="_imageTapped"></selector-thumbnail>
+
+          </template>
+        </iron-list>
+
+
+
       </div>
   	</paper-scroll-header-panel>
     
@@ -216,6 +228,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // called by photo-viewer _newPhotoPlaceholder()
         updatePlaceholder(index, src) {
           const addNewPlaceholder = () => {
+            // return if photo-viewer is already closed by the time this function is ran
+            if (!this.photos || !this.photos[index]) { return; }
             // must be a new object in order to re-render
             const photoObj = Object.assign({}, this.photos[index], {src, orientation: 0});
             this.splice('photos', index, 1, photoObj);

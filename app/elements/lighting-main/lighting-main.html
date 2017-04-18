@@ -690,15 +690,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // fired from bom-send in order to process any enqueued photos before sending bom
         _processWorkerPhotoQueue() {
-          window.Redaap.webWorker.
-            processQueue().
-            catch(error => {
-              console.log(error);
-
-              if (!window.navigator.onLine) {
-                this.warn('Please reconnect to the internet');
-              }
-            });
+          window.Redaap.webWorker.processQueue();
         },
 
 

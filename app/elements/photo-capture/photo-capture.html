@@ -488,19 +488,49 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.set('deferLoad',    false);
           this.set('deferTrigger', false);
         },
+        // allow an instant preview based directly off the file
+        // until it has had a chance to be saved to db
+        _lookupTempUrlByKey(key) {
+          // key is set and placeholder is not already a valid url
+          if (typeof key !== 'string') { return; }
+
+          const setPlaceholder = url => {
+            if (url) {
+              this.set('placeholder', url);
+              // locally saved photos no longer have orientation data
+              // and are processed in Jimp with the correct orientation
+              // so no longer necessary to correct it
+              this.set('orientation', 0);
+              // very important to reset orient for keys data for this photo as well
+              if (this.keys) {
+                this.set(`keys.${key}.orientation`, 0); 
+                this.set(`keys.${key}.placeholder`, url);
+              }
+              this._loadPlaceholderSrc(url);
+            } else if (!window.navigator.onLine) {
+              this._showErrorIcon();
+            } else {
+              this.resetCaptureButton();
+            }
+          };
+          
+          window.Redaap.webWorker.
+            getUrl(key).
+            then(setPlaceholder).
+            catch(error => console.log(error));
+        },
 
 
         _placeholderSrcLoaded() {
           const loaded = () => {
             this._resetTrigger();
             this.fire('photo-capture-placeholder-loaded', this._makeEventPayload());
-            window.Redaap.webWorker.revokeUrl(this.placeholderSrc);
 
             if (this.placeholderSrc && this.placeholderSrc !== '#') {
               this._showImageTag();
             }
           };
-          
+
           this.schedule(loaded);
         },
 
@@ -553,37 +583,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this._showErrorIcon();
           }
           this._resetTrigger();
-        },
-        // allow an instant preview based directly off the file
-        // until it has had a chance to be saved to db
-        _lookupTempUrlByKey(key) {
-          // key is set and placeholder is not already a valid url
-          if (typeof key !== 'string') { return; }
-
-          const setPlaceholder = url => {
-            if (url) {
-              this.set('placeholder', url);
-              // locally saved photos no longer have orientation data
-              // and are processed in Jimp with the correct orientation
-              // so no longer necessary to correct it
-              this.set('orientation', 0);
-              // very important to reset orient for keys data for this photo as well
-              if (this.keys) {
-                this.set(`keys.${key}.orientation`, 0); 
-                this.set(`keys.${key}.placeholder`, url);
-              }
-              this._loadPlaceholderSrc(url);
-            } else if (!window.navigator.onLine) {
-              this._showErrorIcon();
-            } else {
-              this.resetCaptureButton();
-            }
-          };
-          
-          window.Redaap.webWorker.
-            getUrl(key).
-            then(setPlaceholder).
-            catch(error => console.log(error));
         },
         // photo successfully saved to db so now use the url string as the image src
         // to save memory and cache in localstorage
@@ -702,6 +701,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             obj[key]  = newObj;
             this.set('keys', obj);
           }
+
+          window.Redaap.webWorker.revokeUrl(this.placeholderSrc);
           // clear savedUrl incase we are offline and user chooses to take another
           // photo to replace the offline icon
           // otherwise this._load will try to load the last savedUrl
@@ -723,6 +724,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.set(`keys.${key}.orientation`, 0); 
             this.set(`keys.${key}.savedUrl`,    url);
           }
+
+          window.Redaap.webWorker.revokeUrl(this.placeholderSrc);
           this.set('savedUrl', url);
           this.schedule(this._load.bind(this));
         },
