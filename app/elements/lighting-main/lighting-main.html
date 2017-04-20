@@ -296,6 +296,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }
           }
         },
+
+
+        _workQuoteDreadingList() {
+          // iterate over dreading list looking for the key
+          // that matches the saved data
+          for (const key in this.dreading) {
+            const match = this._findFixtureByKey(key);
+            const data  = this.dreading[key]; 
+
+            if (match) {
+              this._addPhotoToMatch(match, data);
+              this._removeFromDreading(data);
+            }
+          }
+        },
         // uSA observer
         // find a home for saved photo data each time the uSA is changed
         _newFixtureAddedToQuote() {
@@ -303,29 +318,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             // any edits to the uSA after the data has been sent to the cloud
             // makes the quote invalid
             this.set('talliesValid', false);
-            // iterate over dreading list looking for the key
-            // that matches the saved data
-            for (const key in this.dreading) {
-              const match = this._findFixtureByKey(key);
-              const data  = this.dreading[key]; 
 
-              if (match) {
-                this._addPhotoToMatch(match, data);
-                this._removeFromDreading(data);
-              }
-            }
+            this._workQuoteDreadingList();
           }, 10);
+        },
+
+
+        _workBomDreadingList() {
+          // iterate over dreading list looking for the fixture photo key
+          // that matches the saved data key
+          for (const key in this.dreading) {
+            const data = this.dreading[key];
+            this._bomSavedPhotoSearch(data);
+          }
         },
 
         // work through the dreading list anytime user adds new fixtures
         _newFixtureAddedToBom() {
           this.debounce('emptyDreadingDebounce', () => {
-            // iterate over dreading list looking for the fixture photo key
-            // that matches the saved data key
-            for (const key in this.dreading) {
-              const data = this.dreading[key];
-              this._bomSavedPhotoSearch(data);
-            }
+            this._workBomDreadingList();
           }, 50);
         },
 
@@ -677,7 +688,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             survey:  this.surveyDataSnapShot
           };
 
-          this._newFixtureAddedToQuote();
+          this._workQuoteDreadingList();
 
           window.Redaap.webWorker.
             save(data).
@@ -715,7 +726,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           this.$.bomSend.showBomSpinner(true);
           // clear up dreading
-          this._newFixtureAddedToBom();
+          this._workBomDreadingList();
 
           window.Redaap.webWorker.
             sendBom(this.bom, this.client).

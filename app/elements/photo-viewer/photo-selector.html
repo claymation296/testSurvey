@@ -11,6 +11,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../redaap-behaviors/utilities.html">
 <link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
 <link rel="import" href="../redaap-behaviors/open-close-fullscreen-behavior.html">
+<link rel="import" href="../redaap-behaviors/expand-collapse-classes-behavior.html">
 <link rel="import" href="selector-thumbnail.html">
 
 
@@ -46,6 +47,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       .fadeInContent {
         opacity: 1;
         transition: opacity 0.2s ease-in;
+      }
+
+      .fullscreenPhoto {
+        position: fixed;
+        top: -8px;
+        left: -8px;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      .expanderTransitions {
+        transition: transform 0.3s ease-out;
       }
 
     </style>
@@ -93,7 +106,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           Polymer.NeonAnimationRunnerBehavior,
           window.Redaap.Behaviors.Utilities,                  
           window.Redaap.Behaviors.OnTapBehavior,              
-          window.Redaap.Behaviors.OpenCloseFullscreenBehavior 
+          window.Redaap.Behaviors.OpenCloseFullscreenBehavior,                
+          window.Redaap.Behaviors.ExpandCollapseClassesBehavior 
         ],
 
         properties: {
@@ -145,7 +159,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // array of photo data objs
           photoDataArray: Array,
           // array of photo data objs with src property and no dead data
-          photos: Array
+          photos: Array,
+
+          selectedThumbnail: Object
         },
 
 
@@ -228,6 +244,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // called by photo-viewer on close
         cleanUp() {
+          if (this.selectedThumbnail) {
+            this.selectedThumbnail.style.zIndex = '0';
+            this.selectedThumbnail = undefined;
+          }
+          this.$.toolbar.style.zIndex = '0';
           this.photoDataArray = undefined;
           this.photos         = undefined;
         },
@@ -251,8 +272,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	this.playAnimation('selectorEntry', 'selectorEntry');
         },
 
-
-        _playExitAnimation() {
+        // called by photo-viewer
+        playExitAnimation() {
           this.cancelAnimation();
           this.playAnimation('selectorExit', 'selectorExit');
         },
@@ -278,6 +299,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
+        closeFullscreenImg() {
+          if (!this.selectedThumbnail) { return; }
+
+          Polymer.dom(this.selectedThumbnail.$.img).classList.remove('fullscreenRotation');
+
+          const cleanUp = () => {
+            this.$.toolbar.style.zIndex         = '0';
+            this.selectedThumbnail.style.zIndex = '0';
+            this.selectedThumbnail = undefined;
+          };
+
+          this.ecClassesAnimation(
+            this.selectedThumbnail, 
+            'fullscreenPhoto', 
+            'expanderTransitions',
+            'reverse',
+            cleanUp
+          );
+        },
+
+
         _imageTapped(event) {
           const photo = event.model.photo;
           const {orientation, unreachable} = photo;
@@ -287,12 +329,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (unreachable) { return; }
 
           const selected = () => {
-            // cloning the iron-image sizedImgDiv for better fullscreen-photo perf
-            // which avoids having to reload the image
-            // Polymer.dom(event).rootTarget does not work on iOS here
-            const imgEl = event.model._nodes[0].$.img.$.sizedImgDiv;
-            const clone = Polymer.dom(imgEl).cloneNode();
-            this.fire('photo-selector-photo-selected', {clone, orientation, photo});
+            this.selectedThumbnail = Polymer.dom(event).rootTarget;
+            // guarantee the image will animate above other images and toolbar
+            this.$.toolbar.style.zIndex         = '-1'; // ios fix
+            this.selectedThumbnail.style.zIndex = '1';
+            // correct rotated thumbnail to be fullscreen
+            if (orientation === 6 || orientation === 8) {
+              Polymer.dom(this.selectedThumbnail.$.img).classList.add('fullscreenRotation');
+            }
+
+            const controlsEntry = () => {
+              this.fire('photo-selector-photo-selected', {photo});
+            };
+
+            this.ecClassesAnimation(
+              this.selectedThumbnail, 
+              'fullscreenPhoto', 
+              'expanderTransitions',
+              undefined,
+              controlsEntry
+            );
           };
 
           this.onTap = selected;
@@ -301,7 +357,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _closeButtonTapped() {
           // onTap property found in redaap-behaviors/on-tap-behavior
-          this.onTap = this._playExitAnimation.bind(this);
+          this.onTap = this.playExitAnimation.bind(this);
         }
 
       });

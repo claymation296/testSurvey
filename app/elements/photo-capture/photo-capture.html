@@ -65,16 +65,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         overflow: hidden;
       }
 
-      #hiddenImgTag {
-        width: 0px;
-        height: 0px;
-        position: absolute;
-        opacity: 0;
-        overflow: hidden;
-        z-index: -1;
-        pointer-events: none;
-      }
-
       #captureButton {
         background-color: inherit;
       }
@@ -182,7 +172,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </style>  
 
     <!-- placeholder load timing only -->
-    <img id="hiddenImgTag" 
+    <img hidden
          src="[[placeholderSrc]]"
          on-load="_placeholderSrcLoaded"> 
     <!-- placeholder error handling only -->
