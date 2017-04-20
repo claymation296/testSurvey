@@ -17,10 +17,10 @@
 	const Exif = Self.Exif;
 	// github oliver-moran/jimp
 	const Jimp = Self.Jimp;
-	// height is auto
-	const IMAGE_WIDTH   = 512;
+	
+	const IMAGE_SIZE    = 512;
 	// output quality of image processing, int 0-100
-	const IMAGE_QUALITY = 40;
+	const IMAGE_QUALITY = 60;
 	// number of photos to simultaneously upload to db
 	const PHOTO_UPLOAD_BATCH_SIZE = 3;
 	// must have seperate localforage instance for blobs because
@@ -167,8 +167,10 @@
   };
 
 
-	const processFile = file => {
+	const processFile = (file, orientation) => {
 		const mime 	 = file.type;
+    const width  = (orientation === 6 || orientation === 8) ? Jimp.AUTO : IMAGE_SIZE;
+    const height = (orientation === 6 || orientation === 8) ? IMAGE_SIZE : Jimp.AUTO;
  		const reader = new FileReader(); // Jimp does not accept raw files
     reader.readAsArrayBuffer(file);
 
@@ -182,7 +184,7 @@
     			then(image => {
 
     				image.
-    					resize(IMAGE_WIDTH, Jimp.AUTO).
+    					resize(width, height).
     					quality(IMAGE_QUALITY).
     					getBuffer(mime, (err, processedBuffer) => {
     					if (err) {
@@ -432,11 +434,11 @@
 
 
   const processPhoto = job => {
-		const {extension,	file,	fileName, key} = waiting.get(job);
+		const {extension,	file,	fileName, key, orientation} = waiting.get(job);
   	const blobName = file.name;
   	waiting.remove(job);
 
-		processFile(file).
+		processFile(file, orientation).
 			then(blob => {
 				// newly processed data waiting to be saved to cloud
   			const offlineJob = {blobName, extension, fileName, key};

@@ -79,9 +79,19 @@ paper-toolbar {
         		observer: '_panelChanged'
         	},
 
-        	backgroundImagePlaceholder: Object,
+        	backgroundImage1: Object,
 
-					backgroundImage: Object,
+					backgroundImage2: Object,
+
+          currentBackground: {
+            type: Number,
+            value: 1
+          },
+
+          nextBackground: {
+            type: Number,
+            computed: '_computenextBackground(currentBackground)'
+          },
 
 					dummyUrl: String
         },
@@ -101,41 +111,43 @@ paper-toolbar {
           // to correct the image orientation
           // one for placeholder ObjectURL and the other is for the saved url from db
           const headerBg = Polymer.dom(panel).node.$.headerBg;
-          this.backgroundImagePlaceholder = document.createElement('div');
-          this.backgroundImage            = document.createElement('div');
+          this.backgroundImage1 = document.createElement('div');
+          this.backgroundImage2 = document.createElement('div');
           // initial styles for both divs with no orientation correction
-          this._setupBackgroundImgStyles(this.backgroundImagePlaceholder);
-          this._setupPlaceholderBackground(this.backgroundImagePlaceholder);
-          this._setupBackgroundImgStyles(this.backgroundImage);
+          this._setupBackgroundImgStyles(1);
+          this._setupBackgroundImgStyles(2);
           // add them to header background
-          Polymer.dom(headerBg).appendChild(this.backgroundImagePlaceholder);
-          Polymer.dom(headerBg).appendChild(this.backgroundImage);
+          Polymer.dom(headerBg).appendChild(this.backgroundImage1);
+          Polymer.dom(headerBg).appendChild(this.backgroundImage2);
         },
+
+
+        _computenextBackground: num => num === 1 ? 2 : 1,
 
 
         reset() {
-        	this._resetBackgroundElement('placeholder');
-          this._resetBackgroundElement('src');
+        	this._resetBackgroundElement(1);
+          this._resetBackgroundElement(2);
         },
 
         // initial styles for both background divs that are appended to header panel background
-        _setupBackgroundImgStyles(element) {
-          element.style.height             = '100%';
-          element.style.position           = 'relative';
-          element.style.backgroundSize     = 'cover';
-          element.style.backgroundPosition = 'center center';
-          element.style.opacity            = '0';
+        _setupBackgroundImgStyles(type) {
+          const el = this._getBackgroundElement(type);
+
+          el.style.width              = '100%';
+          el.style.height             = '100%';
+          el.style.position           = 'absolute';
+          el.style.top                = '0';
+          el.style.backgroundSize     = 'cover';
+          el.style.backgroundPosition = 'center center';
+          el.style.opacity            = '0';
+          el.style.transform          = 'none';
         },
 
-        // initial styles for placeholder div that is appended to header panel background
-        _setupPlaceholderBackground(element) {
-          element.style.width    = '100%';
-          element.style.position = 'absolute';
-          element.style.top      = '50%';
-        },
 
+        _correctPlaceholderOrientation(type, num = 0) {
+          const el = this._getBackgroundElement(type);
 
-        _correctPlaceholderOrientation(num = 0) {
           const config = {
             0: {height: '100%',  rotate: '0'},
             1: {height: '100%',  rotate: '0'},
@@ -145,28 +157,33 @@ paper-toolbar {
           };
 
           const {height, rotate} = config[num];
-          const el               = this.backgroundImagePlaceholder;
-          el.style.height        = height;
-          el.style.transform     = `translate(0px, -50%) rotate(${rotate}deg)`;
+
+          el.style.height    = height;
+          el.style.top       = '50%';
+          el.style.transform = `translate(0px, -50%) rotate(${rotate}deg)`;
         },
 
 
         _getBackgroundElement(type) {
-          return type === 'src' ? this.backgroundImage : this.backgroundImagePlaceholder;
+          return type === 1 ? this.backgroundImage1 : this.backgroundImage2;
         },
 
 
-        _showImage(element) {
-          if (this.backgroundType === 'placeholder') {
-            window.Redaap.webWorker.revokeUrl(this.dummyUrl);
-          }
+        _showImage(el) {
+          window.Redaap.webWorker.revokeUrl(this.dummyUrl);
+          el.style.opacity = '1';
 
-          element.style.opacity = '1';
+          this.async(() => {
+            const resetNext = () => {
+              this._resetBackgroundElement(this.nextBackground);
+            };
+            this.schedule(resetNext);
+          }, 300);
         },
 
         // hidden img tag at top of local dom on-load event
         _dummyUrlLoaded() {
-          const el = this._getBackgroundElement(this.backgroundType);
+          const el = this._getBackgroundElement(this.currentBackground);
 
           el.style.transition      = 'opacity 0.3s ease-out';
           el.style.backgroundImage = `url(${this.dummyUrl})`;
@@ -177,20 +194,21 @@ paper-toolbar {
         },
  
 
-        _setDummyUrl(type, url) {
+        _setTypeAndDummyUrl(type, url) {
           // use hidden img tag for proper load timing
           // force update
-          this.dummyUrl  = undefined;
-          this.dummyUrl  = url;
-          this.backgroundType = type;
+          this.dummyUrl       = undefined;
+          this.dummyUrl       = url;
+          this.currentBackground = type;
         },
 
 
         _resetBackgroundElement(type) {
           const el = this._getBackgroundElement(type);
 
-          el.style.transition = 'none';
-          el.style.opacity    = '0';
+          el.style.transition      = 'none';
+          el.style.backgroundImage = '#';
+          el.style.opacity         = '0';
         },
         // photo-capture placeholder event
         // controls header background img placeholder
@@ -199,12 +217,20 @@ paper-toolbar {
         setPlaceholder(event) {
           const {orientation, placeholder} = event.detail;
 
+
+          console.log('new placeholder: ', placeholder);
+
+
+
           if (placeholder && placeholder !== '#') {
-            this._resetBackgroundElement('src');
-            this._correctPlaceholderOrientation(orientation);
-            this._setDummyUrl('placeholder', placeholder);
+            if (orientation) {
+              this._correctPlaceholderOrientation(this.nextBackground, orientation);
+            } else {
+              this._setupBackgroundImgStyles(this.nextBackground);
+            }
+            this._setTypeAndDummyUrl(this.nextBackground, placeholder);
           } else {
-            this._resetBackgroundElement('placeholder');
+            this._resetBackgroundElement(this.currentBackground);
           }
         },
         // photo-capture external-src event
@@ -214,9 +240,10 @@ paper-toolbar {
           const url = event.detail.savedUrl;
                     
           if (url) {
-            this._setDummyUrl('src', url);
+            this._setupBackgroundImgStyles(this.nextBackground);
+            this._setTypeAndDummyUrl(this.nextBackground, url);
           } else {
-            this._resetBackgroundElement('src');
+            this._resetBackgroundElement(this.currentBackground);
           }
         }
 

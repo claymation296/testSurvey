@@ -722,10 +722,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (this.keys) {
             // saved/processed photos no longer need orientation correction
             this.set(`keys.${key}.orientation`, 0); 
+            this.set(`keys.${key}.placeholder`, '#'); 
             this.set(`keys.${key}.savedUrl`,    url);
           }
 
           window.Redaap.webWorker.revokeUrl(this.placeholderSrc);
+          this.set('placeholder', '#');
           this.set('savedUrl', url);
           this.schedule(this._load.bind(this));
         },

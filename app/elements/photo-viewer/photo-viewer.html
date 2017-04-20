@@ -182,6 +182,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // add new photo to photos array
         _newPhotoPlaceholder(event) {
           if (!this.capture) { return; }
+          // only need to listen to original photo-capture once
+          this.unlisten(this.capture, 'photo-capture-placeholder-loaded', '_newPhotoPlaceholder');
 
           const {placeholder, key, keys, orientation} = event.detail;
           // two events are fired each time a new photo is taken
@@ -213,8 +215,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // add new saved photo data to the element that opened photo-viewer
         _newPhotoSavedUrl(event) {
           if (!this.capture) { return; }
+          // only need to listen to original photo-capture once
+          this.unlisten(this.capture, 'photo-capture-saved-url-loaded',   '_newPhotoSavedUrl');
 
           const {savedUrl, key, keys} = event.detail;
+
+          if (!savedUrl) { return; }
           // must match elements since this event is from the asynchronous
           // photo save to cloud db, so user may have closed this page
           // before this event fires
@@ -236,12 +242,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _openSelectorCallback() {
           this.$.photoSelector.playEntryAnimation();
         },
-        // called by any photo-input instance when user taps on a thumbnail that has already
+        // called by any photo-capture instance when user taps on a thumbnail that has already
         // been loaded into the app.  Show a fullscreen view of the photo along with the 
         // option to delete the pic
         openPhotoViewer(captureElement) {
           const {filename, keys} = captureElement;
           this.capture = captureElement;
+          // update the first photo which was taken with the opening photo-capture
+          this.listen(this.capture, 'photo-capture-placeholder-loaded', '_newPhotoPlaceholder');
+          this.listen(this.capture, 'photo-capture-saved-url-loaded',   '_newPhotoSavedUrl');
           this.label   = filename;
           // keys === {'timestamp_random key': {key, orientation, savedUrl}}
           // Object.keys will create an array with the keys ordered in ascending
@@ -276,6 +285,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _closeButtonTapped() {
           // to be run after close
           const cleanup = () => {
+            this.capture = undefined;
             this.label = undefined;
             this.$.photoSelector.cleanUp();
           };
