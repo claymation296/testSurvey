@@ -81,7 +81,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       	background-color: var(--bom-primary-color);
       }
 
-      p {
+      .desc {
         position: absolute;
         top: 148px;
         padding: 16px;
@@ -106,9 +106,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 	    								on-tap="_quoteButtonTapped">
 	    								quote
 	    	</paper-button>
-        <p class="noSelect">
+        <div class="desc noSelect">
           Quote Mode is a sales tool, used to get an immediate rough price estimate for an LED lighting upgrade. It is easier to use and much faster to complete than Bill of Materials Mode.  However, a Bill of Materails survey must be completed in order to purchase any product.
-        </p>
+        </div>
 	    </div>
 
 	    <div id="bom" class="half">
@@ -119,9 +119,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 	    								on-tap="_bomButtonTapped">
 	    								bom
 	    	</paper-button>
-        <p class="noSelect">
+        <div class="desc noSelect">
           Use Bill of Materials Mode to record an accurate and thorough lighting survey that will be used to order LED upgrade products.  The information gathered in this mode is used by our teams to build a custom solution, then later return precise pricing and install schedules.  
-        </p>
+        </div>
 
 	    </div>
 	  </div>

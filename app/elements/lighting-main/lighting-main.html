@@ -677,6 +677,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             survey:  this.surveyDataSnapShot
           };
 
+          this._newFixtureAddedToQuote();
+
           window.Redaap.webWorker.
             save(data).
             then(() => {
@@ -712,6 +714,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
 
           this.$.bomSend.showBomSpinner(true);
+          // clear up dreading
+          this._newFixtureAddedToBom();
 
           window.Redaap.webWorker.
             sendBom(this.bom, this.client).

@@ -217,11 +217,6 @@ paper-toolbar {
         setPlaceholder(event) {
           const {orientation, placeholder} = event.detail;
 
-
-          console.log('new placeholder: ', placeholder);
-
-
-
           if (placeholder && placeholder !== '#') {
             if (orientation) {
               this._correctPlaceholderOrientation(this.nextBackground, orientation);
