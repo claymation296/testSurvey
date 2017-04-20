@@ -214,7 +214,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // called by photo-viewer _newPhotoPlaceholder()
-        updatePlaceholder(index, src) {
+        updateExisting(index, src) {
           const addNewPlaceholder = () => {
             // return if photo-viewer is already closed by the time this function is ran
             if (!this.photos || !this.photos[index]) { return; }

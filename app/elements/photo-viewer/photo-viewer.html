@@ -195,7 +195,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (this.capture.key === key) { 
             const index = this.photoDataArray.findIndex(obj => obj.key === key);
             this.photoDataArray.splice(index, 1, newKeyObj);
-            this.$.photoSelector.updatePlaceholder(index, placeholder);
+            this.$.photoSelector.updateExisting(index, placeholder);
           } else {
             // place new photo to the front of the photos list
             this.photoDataArray.unshift(newKeyObj);
@@ -221,19 +221,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const {savedUrl, key, keys} = event.detail;
 
           if (!savedUrl) { return; }
-          // must match elements since this event is from the asynchronous
-          // photo save to cloud db, so user may have closed this page
-          // before this event fires
-          if (key !== this.capture.key) { return; }
           // update the photo keys data in the photoDataArray
-          const index     = this.photoDataArray.findIndex(obj => obj.key === key);
           const newKeyObj = keys[key];
+          const index     = this.photoDataArray.findIndex(obj => obj.key === key);
           // saved/processed photos no longer need orientation correction
           newKeyObj.orientation = 0;
           // remove and replace the old keys data
           // no need to update photo-selector model data
           // since the data object is only being replaced, not added or deleted
           this.photoDataArray.splice(index, 1, newKeyObj);
+          this.$.photoSelector.updateExisting(index, savedUrl);
           this.capture.updateSavedUrl(savedUrl);
           this.capture.updateKeys(key, keys);
         },

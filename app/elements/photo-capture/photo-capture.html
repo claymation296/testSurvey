@@ -349,6 +349,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // called by photo-viewer if user updates the photo pertaining to this
         // capture instance
         updateThumbnail({key, orientation, placeholder, url}) {
+          window.Redaap.webWorker.revokeUrl(this.placeholderSrc);
           // the order of operations is very important here
           this.orientation = undefined;
           this.set('orientation', orientation);
@@ -372,6 +373,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // called by photo-viewer once a new photo has saved from db
         updateSavedUrl(url) {
+          window.Redaap.webWorker.revokeUrl(this.placeholderSrc);
+          this.set('placeholder', '#');
           this.set('savedUrl', url);
           this.schedule(this._load.bind(this));
         }, 
