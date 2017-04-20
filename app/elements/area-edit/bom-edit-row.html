@@ -10,7 +10,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../slide-delete/slide-delete.html">
 <link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
-<link rel="import" href="../redaap-behaviors/expand-collapse-classes-behavior.html">
 
 
 
@@ -85,10 +84,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       Polymer({
         is: 'bom-edit-row',
 
-        behaviors: [
-          window.Redaap.Behaviors.OnTapBehavior,
-          window.Redaap.Behaviors.ExpandCollapseClassesBehavior 
-        ],
+        behaviors: [ window.Redaap.Behaviors.OnTapBehavior ],
 
         properties: {
 

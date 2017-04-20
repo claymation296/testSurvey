@@ -20,45 +20,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       :host {
         @apply(--fullscreen-elements);
-        background-color: var(--accent-color);
+        background-color: transparent;
       }
 
       paper-toolbar {
         background-color: rgba(0, 0, 0, 0.4);
         color: var(--text-primary-color);
-      }
-
-      .img {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 100vw;
-        height: 100vh;
-        opacity: 0;
-      }
-
-      .orientation0 {
-        transform: translate(-50%, -50%);
-      }
-
-      .orientation3 {
-        transform: translate(-50%, -50%) rotate(180deg);
-      }
-
-      .orientation6 {
-        width: 100vh;
-        height: 100vw;
-        transform: translate(-50%, -50%) rotate(90deg);
-      }
-
-      .orientation8 {
-        width: 100vh;
-        height: 100vw;
-        transform: translate(-50%, -50%) rotate(-90deg);
-      }
-
-      .showImg {
-        opacity: 1;
       }
 
       paper-fab {
@@ -138,11 +105,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   ],
                   timing: {duration: 200, delay: 250, easing: 'ease-out'}
                 }],
-                'fullscreenImageEntry': {
-                  name: 'fade-in-animation',
-                  // node set imperatively
-                  timing: {duration: 200, easing: 'ease-in'}
-                },
                 'fullscreenFabEntry1': [{
                   name: 'fade-in-animation',
                   node: this.$.trash,
@@ -161,32 +123,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   transformTo: 'scale(1, 1)',
                   timing: {duration: 200, easing: 'ease-out'}
                 },
-                'fullscreenDelete': [{
-                  name: 'slide-down-animation',
-                  node: this,
-                  timing: {duration: 300, easing: 'ease-in'}
-                }, {
-                  name: 'fade-out-animation',
-                  node: this,
-                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
-                }],
-                'fullscreenDeleteLast': [{
-                  name: 'slide-down-animation',
-                  node: this,
-                  timing: {duration: 300, easing: 'ease-in'}
-                }, {
-                  name: 'fade-out-animation',
-                  node: this,
-                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
-                }],
                 'fullscreenBack': [{
-                  name: 'slide-left-animation',
-                  node: this,
-                  timing: {duration: 300, easing: 'ease-in'}
+                  name: 'slide-up-animation',
+                  node: this.$.toolbar,
+                  timing: {duration: 200, easing: 'ease-in'}
                 }, {
                   name: 'fade-out-animation',
-                  node: this,
-                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
+                  node: this.$.toolbar,
+                  timing: {duration: 100, delay: 100, easing: 'ease-in'}
+                }, {
+                  name: 'transform-animation',
+                  node: this.$.trash,
+                  transformFrom: 'scale(1, 1)',
+                  transformTo: 'scale(0, 0)',
+                  timing: {duration: 200, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  node: this.$.trash,
+                  timing: {duration: 100, delay: 100, easing: 'ease-in'}
                 }],
                 'fullscreenClose': [{
                   name: 'slide-up-animation',
@@ -202,8 +156,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
 
           label: String,
-          // clone of selector-thumbnail iron-image sizedImgDiv for instant rendering
-          cachedClone: Object,
           // used for correct photo delete
           photo: Object,
         },
@@ -212,41 +164,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         listeners: {
           'neon-animation-finish': '_animationFinished'
         },
-
-
-        _correctOrientation(orient) {
-          switch (orient) {
-            case 3:
-              return 'orientation3';
-            case 6:
-              return 'orientation6';
-            case 8:
-              return 'orientation8';
-            default:
-              return 'orientation0';
-          }
-        },
         
 
         _cleanup() {
-          Polymer.dom(this.$.panel).removeChild(this.cachedClone);
-          this.cachedClone = undefined;
           this.$.trash.style.display = 'none';
           this.close();
         },
 
-
-        _setupClone({clone, orientation}) {
-          const correctionClass = this._correctOrientation(orientation);
-          Polymer.dom(clone).classList.add('img', correctionClass);
-          this.cachedClone = clone;
-        },
-
-
         // called by photo-viewer when user selects a photo in photo-selector
         playEntryAnimation(detail) {
           this.photo = detail.photo;
-          this._setupClone(detail);
           this.open();
           this.cancelAnimation();
           this.playAnimation('fullscreenEntry', 'fullscreenEntry');
@@ -262,17 +189,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _animationFinished(_, animationType) {
           switch(animationType) {
             case 'fullscreenEntry':
-              const fadeImage = () => {
-                this.animationConfig.fullscreenImageEntry.node = this.cachedClone;
-                Polymer.dom(this.cachedClone).classList.add('showImg');
-                this.cancelAnimation();
-                this.playAnimation('fullscreenImageEntry', 'fullscreenImageEntry');
-              };
-
-              Polymer.dom(this.$.panel).insertBefore(this.cachedClone, this.$.trash);
-              this.schedule(fadeImage);
-              break;
-            case 'fullscreenImageEntry':
               this.$.trash.style.display = 'flex';
               this.cancelAnimation();
               this.playAnimation('fullscreenFabEntry1', 'fullscreenFabEntry1');
@@ -289,37 +205,34 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             case 'fullscreenBack':
             case 'fullscreenDelete':
               this._cleanup();
+              this.fire('fullscreen-photo-back-animation-done');
               break;
             default:
               return;
           }
         },
 
-
+        // called by photo-viewer
         playDeleteAnimation() {
-          this.fire('fullscreen-photo-back');
-          this._playExitAnimation('fullscreenDelete');
+          this._playExitAnimation('fullscreenBack');
         },
 
-
+        // called by photo-viewer
         playDeleteLastPhotoAnimation() {
-          this.fire('fullscreen-photo-close');
-          this._playExitAnimation('fullscreenDeleteLast');
+          this._playExitAnimation('fullscreenClose');
         },
 
 
         _deletePhotoButtonTapped() {
-          // onTap property found in redaap-behaviors/on-tap-behavior
           this.onTap = this.fire.bind(this, 'fullscreen-photo-delete', {photo: this.photo});
         },
 
 
         _backButtonTapped() {
           const back = () => {
-            this.fire('fullscreen-photo-back');
             this._playExitAnimation('fullscreenBack');
           };
-          // onTap property found in redaap-behaviors/on-tap-behavior
+
           this.onTap = back;
         },
         
@@ -329,7 +242,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.fire('fullscreen-photo-close');
             this._playExitAnimation('fullscreenClose');
           };
-          // onTap property found in redaap-behaviors/on-tap-behavior
+
           this.onTap = close;
         }
 

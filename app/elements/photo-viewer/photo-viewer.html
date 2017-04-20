@@ -30,20 +30,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     </style>
 
-    <!-- <neon-animated-pages id="pages" 
-                         selected="[[selected]]"
-                         attr-for-selected="id"> -->
-
-      <photo-selector id="photoSelector" 
-                      label="[[label]]" 
-                      photo-data-array="[[photoDataArray]]">
-      </photo-selector>
-
-      <!-- <photo-hero id="photoHero" photo="[[photo]]"></photo-hero> -->
-
-    <!-- </neon-animated-pages> -->
-
-
+    <photo-selector id="photoSelector" 
+                    label="[[label]]" 
+                    photo-data-array="[[photoDataArray]]">
+    </photo-selector>
 
     <fullscreen-photo id="fullscreenPhoto" 
                       label="[[label]]">
@@ -63,11 +53,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         ],
 
         properties: {
-
-          selected: {
-            type: String,
-            value: 'photoSelector'
-          },
           // reference to photo-capture element that opened photo-viewer
           // used to update the element's data including:
           // key, keys, savedUrl, orientation
@@ -81,7 +66,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         listeners: {
-          // 'neon-animation-finish':                 '_photoViewerAnimationFinished',
           // photo-selector encountered bad photo data while loading
           // so remove it from the photoDataArray to maintain state
           'photo-selector-dead-photo-data':        '_removeDeadPhotoData',
@@ -95,17 +79,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           'photo-selector-close':                  '_closeButtonTapped',
           // fullscreen-photo close button
           'fullscreen-photo-close':                '_fullscreenClose',
+          // fullscreen-photo after back animation
+          'fullscreen-photo-back-animation-done':  '_fullscreenBack',
           // fullscreen-photo after close animation
           'fullscreen-photo-close-animation-done': '_closeButtonTapped',
-          // fullscreen-photo close button
-          'fullscreen-photo-back':                 '_fullscreenPhotoBackButtonTapped',
           // fullscreen-photo delete fab
           'fullscreen-photo-delete':               '_deletePhoto'
         },
-
-
-        // _photoViewerAnimationFinished(_, animationType) {
-        // },
 
 
         _removeObjFromPhotoDataArray(obj) {
@@ -140,9 +120,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             this.schedule.bind(this, this.$.fullscreenPhoto.playDeleteAnimation());
           } else {
+
+            const play = () => {
+              this.$.photoSelector.playExitAnimation();
+              this.$.fullscreenPhoto.playDeleteLastPhotoAnimation();
+            };
             // the last photo was deleted so reset photo-capture
             this.capture.resetCapture();
-            this.schedule.bind(this, this.$.fullscreenPhoto.playDeleteLastPhotoAnimation());
+            this.schedule(play);
           }
         },
 
@@ -248,34 +233,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // update the first photo which was taken with the opening photo-capture
           this.listen(this.capture, 'photo-capture-placeholder-loaded', '_newPhotoPlaceholder');
           this.listen(this.capture, 'photo-capture-saved-url-loaded',   '_newPhotoSavedUrl');
-          this.label   = filename;
+          this.label = filename;
           // keys === {'timestamp_random key': {key, orientation, savedUrl}}
           // Object.keys will create an array with the keys ordered in ascending
           // order which puts the elements in order of newest last since
           // each key is a timestamp
           // cache the array in order of newest to oldest taken photos
           this.photoDataArray = Object.keys(keys).map(key => keys[key]).reverse();
-
-          this.selected = 'photoSelector';
           this.open(this._openSelectorCallback.bind(this));
         }, 
 
         // photo-selector user selects a photo from the list
         _photoSelected(event) {
-          // // start photo-hero entry
-          // this.selected = 'photoHero';
           this.$.fullscreenPhoto.playEntryAnimation(event.detail);
         }, 
 
 
-        _fullscreenPhotoBackButtonTapped() {
-          // reset for hero animation
-          // this.selected = 'photoSelector';
+        _fullscreenBack() {
+          this.$.photoSelector.closeFullscreenImg();
         },
 
 
         _fullscreenClose() {
-          this.$.photoSelector.close();
+          this.$.photoSelector.playExitAnimation();
         },
         
 
