@@ -197,15 +197,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this.cancelAnimation();
               this.playAnimation('fullscreenFabEntry2', 'fullscreenFabEntry2');
               break;
-            case 'fullscreenClose':
-            case 'fullscreenDeleteLast':
-              this._cleanup();
-              this.fire('fullscreen-photo-close-animation-done');
-              break;
             case 'fullscreenBack':
             case 'fullscreenDelete':
               this._cleanup();
               this.fire('fullscreen-photo-back-animation-done');
+              break;
+            case 'fullscreenClose':
+            case 'fullscreenDeleteLast':
+              this._cleanup();
+              this.fire('fullscreen-photo-close-animation-done');
               break;
             default:
               return;
