@@ -142,6 +142,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   ],
                   timing: {duration: 200, delay: 250, easing: 'ease-out'}
                 }],
+
+
+
+                'deletePhoto': [{
+                  name: 'slide-up-animation',
+                  // node set imperatively in updateDelete()
+                  timing: {duration: 300, easing: 'ease-in'}
+                }, {
+                  name: 'fade-out-animation',
+                  // node set imperatively in updateDelete()
+                  timing: {duration: 200, delay: 100, easing: 'ease-in'}
+                }],
+
+
+
+
                 'selectorExit': [{
                   name: 'slide-up-animation',
                   node: this,
@@ -173,6 +189,106 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           'photo-capture-placeholder-loaded':  '_photoCapturePlaceholder',
           // photo-capture temp url when user adds a photo
           'photo-capture-saved-url-loaded':    '_photoCaptureExternalSrc'
+        },
+
+
+        _deletePhotoCookie(index) {
+          return {
+            type: 'deletePhoto',
+            del() {
+              this.splice('photos', index, 1);
+              this._resetThumbnailMorphAnimation();
+            }
+          };
+        },
+
+        // called by photo-viewer on photo delete        
+        updateDelete(key) {
+
+          const playDelAnimation = () => {
+            const index  = this.photos.findIndex(photo => photo.key === key);
+            const cookie = this._deletePhotoCookie(index);
+            this.animationConfig.deletePhoto[0].node = this.selectedThumbnail;
+            this.animationConfig.deletePhoto[1].node = this.selectedThumbnail;
+            this.cancelAnimation();
+            this.playAnimation('deletePhoto', cookie);
+          };
+          
+          this.schedule(playDelAnimation);
+        },
+
+        // called by photo-viewer _newPhotoPlaceholder()
+        updateAdd(obj, src) {
+          const addNewPhoto = () => {
+            const photoObj = Object.assign({src}, obj);
+            this.unshift('photos', photoObj);
+          };
+
+          this.schedule(addNewPhoto);
+        },
+
+        // called by photo-viewer _newPhotoPlaceholder()
+        updateExisting(index, src) {
+          // return if photo-viewer is already closed by the time this function is ran
+          if (!this.photos || !this.photos[index]) { return; }
+
+          const addNewPlaceholder = () => {
+            // must be a new object in order to re-render
+            const photoObj = Object.assign({}, this.photos[index], {src, orientation: 0});
+            this.splice('photos', index, 1, photoObj);
+          };
+          
+          this.schedule(addNewPlaceholder);
+        },
+
+        // called by photo-viewer on close
+        cleanUp() {
+          this._resetThumbnailMorphAnimation();
+          this.photoDataArray = undefined;
+          this.photos         = undefined;
+        },
+
+        // called by photo-viewer
+        playEntryAnimation() {
+          this.open();
+          this.cancelAnimation();
+          this.playAnimation('selectorEntry', 'selectorEntry');
+        },
+
+        // called by photo-viewer
+        playExitAnimation() {
+          this.cancelAnimation();
+          this.playAnimation('selectorExit', 'selectorExit');
+        },
+
+        // called by photo-viewer
+        closeFullscreenImg() {
+          if (!this.selectedThumbnail) { return; }
+
+          Polymer.dom(this.selectedThumbnail.$.img).classList.remove('fullscreenRotation');
+
+          const cleanUp = () => {
+            this.$.toolbar.style.zIndex         = '0';
+            this.selectedThumbnail.style.zIndex = '0';
+            this.selectedThumbnail = undefined;
+          };
+
+          this.ecClassesAnimation(
+            this.selectedThumbnail, 
+            'fullscreenPhoto', 
+            'expanderTransitions',
+            'reverse',
+            cleanUp
+          );
+        },
+
+
+        _resetThumbnailMorphAnimation() {
+          if (this.selectedThumbnail) {
+            this.selectedThumbnail.style.zIndex = '0';
+            this.selectedThumbnail = undefined;
+          }
+          this.$.toolbar.style.zIndex = '0';
         },
 
 
@@ -211,47 +327,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               });
             }).
             catch(error => console.log('photo-viewer error: ', error));
-        },
-
-        // called by photo-viewer on photo delete        
-        updateDelete(key) {
-          const index = this.photos.findIndex(photo => photo.key === key);
-          this.schedule.bind(this, this.splice('photos', index, 1));
-        },
-
-        // called by photo-viewer _newPhotoPlaceholder()
-        updateAdd(obj, src) {
-          const addNewPhoto = () => {
-            const photoObj = Object.assign({src}, obj);
-            this.unshift('photos', photoObj);
-          };
-
-          this.schedule(addNewPhoto);
-        },
-
-        // called by photo-viewer _newPhotoPlaceholder()
-        updateExisting(index, src) {
-          const addNewPlaceholder = () => {
-            // return if photo-viewer is already closed by the time this function is ran
-            if (!this.photos || !this.photos[index]) { return; }
-            // must be a new object in order to re-render
-            const photoObj = Object.assign({}, this.photos[index], {src, orientation: 0});
-            this.splice('photos', index, 1, photoObj);
-          };
-          
-          this.schedule(addNewPlaceholder);
-        },
-
-        // called by photo-viewer on close
-        cleanUp() {
-          if (this.selectedThumbnail) {
-            this.selectedThumbnail.style.zIndex = '0';
-            this.selectedThumbnail = undefined;
-          }
-          this.$.toolbar.style.zIndex = '0';
-          this.photoDataArray = undefined;
-          this.photos         = undefined;
-        },
+        },        
 
         // from local photo-capture
         _photoCapturePlaceholder(event) {
@@ -265,27 +341,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.fire('photo-selector-new-photo-external-src', event.detail);
         },
 
-        // called by photo-viewer
-        playEntryAnimation() {
-          this.open();
-        	this.cancelAnimation();
-        	this.playAnimation('selectorEntry', 'selectorEntry');
-        },
 
-        // called by photo-viewer
-        playExitAnimation() {
-          this.cancelAnimation();
-          this.playAnimation('selectorExit', 'selectorExit');
-        },
-
-
-        _animationFinished(_, animationType) {
-          if (animationType === 'selectorEntry') {
-            this._extractPhotoData(this.photoDataArray);
-          } else if (animationType === 'selectorExit') {
-            this.cleanUp();
-            this.close();
-            this.fire('photo-selector-close');
+        _animationFinished(_, cookie) {
+          if (typeof cookie === 'string') {
+            if (cookie === 'selectorEntry') {
+              this._extractPhotoData(this.photoDataArray);
+            } else if (cookie === 'selectorExit') {
+              this.cleanUp();
+              this.close();
+              this.fire('photo-selector-close');
+            }
+          } else if (typeof cookie === 'object') {
+            if (cookie.type === 'deletePhoto') {
+              const boundDel = cookie.del.bind(this);
+              boundDel();
+            }
           }
         },
 
@@ -296,27 +366,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           } else {
             this.$.content.classList.remove('fadeInContent');
           }
-        },
-
-
-        closeFullscreenImg() {
-          if (!this.selectedThumbnail) { return; }
-
-          Polymer.dom(this.selectedThumbnail.$.img).classList.remove('fullscreenRotation');
-
-          const cleanUp = () => {
-            this.$.toolbar.style.zIndex         = '0';
-            this.selectedThumbnail.style.zIndex = '0';
-            this.selectedThumbnail = undefined;
-          };
-
-          this.ecClassesAnimation(
-            this.selectedThumbnail, 
-            'fullscreenPhoto', 
-            'expanderTransitions',
-            'reverse',
-            cleanUp
-          );
         },
 
 

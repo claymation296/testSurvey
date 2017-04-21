@@ -279,8 +279,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // called by photo-viewer
-        removeUserDeletedPhoto(keyToDelete) {
-          const job = {func: 'deletePhoto', keyToDelete};
+        removeUserDeletedPhoto(key) {
+          const job = {func: 'deletePhoto', key};
           this.worker.postMessage(job);
         },
 
@@ -302,7 +302,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
           // const fakeUpload = () => {
-          //   return new Promise(resolve => this.async(() => resolve(), 8000)).
+          //   return new Promise(resolve => this.async(() => resolve(), 2000)).
           //     then(() => {
 
           //       const saved = {

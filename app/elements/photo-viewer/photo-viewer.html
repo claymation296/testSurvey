@@ -21,7 +21,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <dom-module id="photo-viewer">
   <template>
-    <style include="shared-styles"></style>
     <style>
 
       :host {
@@ -61,7 +60,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           label: String,
           // array of objects used to populate photo-selector 
           // and update capture after a delete
-          photoDataArray: Array
+          photoDataArray: Array,
+
+          deleteWhenDone: Object
         },
 
 
@@ -140,8 +141,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // removed obj returned from this._removeObjFromPhotoDataArray
           const deletedObj  = this._removeObjFromPhotoDataArray(photoToDelete);
           const keyToDelete = deletedObj.key;
-          // delete from photo-selector data model
-          this.$.photoSelector.updateDelete(keyToDelete);
+          // to be ran after fullscreen-photo's animations
+          this.deleteWhenDone = () => {
+            // delete from photo-selector data model
+            this.$.photoSelector.updateDelete(keyToDelete);
+          };
           // remove data from localforage
           window.Redaap.webWorker.removeUserDeletedPhoto(keyToDelete);
           // remove the key and value from list of saved keys
@@ -149,12 +153,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // force update to update photo-capture badge state
           this.capture.keys = undefined;
           this.capture.set('keys', currentKeys);
-          // Object keys are arranged in ascending order
-          const remainingKeys = Object.keys(currentKeys);
           // if photo to delete is also the current thumbnail
           // update the thumbnail data with the next lowest key number data
           // or reset the photo-capture if its the last photo in the list
           if (this.capture.key === keyToDelete) {
+            // Object keys are arranged in ascending order
+            const remainingKeys = Object.keys(currentKeys);
             this._updateCaptureData(remainingKeys, currentKeys);
           } else {
             // not the current thumbnail photo so assume the deleted photo is not the
@@ -176,16 +180,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (!placeholder || placeholder === '#') { return; }
 
           const newKeyObj = keys[key];
-          // swap the uncompressed temp url for the new processed temp url
-          if (this.capture.key === key) { 
-            const index = this.photoDataArray.findIndex(obj => obj.key === key);
-            this.photoDataArray.splice(index, 1, newKeyObj);
-            this.$.photoSelector.updateExisting(index, placeholder);
-          } else {
+          const index = this.photoDataArray.findIndex(photo => photo.key === key);
+          
+          if (index === -1) {
             // place new photo to the front of the photos list
             this.photoDataArray.unshift(newKeyObj);
             // update the photo-selector model data
             this.$.photoSelector.updateAdd(newKeyObj, placeholder);
+          } else {
+            // swap processed data in place with splice
+            this.photoDataArray.splice(index, 1, newKeyObj);
+            this.$.photoSelector.updateExisting(index, placeholder);
           }
           // set new data onto the element to reflect the new photo taken in photo-selector
           this.capture.updateKeys(key, keys);
@@ -209,13 +214,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // update the photo keys data in the photoDataArray
           const newKeyObj = keys[key];
           const index     = this.photoDataArray.findIndex(obj => obj.key === key);
-          // saved/processed photos no longer need orientation correction
-          newKeyObj.orientation = 0;
-          // remove and replace the old keys data
-          // no need to update photo-selector model data
-          // since the data object is only being replaced, not added or deleted
-          this.photoDataArray.splice(index, 1, newKeyObj);
-          this.$.photoSelector.updateExisting(index, savedUrl);
+
+          if (index !== -1) {
+            // saved/processed photos no longer need orientation correction
+            newKeyObj.orientation = 0;
+            // remove and replace the old keys data
+            this.photoDataArray.splice(index, 1, newKeyObj);
+            this.$.photoSelector.updateExisting(index, savedUrl);
+          }
+          
           this.capture.updateSavedUrl(savedUrl);
           this.capture.updateKeys(key, keys);
         },
@@ -250,7 +257,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _fullscreenBack() {
-          this.$.photoSelector.closeFullscreenImg();
+          if (this.deleteWhenDone) {
+            // fullscreen-photo delete button tapped and animation done
+            this.deleteWhenDone();
+            this.deleteWhenDone = undefined;
+          } else {
+            // fullscreen-photo back button tapped and animation done
+            this.$.photoSelector.closeFullscreenImg();
+          }          
         },
 
 
@@ -262,6 +276,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _closeButtonTapped() {
           // to be run after close
           const cleanup = () => {
+            this.deleteWhenDone = undefined;
             this.capture = undefined;
             this.label = undefined;
             this.$.photoSelector.cleanUp();

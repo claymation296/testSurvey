@@ -580,8 +580,8 @@
 	const deletePhoto = job => {
 		waiting.remove(job);
 		dreading.remove(job);
-		jobLocalforage.removeItem(job.keyToDelete);
-    blobLocalforage.removeItem(job.keyToDelete);
+		jobLocalforage.removeItem(job.key);
+    blobLocalforage.removeItem(job.key);
 	};
 
 
