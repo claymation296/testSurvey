@@ -246,10 +246,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         ],
 
         // delete in area-edit bom-edit-row slide-delete event
-        _bomRowDeleted(event) {
+        _bomRowDeleted() {
           if (!this.deletedBomFix) { return; }
-          const area = event.detail.area;
-          this.areaPageCE.deleteBomFixture(area, this.deletedBomFix);
+
+          this._editMade();
+          this.areaPageCE.deleteBomFixture(this.deletedBomFix);
         },
 
         // bom-fullscreen-edit delete button
@@ -305,7 +306,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // cannot use a computed property here because of a dom-repeat bug
         _dataChanged(data) {
           if (data && data.fixtures) {
-            this.set('fixtures', data.fixtures);
+            // show newest added fixture first
+            this.set('fixtures', data.fixtures.reverse());
             // must force the repeater to render
             // may be a Polymer bug
             this.$.fixtureRepeater.render();
@@ -369,9 +371,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             // splice instead of this.arrayDelete
             this.splice('fixtures', this.selectedIndex, 1); 
             this.splice('allCards', this.selectedIndex, 1); 
+            this._editMade();
 
             if (this.mode === 'bom') {
-              this.areaPageCE.deleteBomFixture(this.data.name, this.deletedBomFix);
+              this.areaPageCE.deleteBomFixture(this.deletedBomFix);
             }
 
             if (this.fixtures.length === 0) {
@@ -499,13 +502,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // and by area-page _bomChanged observer when bom is changed by bom-catagory-selector
         update(newData) {
           // no need to run the update if area-edit is not already open
-          const areaEditIsNotOpen = (
-            window.getComputedStyle(this).getPropertyValue('display') === 'none'
-          );
-
-          if (areaEditIsNotOpen) {
-            return;
-          }
+          if (!this.isDisplayed(this)) { return; }
 
           const setData = () => {
             this.set('data', newData);

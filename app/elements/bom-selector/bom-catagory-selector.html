@@ -258,14 +258,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _fillWithUnderscores: str => str.split(' ').join('_'),
+        _makeKey: str => str.split(' ').join('_'),
 
         
         _bomTypeSave(event) {
           const light   = event.detail.light;
-          const areaKey = this._fillWithUnderscores(light.area);
-          const fixKey  = this._fillWithUnderscores(light.type);
+          const areaKey = this._makeKey(light.area);
+          const fixKey  = this._makeKey(light.type);
           let bom       = this.bom;
+          light.areaKey = areaKey;
 
           if (!bom) {
             bom = {areas: {}, fixtures: {}, photos: {}};
@@ -300,10 +301,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             };
 
             const uniqueFixKey = getDuplicateKey(1, bom.areas[areaKey].fixtures);
+            light.fixtureKey   = uniqueFixKey; // used to find correct light to delete in area-page
             bom.areas[areaKey].fixtures[uniqueFixKey] = true;
             bom.fixtures[uniqueFixKey]                = {};
             bom.fixtures[uniqueFixKey][areaKey]       = light;
           } else {
+            light.fixtureKey = fixKey; // used to find correct light to delete in area-page
             bom.areas[areaKey].fixtures[fixKey] = true;
             bom.fixtures[fixKey][areaKey]       = light;
           }          

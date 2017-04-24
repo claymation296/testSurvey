@@ -232,12 +232,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           <area-cards cards="{{userSelectedArray}}" 
                       filter="[[filter]]"
-                      hidden$="[[_computeQuoteCardsMode(mode)]]">
+                      hidden$="[[_computeQuoteCardsVisibility(mode)]]">
           </area-cards>
 
           <area-cards cards="{{bomArray}}" 
                       filter="[[filter]]"
-                      hidden$="[[_computeBomCardsMode(mode)]]">
+                      hidden$="[[!_computeQuoteCardsVisibility(mode)]]">
           </area-cards>
 
         </div>
@@ -315,12 +315,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // called by area-edit bom-edit-row slide-delete events
-        deleteBomFixture(area, light) {
-          const makeKey = str => str.split(' ').join('_');
-          const areaKey = makeKey(area);
-          const fixKey  = makeKey(light.type);
-          const bom     = this.bom;
-          delete bom.areas[areaKey].fixtures[fixKey];
+        deleteBomFixture(light) {
+          const {areaKey, fixtureKey} = light;
+          const bom                   = this.bom;
+          const fixture               = bom.fixtures[fixtureKey];
+
+          delete bom.areas[areaKey].fixtures[fixtureKey];          
+          delete fixture[areaKey];
 
           if (light.photos && typeof light.photos === 'object') {
             const photoKeys = Object.keys(light.photos);
@@ -329,20 +330,49 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               delete bom.photos[photoKey];
             });
           }
-          
-          const fixture = bom.fixtures[fixKey];
-          delete fixture[areaKey];
+
           const remainingFixtureAreas = Object.keys(fixture).length;
 
           if (!remainingFixtureAreas) {
-            delete bom.fixtures[fixKey];
+            delete bom.fixtures[fixtureKey];
+          }
+        },
+
+        // called by area-edit and this._bomArrayChanged()
+        deleteArea(name) {
+          if (this.mode === 'quote') {
+            const index = this._getIndexByName(this.userSelectedArray, name);
+            this.splice('userSelectedArray', index, 1);
+          } else if (this.mode === 'bom') {
+            const bom            = this.bom;
+            const areaKey        = name.split(' ').join('_');
+            const areaToDel      = bom.areas[areaKey];
+            const fixKeysToDel   = Object.keys(areaToDel.fixtures);
+            const photoKeysToDel = Object.keys(areaToDel.photos);
+
+            delete bom.areas[areaKey];
+
+            fixKeysToDel.forEach(fixKey => {
+              delete bom.fixtures[fixKey][areaKey];
+
+              const remainingFixtures = Object.keys(bom.fixtures[fixKey]);
+
+              if (!remainingFixtures.length) {
+                delete bom.fixtures[fixKey];
+              }
+            });
+
+            photoKeysToDel.forEach(photoKey => {
+              delete bom.photos[photoKey];
+            });
+            // force repeater to update
+            this.bom = undefined;
+            this.set('bom', bom);
           }
         },
         
 
-        _computeQuoteCardsMode: mode => (mode && mode === 'quote') ? false : true,
-
-        _computeBomCardsMode:   mode => (mode && mode === 'bom')   ? false : true,
+        _computeQuoteCardsVisibility: mode => (mode && mode === 'quote') ? false : true,
 
 
         _computeBomArray(obj) {
@@ -354,7 +384,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const array = areas.map(area => {
             const name        = area.split('_').join(' ');
             const fixtureKeys = Object.keys(bom.areas[area].fixtures);
-            const fixtures = fixtureKeys.map(fixKey => bom.fixtures[fixKey][area]);
+            const fixtures    = fixtureKeys.map(fixKey => bom.fixtures[fixKey][area]);
             // data obj in area-cards.html
             return {
               fixtures,
@@ -389,39 +419,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.async(() => {
               this.schedule.bind(this, this.deleteArea(areaToDel));
             }, 50);
-          }
-        },
-
-        // called by area-edit and this._bomArrayChanged()
-        deleteArea(name) {
-          if (this.mode === 'quote') {
-            const index = this._getIndexByName(this.userSelectedArray, name);
-            this.splice('userSelectedArray', index, 1);
-          } else if (this.mode === 'bom') {
-            const bom            = this.bom;
-            const areaKey        = name.split(' ').join('_');
-            const areaToDel      = bom.areas[areaKey];
-            const fixKeysToDel   = Object.keys(areaToDel.fixtures);
-            const photoKeysToDel = Object.keys(areaToDel.photos);
-
-            delete bom.areas[areaKey];
-
-            fixKeysToDel.forEach(fixKey => {
-              delete bom.fixtures[fixKey][areaKey];
-
-              const remainingFixtures = Object.keys(bom.fixtures[fixKey]);
-
-              if (!remainingFixtures.length) {
-                delete bom.fixtures[fixKey];
-              }
-            });
-
-            photoKeysToDel.forEach(photoKey => {
-              delete bom.photos[photoKey];
-            });
-            // force repeater to update
-            this.bom = undefined;
-            this.set('bom', bom);
           }
         },
         // called by solution-view sendDataAndClear() method

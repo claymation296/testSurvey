@@ -99,7 +99,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         listeners: {
           // fired from slide-delete after delete animation completes
           // forward the event up to parent
-          'slide-delete-animation-done': '_forwardEventToParent'
+          'slide-delete-element-deleted': '_forwardEventToParent'
         },
 
         _rowTapped() {
@@ -112,7 +112,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _forwardEventToParent() {
-          this.fire('bom-edit-row-forwarded-delete-animation-done', {area: this.area});
+          this.fire('bom-edit-row-forwarded-delete-animation-done');
         }
 
       });
