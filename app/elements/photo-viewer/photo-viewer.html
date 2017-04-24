@@ -213,7 +213,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (!savedUrl) { return; }
           // update the photo keys data in the photoDataArray
           const newKeyObj = keys[key];
-          const index     = this.photoDataArray.findIndex(obj => obj.key === key);
+          const index     = this.photoDataArray.findIndex(photo => photo.key === key);
 
           if (index !== -1) {
             // saved/processed photos no longer need orientation correction
@@ -277,8 +277,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // to be run after close
           const cleanup = () => {
             this.deleteWhenDone = undefined;
-            this.capture = undefined;
-            this.label = undefined;
+            this.capture        = undefined;
+            this.label          = undefined;
             this.$.photoSelector.cleanUp();
           };
 

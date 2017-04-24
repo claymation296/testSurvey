@@ -204,7 +204,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // called by photo-viewer on photo delete        
         updateDelete(key) {
-
           const playDelAnimation = () => {
             const index  = this.photos.findIndex(photo => photo.key === key);
             const cookie = this._deletePhotoCookie(index);
@@ -382,6 +381,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             // guarantee the image will animate above other images and toolbar
             this.$.toolbar.style.zIndex         = '-1'; // ios fix
             this.selectedThumbnail.style.zIndex = '1';
+
+
+
+            console.log('toolbar zIndex: ', this.$.toolbar.getComputedStyleValue('z-index'));
+
+
             // correct rotated thumbnail to be fullscreen
             if (orientation === 6 || orientation === 8) {
               Polymer.dom(this.selectedThumbnail.$.img).classList.add('fullscreenRotation');
