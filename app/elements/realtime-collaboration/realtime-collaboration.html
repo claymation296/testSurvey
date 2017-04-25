@@ -1,0 +1,116 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="realtime-collaboration">
+  <template>
+    <style>
+
+      :host {
+        display: block;
+      }
+
+      paper-card {
+      	display: block;
+      	position: relative;
+      }
+
+      #linkBtn {
+      	color: var(--text-primary-color);
+      	background-color: var(--default-primary-color);
+      }
+
+    </style>
+
+
+    
+
+    <paper-card heading="Setup Realtime Collaboration">
+    	<div class="card-content">
+    		<p>You can choose to help the surveyor who sent you this link by tapping the ACCEPT button below.</p>
+    		<p>WARNING!  This will DELETE any work you currently have in the app and replace it with data from the app of the surveyor who invited you.</p>
+    	</div>
+
+    	<div class="card-actions">
+    		<span class="flex"></span>
+    		<paper-button id="linkBtn" on-tap="_link" raised>
+    			<iron-icon icon="custom-icons:link"></iron-icon>
+    			Link App
+    		</paper-button>
+    		<paper-button on-tap="_decline">Decline Invitation</paper-button>
+    	</div>
+
+    </paper-card>
+
+    
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'realtime-collaboration',
+
+        behaviors: [
+          window.Redaap.Behaviors.Utilities,
+          window.Redaap.Behaviors.OnTapBehavior
+        ],
+
+        properties: {
+
+        	channel: String,
+
+        	route: {
+        		type: String,
+        		notify: true
+        	}
+        	
+        },
+
+
+        _link() {
+        	const accept = () => {
+
+        		console.log('channel: ', this.channel);
+
+        		window.Redaap.appState.linkApp(this.channel).
+        			then(() => {
+		        		this.message('You will now be collaborating live!');
+
+			        	this.async(() => {
+			        		this.set('route', 'client');
+			        	}, 800);
+        			});
+        	};
+
+        	this.onTap = accept;
+        },
+
+        _decline() {
+        	const decline = () => {
+        		this.message('You have declined the invitaion.');
+
+	        	this.async(() => {
+	        		this.set('route', 'client');
+	        	}, 800);
+        	};
+
+        	this.onTap = decline;
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

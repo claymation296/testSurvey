@@ -8,6 +8,10 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 -->
 
+<link rel="import" href="../../bower_components/polymerfire/firebase-app.html">
+<link rel="import" href="../../bower_components/polymerfire/firebase-auth.html">
+<link rel="import" href="../../bower_components/polymerfire/firebase-document.html">
+
 
 
 
@@ -27,7 +31,43 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       error-message="{{localStorageError}}">
     </iron-localstorage>
 
+    <iron-localstorage name="redaap-email"
+      value="{{email}}"
+      error-message="{{localStorageError}}">
+    </iron-localstorage>
+
+
+
+
+
+
+    <firebase-app api-key="AIzaSyA7lC69yQkPBFAfl9dOLCFbSxnbReE7PFA"
+                  auth-domain="redaapsurvey.firebaseapp.com"
+                  database-url="https://redaapsurvey.firebaseio.com/"
+                  storage-bucket="redaapsurvey.appspot.com"
+                  messaging-sender-id="887370986753">
+    </firebase-app>
+
+
+    <firebase-auth id="auth" 
+                   user="{{user}}" 
+                   on-error="_firebaseAuthError">
+    </firebase-auth>
+
+
+    <firebase-document id="doc" 
+                       path="/channels/{{channel}}"
+                       data="{{state}}"
+                       on-error="_firebaseDocError">
+    </firebase-document>
+
+
+
+
+
   </template>
+
+
 
   <script>
     (function() {
@@ -39,12 +79,63 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	state: {
         		type: Object,
         		notify: true
-        	}
+        	},
+          // cache email for user experience during login
+          email: {
+            type: String,
+            notify: true
+          },
+
+          channel: String
 
         },
 
 
+        initFirebase() {
+          return this.$.auth.signInAnonymously().
+            then(user => {
+              const {uid: channel} = user;
+              this.channel = channel;
 
+              return channel;
+            }).
+            catch(error => console.log('firebase sign in error: ', error));
+        },
+
+
+
+        linkApp(channel) {
+          return this.$.auth.signInAnonymously().
+            then(() => {
+              this.channel = channel;
+
+              console.log('apps linked!!');
+            }).
+            catch(error => console.log('firebase sign in error: ', error))
+        },
+        
+
+
+        signOut() {
+
+
+          // TODO: 
+          //      remove user and channel from firebase
+
+
+          console.log('signing out of firebase');
+          this.$.auth.signOut();
+        },
+
+
+        _firebaseAuthError(error) {
+          console.log('firebase auth error: ', error);
+        },
+
+
+        _firebaseDocError(error) {
+          console.log('firebase doc error: ', error);
+        },
 
 
         // observers: [
