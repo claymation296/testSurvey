@@ -151,7 +151,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // remove the key and value from list of saved keys
           delete currentKeys[keyToDelete];
           // force update to update photo-capture badge state
-          this.capture.keys = undefined;
+          this.capture.keys = null;
           this.capture.set('keys', currentKeys);
           // if photo to delete is also the current thumbnail
           // update the thumbnail data with the next lowest key number data
@@ -198,7 +198,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             key,
             orientation,
             placeholder,
-            url: undefined
+            url: null
           });
         },
         // from photo-selector

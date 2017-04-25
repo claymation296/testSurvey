@@ -341,7 +341,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         updateThumbnail({key, orientation, placeholder, url}) {
           window.Redaap.webWorker.revokeUrl(this.placeholderSrc);
           // the order of operations is very important here
-          this.orientation = undefined;
+          this.orientation = null;
           this.set('orientation', orientation);
           this.set('placeholder', placeholder);
           this.set('savedUrl', url);
@@ -371,7 +371,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // reset for another photo capture 
         // called by solution-view before it animates open
         resetCaptureButton() {
-          this.placeholder           = undefined;
+          this.placeholder           = null;
           this.placeholderErrorRetry = true;
           this.fire('photo-capture-placeholder-loaded', this._makeEventPayload());
           this.fire('photo-capture-saved-url-loaded',   this._makeEventPayload());
@@ -380,12 +380,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         
         // called by photo-viewer when user deletes last photo from the list
         resetCapture() {
-          this.set('orientation', undefined);
-          this.set('placeholder', undefined);
-          this.set('savedUrl',    undefined);
-          this.set('keys',        undefined);
+          this.set('orientation', null);
+          this.set('placeholder', null);
+          this.set('savedUrl',    null);
+          this.set('keys',        null);
           // _keyChanged should trigger a reset since it and savedUrl are undefined
-          this.set('key',         undefined);
+          this.set('key',         null);
         },
 
         // this.$.imageTag dynamic class to correct photo rotation
@@ -699,11 +699,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // clear savedUrl incase we are offline and user chooses to take another
           // photo to replace the offline icon
           // otherwise this._load will try to load the last savedUrl
-          this.set('savedUrl',    undefined);
+          this.set('savedUrl',    null);
           this.set('placeholder', url);
           this.set('orientation', orientation);
           // force update
-          this.key = undefined;
+          this.key = null;
           this.set('key', key);
         },
         

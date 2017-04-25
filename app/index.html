@@ -96,7 +96,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <template is="dom-bind" id="app">
 
     
-    <app-state state="{{state}}"></app-state>
+    <app-state state="{{state}}" email="{{email}}"></app-state>
 
     <web-worker saved-photo-data="{{savedPhotoData}}" queue-size="{{queueSize}}"></web-worker>
 
@@ -152,6 +152,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <a data-route="contact" href="/contact" on-tap="onDataRouteClick">
             <iron-icon icon="custom-icons:mail"></iron-icon>
             <span>Contact</span>
+          </a>
+
+          <a data-route="invite" href="/invite" on-tap="onDataRouteClick">
+            <iron-icon icon="custom-icons:supervisor-account"></iron-icon>
+            <span>Invite</span>
           </a>
 
         </paper-menu>
@@ -284,6 +289,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             </paper-material>
           </section>
 
+
+          <section data-route="invite">
+            <invite-collaborator route="{{route}}"></invite-collaborator>
+          </section>
+
+
+          <!-- hidden section only for linking firebase db channels -->
+          <section data-route="channel">
+            <realtime-collaboration channel="[[channel]]" 
+                                    route="{{route}}">
+            </realtime-collaboration>
+          </section>
+
+
         </neon-animated-pages>
         
       </paper-scroll-header-panel>
@@ -293,7 +312,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <!-- ************************ overlays *************************** -->
 
-    <app-security email="{{state.email}}" displayed-user-name="{{userName}}"></app-security>
+    <app-security email="{{email}}" displayed-user-name="{{userName}}"></app-security>
 
     <lighting-mode-ripple></lighting-mode-ripple>
 
@@ -333,7 +352,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
     
-    <paper-toast id="caching-complete"
+    <!-- <paper-toast id="caching-complete"
                  duration="6000"
                  text="REDAAP can now work offline.">
     </paper-toast>
@@ -345,7 +364,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <platinum-sw-cache default-cache-strategy="fastest"
                          cache-config-file="cache-config.json">
       </platinum-sw-cache>
-    </platinum-sw-register>
+    </platinum-sw-register> -->
 
 
 

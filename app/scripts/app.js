@@ -32,6 +32,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     accountBadge:   '#accountBadge',
     accountForm:    'account-form',
     appSecurity:    'app-security',
+    appState:       'app-state',
     areaEdit:       'area-edit',
     bomFullscreen:  'bom-fullscreen-edit',
     bomSelector:    'bom-catagory-selector',

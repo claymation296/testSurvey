@@ -12,7 +12,8 @@
     "gold-zip-input": "PolymerElements/gold-zip-input#^1.0.0",
     "signature_pad": "^1.5.3",
     "localforage": "^1.5.0",
-    "parse": "^1.9.2"
+    "parse": "^1.9.2",
+    "polymerfire": "firebase/polymerfire#^0.11.1"
   },
   "devDependencies": {
     "web-component-tester": "*",

@@ -351,7 +351,12 @@
 			then(currentUser => {
 				const currentUserJob = {func: 'user'};
 				if (currentUser) {
-					successful(currentUserJob, currentUser.attributes);
+					const current = {
+						first: 		currentUser.attributes.first,
+						username: currentUser.attributes.username
+					};
+
+					successful(currentUserJob, current);
 				} else {
 					successful(currentUserJob, null);
 				}
@@ -364,9 +369,13 @@
 		const normalizedEmail 	= normalizeEmail(email);
 		Db.User.logIn(normalizedEmail, password).
 			then(user => {
-				// clear pw so it is guaranteed to not be displayed accidentally
+				const current = {
+					first: 		user.attributes.first,
+					username: user.attributes.username
+				};
+				// clear pw so it is not displayed accidentally
 				job.password = '';
-				successful(job, user.attributes);
+				successful(job, current);
 			}, error => {
 				errored(job, error);
 			});
@@ -384,7 +393,13 @@
       	return Db.User.become(response.attributes.sessionToken);
       }).
 			then(user => {
-				successful(job, user.attributes);
+				const current = {
+					first: 		user.attributes.first,
+					username: user.attributes.username
+				};
+				// clear pw so it is not displayed accidentally
+				job.password = '';
+				successful(job, current);
 			}, error => {
 				errored(job, error);
 			});
@@ -403,7 +418,6 @@
         return Promise.all(clearBoth);
       }).
       then(() => {
-				// must use null for iron-localstorage
 				successful(job, null);
 			}, error => {
 				errored(job, error);

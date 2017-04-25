@@ -84,7 +84,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         is: 'account-fab',
 
         behaviors: [
-          Polymer.NeonAnimatableBehavior,
           Polymer.NeonAnimationRunnerBehavior,
           window.Redaap.Behaviors.Utilities,
           window.Redaap.Behaviors.OnTapBehavior
@@ -190,14 +189,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _fabIsVisible() {
-          return (this.getComputedStyleValue('display') !== 'none' && 
-                  this.getComputedStyleValue('display') !== '');
-        },
-
-
         _animateIn() {
-          if (this._fabIsVisible()) { return; }
+          if (this.isDisplayed(this)) { return; }
 
           const run = () => {
             this.style.display = 'block';
@@ -213,7 +206,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         _animateOut() {
-          if (this._fabIsVisible()) {
+          if (this.isDisplayed(this)) {
             const run = () => {
               this.cancelAnimation();
               this.playAnimation('fabExit', 'fabExit');
@@ -225,7 +218,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _animateHero() {
-          if (this._fabIsVisible()) {
+          if (this.isDisplayed(this)) {
             const run = () => {
               this.fire('account-fab-hide');
               this.cancelAnimation();

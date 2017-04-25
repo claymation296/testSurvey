@@ -1,0 +1,136 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+
+
+<dom-module id="invite-collaborator">
+  <template>
+    <style>
+
+      :host {
+        display: block;
+        margin-bottom: 64px;
+      }
+
+      paper-card {
+      	display: block;
+      	position: relative;
+      }
+
+      #sendBtn {
+      	color: var(--text-primary-color);
+      	background-color: var(--default-primary-color);
+      }
+
+      iron-icon {
+      	margin-right: 8px;
+      }
+
+    </style>
+
+
+    
+
+    <paper-card heading="Invite Realtime Collaborators">
+    	<div class="card-content">
+    		<p>You can invite other surveyors to help complete the survey faster by linking apps in real time.</p>
+    		<p>If you choose to add a collaborator, an email will be sent to them that containes a link to setup the realtime collaboration process.</p>
+
+
+  			<!-- dont allow spaces, newline, carriage returns, etc. 
+           allow any alphanumeric combo before one '@' followed by 
+           any alphanumeric combo followed by one '.' followed by any alphanumeric combo -->
+        <paper-input id="email"
+                     label="Email *"
+                     type="email"
+                     allowed-pattern="[^\s\f\n\r\t\v]"
+                     prevent-invalid-input 
+                     pattern=".+@{1}.+\.{1}.+"
+                     auto-validate 
+                     required 
+                     error-message="Please enter a valid email format"
+                     value="{{email}}">
+        </paper-input>
+
+
+    	</div>
+
+    	<div class="card-actions">
+    		<span class="flex"></span>
+    		<paper-button id="sendBtn" 
+    									on-tap="_send" 
+    									disabled="[[_computeDisabledSendBtn(email)]]"
+    									raised>
+    			<iron-icon icon="custom-icons:send"></iron-icon>
+    			Send Invitation
+    		</paper-button>
+    	</div>
+
+    </paper-card>
+
+    
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'invite-collaborator',
+
+        behaviors: [
+          window.Redaap.Behaviors.Utilities,
+          window.Redaap.Behaviors.OnTapBehavior
+        ],
+
+        properties: {
+
+        	email: String,
+
+        	route: {
+        		type: String,
+        		notify: true
+        	}
+        	
+        },
+
+
+        _computeDisabledSendBtn: email => !email,
+
+
+        _send() {
+        	const send = () => {
+
+        		window.Redaap.appState.initFirebase().
+        			then(channel => {
+        				console.log('email and channel: ', this.email, channel);
+
+
+		        		this.message(`Invitation sent to ${this.email} @ channel ${channel}!`);
+
+			        	this.async(() => {
+			        		this.set('route', 'client');
+			        	}, 800);
+        			});
+
+
+        		
+        	};
+
+        	this.onTap = send;
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

@@ -28,10 +28,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         is: 'web-worker',
 
         properties: {
-
+          // web worker instance
         	worker: Object,
-          // localstorage
-          currentUser: Object,
           // data bind saved photo data out
           // not using events since this element is at top level
           savedPhotoData: {
@@ -98,7 +96,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _jobError(job) {
           // bad session token handler
           if (job.func === 'user') {
-            this.set('currentUser', null);
             window.Redaap.appSecurity.currentUserError();
           }
         },
@@ -167,21 +164,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           switch (func) {
             case 'user':
-              this.set('currentUser', job.output);
               // woker may load before dom is ready
               this.async(() => {
-                window.Redaap.appSecurity.checkCurrentUser(this.currentUser);
+                window.Redaap.appSecurity.checkCurrentUser(job.output);
               }, 50);
-              break;
-            // set current user when login, signup or logout return
-            case 'login':
-            case 'signup':
-              this.set('currentUser', job.output);
               break;
             case 'logout':
               window.Redaap.lightingMain.clearSurvey();
-              // must use null for iron-localstorage
-              this.set('currentUser', null);
+              window.Redaap.appState.signOut();
               break;
             case 'photoMetadata': 
               // add to queue
@@ -199,6 +189,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               console.log(...job.output);
               break;
             // no action for the following functions
+            case 'login':
+            case 'signup':
             case 'processPhoto':
             case 'getUrl':
             case 'pricing':

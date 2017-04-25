@@ -68,6 +68,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       schedule(setRoute('contact'));
     });
 
+    page('/invite', scrollToTop, () => {
+      // app.route = 'contact';
+      schedule(setRoute('invite'));
+    });
+
+    page('/channel/', scrollToTop, data => {
+      app.channel = data.querystring;
+      schedule(setRoute('channel'));
+    });
+
     // add #! before urls
     page({
       hashbang: true
