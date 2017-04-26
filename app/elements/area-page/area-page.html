@@ -310,7 +310,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // on bom force update
         updateBomState() {
           const bom = this.bom;
-          this.bom = undefined;
+          this.bom = null;
           this.set('bom', bom);
         },
 
@@ -366,7 +366,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               delete bom.photos[photoKey];
             });
             // force repeater to update
-            this.bom = undefined;
+            this.bom = null;
             this.set('bom', bom);
           }
         },

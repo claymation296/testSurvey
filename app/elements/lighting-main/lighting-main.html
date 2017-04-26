@@ -390,12 +390,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               // light's displayed photo saved data as well
               if (light.key === photoKey) {
                 light.orientation = 0;
-                light.placeholder = undefined;
+                light.placeholder = null;
                 light.savedUrl    = data.savedUrl;
               }
               // update the matching photo's saved data
               photo.orientation = 0;
-              photo.placeholder = undefined;
+              photo.placeholder = null;
               photo.savedUrl    = data.savedUrl;
 
               this._removeFromDreading(data);
@@ -623,7 +623,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _createNewVersion(version) {
           // increment the survey version number to help keep track of edits
           // the original surveyVersion key will be undefined
-          if (version === undefined) {
+          if (version === null) {
             return 2;
           // increment all other versions
           } else {
