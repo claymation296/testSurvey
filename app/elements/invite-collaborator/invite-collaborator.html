@@ -110,17 +110,34 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _send() {
         	const send = () => {
 
-        		window.Redaap.appState.initFirebase().
-        			then(channel => {
-        				console.log('email and channel: ', this.email, channel);
+
+            const channel = window.Redaap.appState.getChannel();
+            
+            console.log('email and channel: ', this.email, channel);
 
 
-		        		this.message(`Invitation sent to ${this.email} @ channel ${channel}!`);
+            this.message(`Invitation sent to ${this.email} @ channel ${channel}!`);
 
-			        	this.async(() => {
-			        		this.set('route', 'client');
-			        	}, 800);
-        			});
+            this.async(() => {
+              this.set('route', 'client');
+            }, 800);
+
+
+
+
+
+
+        		// window.Redaap.appState.initFirebase().
+        		// 	then(channel => {
+        		// 		console.log('email and channel: ', this.email, channel);
+
+
+		        // 		this.message(`Invitation sent to ${this.email} @ channel ${channel}!`);
+
+			       //  	this.async(() => {
+			       //  		this.set('route', 'client');
+			       //  	}, 800);
+        		// 	});
 
 
         		

@@ -25,18 +25,31 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     </style>
 
-    <iron-localstorage name="redaap-state"
+    <!-- <iron-localstorage name="redaap-state"
       value="{{state}}"
       on-iron-localstorage-load-empty="_initializeDefaultState"
       error-message="{{localStorageError}}">
-    </iron-localstorage>
+    </iron-localstorage> -->
 
-    <iron-localstorage name="redaap-email"
-      value="{{email}}"
+
+    <iron-localstorage name="redaap-tempState"
+      value="{{tempState}}"
       error-message="{{localStorageError}}">
     </iron-localstorage>
 
 
+
+    <iron-localstorage name="redaap-email"
+                       value="{{email}}"
+                       error-message="{{localStorageError}}">
+    </iron-localstorage>
+
+
+
+    <iron-localstorage name="redaap-channel"
+                       value="{{channel}}"
+                       error-message="{{localStorageError}}">
+    </iron-localstorage>
 
 
 
@@ -50,13 +63,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
     <firebase-auth id="auth" 
-                   user="{{user}}" 
                    on-error="_firebaseAuthError">
     </firebase-auth>
 
 
     <firebase-document id="doc" 
-                       path="/channels/{{channel}}"
+                       path="/channels/[[channel]]"
                        data="{{state}}"
                        on-error="_firebaseDocError">
     </firebase-document>
@@ -86,33 +98,80 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             notify: true
           },
 
-          channel: String
+          channel: {
+            type: String,
+            observer: '_channelChanged'
+          },
+
+          tempState: Object
 
         },
 
 
-        initFirebase() {
-          return this.$.auth.signInAnonymously().
+        _channelChanged(channel) {
+          if (!channel) { return; }
+
+          this.$.doc.getStoredValue(`/channels/${channel}`).
+            then(state => {
+
+              console.log('got stored state: ', state, this.tempState);
+
+
+              if (this.tempState) {
+                if (!state) {
+                  this.set('state', this.tempState);
+                  this.tempState = null;
+                } else if (typeof state === 'object') {
+                  const stateIsEmpty = Object.keys(state).length === 0;
+                  if (stateIsEmpty) {
+                    this.set('state', this.tempState);
+                    this.tempState = null;
+                  }
+                }
+              }
+            });
+        },
+
+
+        signIn() {
+          this.$.auth.signInAnonymously().
             then(user => {
               const {uid: channel} = user;
               this.channel = channel;
-
-              return channel;
             }).
             catch(error => console.log('firebase sign in error: ', error));
         },
 
+        
+        getChannel() {
+          return this.channel;
+        },
 
 
         linkApp(channel) {
-          return this.$.auth.signInAnonymously().
-            then(() => {
-              this.channel = channel;
 
-              console.log('apps linked!!');
-            }).
-            catch(error => console.log('firebase sign in error: ', error))
+          this.channel = channel;
+
+          console.log('apps linked!!');
         },
+
+
+
+        unLinkApp() {
+          // hold state in localstorage incase of page refresh
+          this.tempState = this.state;
+          // switch to new channel to guarantee the previously linked
+          // user can no longer make changes to this user's data
+          this.$.doc.destroy().
+            then(() => this.$.auth.user.delete()).
+            then(() => this.$.auth.signInAnonymously()).
+            then(user => {
+              const {uid: channel} = user;
+              this.channel = channel;
+            }).
+            catch(error => console.log(error));
+        },
+
         
 
 
@@ -122,9 +181,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // TODO: 
           //      remove user and channel from firebase
 
-
-          console.log('signing out of firebase');
-          this.$.auth.signOut();
+          this.$.doc.destroy().
+            then(() => this.$.auth.user.delete()).
+            catch(error => console.log(error));
         },
 
 
@@ -151,9 +210,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
 
-        _initializeDefaultState() {
-        	this.set('state', {});
-        },
+        // _initializeDefaultState() {
+        // 	this.set('state', {});
+        // },
         
 
         _localStorageError(error) {
