@@ -31,24 +31,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       	background-color: var(--default-primary-color);
       }
 
+      iron-icon {
+        margin-right: 8px;
+      }
+
     </style>
-
-
-    
 
     <paper-card heading="Setup Realtime Collaboration">
     	<div class="card-content">
-    		<p>You can choose to help the surveyor who sent you this link by tapping the ACCEPT button below.</p>
-    		<p>WARNING!  This will DELETE any work you currently have in the app and replace it with data from the app of the surveyor who invited you.</p>
+    		<p>You can choose to collaborate with the surveyor who sent you this invitation by tapping the LINK APPS button below.  Your apps will be linked in real time.</p>
+    		<p>WARNING!</p>
+        <p>This will DELETE any work you currently have in the app and replace it with data from the app of the surveyor who invited you.</p>
     	</div>
 
     	<div class="card-actions">
-    		<span class="flex"></span>
     		<paper-button id="linkBtn" on-tap="_link" raised>
     			<iron-icon icon="custom-icons:link"></iron-icon>
-    			Link App
+    			Link Apps
     		</paper-button>
-    		<paper-button on-tap="_decline">Decline Invitation</paper-button>
+    		<paper-button on-tap="_decline">Decline</paper-button>
     	</div>
 
     </paper-card>
@@ -80,30 +81,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _link() {
-        	const accept = () => {
+        	const link = () => {
 
-        		console.log('channel: ', this.channel);
+            if (!this.channel) {
+              this.warn('An error occured while linking apps. Please try again.');
+              return;
+            }
 
         		window.Redaap.appState.linkApp(this.channel).
         			then(() => {
 		        		this.message('You will now be collaborating live!');
-
-			        	this.async(() => {
-			        		this.set('route', 'client');
-			        	}, 800);
-        			});
+        			}).
+              catch(error => {
+                console.log('app link error: ', error);
+                this.warn('An error occured while linking apps. Please try again.');
+              });
         	};
 
-        	this.onTap = accept;
+        	this.onTap = link;
         },
 
         _decline() {
         	const decline = () => {
         		this.message('You have declined the invitaion.');
-
-	        	this.async(() => {
-	        		this.set('route', 'client');
-	        	}, 800);
         	};
 
         	this.onTap = decline;

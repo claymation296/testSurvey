@@ -377,7 +377,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _clientValidChanged(bool, oldBool) {
           if (oldBool === undefined) { return; }
 
-          window.Redaap.accountBadge.hidden = !bool;
+          if (window.Redaap && window.Redaap.accountBadge) {
+            window.Redaap.accountBadge.hidden = !bool;
+          }
+          
           // scroll to top of account-form to display nav buttons
           if (this.route === 'client' && bool) {
             const scrollUp = () => {
