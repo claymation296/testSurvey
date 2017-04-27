@@ -13,7 +13,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
 
 
-<dom-module id="invite-collaborator">
+<dom-module id="link-app">
   <template>
     <style>
 
@@ -41,10 +41,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     
 
-    <paper-card heading="Invite Realtime Collaborators">
+    <paper-card heading="Link Apps">
     	<div class="card-content">
     		<p>You can invite other surveyors to help complete the survey faster by linking apps in real time.</p>
-    		<p>If you choose to add a collaborator, an email will be sent to them that containes a link to setup the realtime collaboration process.</p>
+    		<p>If you choose to add a collaborator, an email will be sent to them which contains a link to setup the realtime collaboration process.</p>
 
 
   			<!-- dont allow spaces, newline, carriage returns, etc. 
@@ -59,6 +59,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                      auto-validate 
                      required 
                      error-message="Please enter a valid email format"
+                     invalid="{{invalid}}"
                      value="{{email}}">
         </paper-input>
 
@@ -66,7 +67,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     	</div>
 
     	<div class="card-actions">
-    		<span class="flex"></span>
     		<paper-button id="sendBtn" 
     									on-tap="_send" 
     									disabled="[[_computeDisabledSendBtn(email)]]"
@@ -74,6 +74,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     			<iron-icon icon="custom-icons:send"></iron-icon>
     			Send Invitation
     		</paper-button>
+        <paper-button id="unlinkBtn" 
+                      on-tap="_unlink">
+          <iron-icon icon="custom-icons:link"></iron-icon>
+          Unlink App
+        </paper-button>
     	</div>
 
     </paper-card>
@@ -85,7 +90,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <script>
     (function() {
       Polymer({
-        is: 'invite-collaborator',
+        is: 'link-app',
 
         behaviors: [
           window.Redaap.Behaviors.Utilities,
@@ -93,8 +98,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         ],
 
         properties: {
-
-        	email: String,
 
         	route: {
         		type: String,
@@ -110,40 +113,38 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _send() {
         	const send = () => {
 
+            if (this.invalid) {
+              this.warn('Please check the email format.');
+              return;
+            }
 
             const channel = window.Redaap.appState.getChannel();
-            
-            console.log('email and channel: ', this.email, channel);
 
-
-            this.message(`Invitation sent to ${this.email} @ channel ${channel}!`);
-
-            this.async(() => {
-              this.set('route', 'client');
-            }, 800);
-
-
-
-
-
-
-        		// window.Redaap.appState.initFirebase().
-        		// 	then(channel => {
-        		// 		console.log('email and channel: ', this.email, channel);
-
-
-		        // 		this.message(`Invitation sent to ${this.email} @ channel ${channel}!`);
-
-			       //  	this.async(() => {
-			       //  		this.set('route', 'client');
-			       //  	}, 800);
-        		// 	});
-
-
-        		
+            window.Redaap.webWorker.invite(this.email, channel).
+              then(() => {
+                this.message(`Invitation sent to ${this.email}!`);
+              }).
+              catch(error => {
+                console.log('invite-collaborator error: ', error);
+                this.warn('An error occured while sending the invitaion. Please try again.');
+              });
         	};
 
         	this.onTap = send;
+        },
+
+        _unlink() {
+          const unlink = () => {
+            window.Redaap.appState.unlinkApp().
+              then(() => {
+                this.message('Your app has been unlinked');
+              }).
+              catch(() => {
+                this.warn('An error occured while unlinking your app. Please try again.');
+              });
+          };
+          
+          this.onTap = unlink;
         }
 
       });

@@ -8,10 +8,6 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 -->
 
-<link rel="import" href="../../bower_components/polymerfire/firebase-app.html">
-<link rel="import" href="../../bower_components/polymerfire/firebase-auth.html">
-<link rel="import" href="../../bower_components/polymerfire/firebase-document.html">
-
 
 
 
@@ -26,15 +22,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </style>
 
     <!-- <iron-localstorage name="redaap-state"
-      value="{{state}}"
-      on-iron-localstorage-load-empty="_initializeDefaultState"
-      error-message="{{localStorageError}}">
+                       value="{{state}}"
+                       on-iron-localstorage-load-empty="_initializeDefaultState"
+                       error-message="{{localStorageError}}">
     </iron-localstorage> -->
 
 
     <iron-localstorage name="redaap-tempState"
-      value="{{tempState}}"
-      error-message="{{localStorageError}}">
+                       value="{{tempState}}"
+                       error-message="{{localStorageError}}">
     </iron-localstorage>
 
 
@@ -109,24 +105,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _channelChanged(channel) {
-          if (!channel) { return; }
+          if (!channel || !this.tempState) { return; }
 
           this.$.doc.getStoredValue(`/channels/${channel}`).
             then(state => {
+              if (!state) {
+                this.set('state', this.tempState);
+                this.tempState = null;
 
-              console.log('got stored state: ', state, this.tempState);
+                console.log('setting state from tempState: ', this.state);
 
-
-              if (this.tempState) {
-                if (!state) {
+              } else if (typeof state === 'object') {
+                const stateIsEmpty = Object.keys(state).length === 0;
+                if (stateIsEmpty) {
                   this.set('state', this.tempState);
                   this.tempState = null;
-                } else if (typeof state === 'object') {
-                  const stateIsEmpty = Object.keys(state).length === 0;
-                  if (stateIsEmpty) {
-                    this.set('state', this.tempState);
-                    this.tempState = null;
-                  }
+
+                  console.log('setting state from tempState: ', this.state);
+
                 }
               }
             });
@@ -134,6 +130,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         signIn() {
+
+          // TODO:
+          //      switch to this.$.auth.signInWithCustomToken()
+          //      and get new channel from web-worker getKey()
+
+
           this.$.auth.signInAnonymously().
             then(user => {
               const {uid: channel} = user;
@@ -152,17 +154,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           this.channel = channel;
 
-          console.log('apps linked!!');
+          return this.$.doc.getStoredValue(`/channels/${channel}`);
         },
 
 
 
-        unLinkApp() {
+        unlinkApp() {
+
+
+          // TODO:
+          //      switch to using web-worker's getKey()
+          //      for new channel after moving to this.$.auth.signInWithCustomToken()
+
+
+
           // hold state in localstorage incase of page refresh
           this.tempState = this.state;
           // switch to new channel to guarantee the previously linked
           // user can no longer make changes to this user's data
-          this.$.doc.destroy().
+          return this.$.doc.destroy().
             then(() => this.$.auth.user.delete()).
             then(() => this.$.auth.signInAnonymously()).
             then(user => {
@@ -179,7 +189,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
           // TODO: 
-          //      remove user and channel from firebase
+          //      switch to using this.$.auth.signOut()
+          //      after changing to signInWithCustomToken()
 
           this.$.doc.destroy().
             then(() => this.$.auth.user.delete()).

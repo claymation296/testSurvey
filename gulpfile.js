@@ -23,7 +23,7 @@ const glob               = require('glob');
 const historyApiFallback = require('connect-history-api-fallback');
 const packageJson        = require('./package.json');
 const crypto             = require('crypto');
-const polybuild          = require('polybuild');
+// const polybuild          = require('polybuild');
 const gulpMatch          = require('gulp-match'); // used to ignore transpiling min.js files
 const cache              = require('gulp-cache'); // 'gulp clear' task added 3/27/2017
 
@@ -215,13 +215,34 @@ gulp.task('remaining-scripts', function () {
     .pipe(gulp.dest('dist/scripts'));
 });
 
+
+
+// polybuild/vulcanize break firebase.js
+
+// // Polybuild will take care of inlining HTML imports,
+// // scripts and CSS for you.
+// gulp.task('vulcanize-elements', function () {
+//   return gulp.src('dist/elements/elements.html')
+//     .pipe(polybuild({maximumCrush: true}))
+//     .pipe(gulp.dest('dist/elements'));
+// });
+
+
+// polybuild/vulcanize break firebase.js so exclude it
+
 // Polybuild will take care of inlining HTML imports,
 // scripts and CSS for you.
 gulp.task('vulcanize-elements', function () {
   return gulp.src('dist/elements/elements.html')
-    .pipe(polybuild({maximumCrush: true}))
+    .pipe($.vulcanize({
+      stripComments: true,
+      inlineCss: true,
+      inlineScripts: true,
+      excludes: [path.resolve('./dist/bower_components/firebase/firebase.js')]
+    }))
     .pipe(gulp.dest('dist/elements'));
 });
+
 
 // If you require more granular configuration of Vulcanize
 // than polybuild provides, follow instructions from readme at:

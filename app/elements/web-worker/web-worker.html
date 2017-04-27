@@ -64,6 +64,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             if (!this.worker) {
               window.Redaap.workerDialog.open();
             }
+            // fetch current user once dom is ready
+            const job = {func: 'user'};
+            this.worker.postMessage(job);
           });
         },
 
@@ -75,6 +78,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.worker.removeEventListener('error', event => {
             this._workerError(event);
           }, false);
+        },
+        // using key to keep data in sync
+        // between multiple worker events and photo-capture instances
+        // as well as assigning firebase channels
+        getKey() {
+          // time in milliseconds to be used as the first part of the key as well
+          // as a timestamp 
+          // must gurantee each key is unique so use a combination of milliseconds
+          // and Math.random() to generate the key
+          // key must be a string since it is used as keys in objects
+          const time   = new Date().getTime();
+          const random = this._getRandomInt(0, 1000);
+          const key    = `${time}_${random}`;
+
+          return key;
         },
 
         // general worker response handling
@@ -136,24 +154,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           max = Math.floor(max);
           return Math.floor(Math.random() * (max - min)) + min;
         },
-        // using key to keep data in sync
-        // between multiple worker events and photo-capture instances
-        _getKey() {
-          // time in milliseconds to be used as the first part of the key as well
-          // as a timestamp 
-          // must gurantee each key is unique so use a combination of milliseconds
-          // and Math.random() to generate the key
-          // key must be a string since it is used as keys in objects
-          const time   = new Date().getTime();
-          const random = this._getRandomInt(0, 1000);
-          const key    = `${time}_${random}`;
-
-          return key;
-        },
         // takes a string representing the worker function to run and an object 
         // containing the data to pass into the worker function        
         _startJob(func, inputs) {
-          const key = this._getKey();
+          const key = this.getKey();
           const job = Object.assign({func, key}, inputs);
           return this._dispatch(job);
         },
@@ -164,10 +168,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           switch (func) {
             case 'user':
-              // woker may load before dom is ready
-              this.async(() => {
-                window.Redaap.appSecurity.checkCurrentUser(job.output);
-              }, 50);
+              window.Redaap.appSecurity.checkCurrentUser(job.output);
               break;
             case 'login':
             case 'signup':
@@ -199,6 +200,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             case 'save':
             case 'sendBom':
             case 'search':
+            case 'invite':
               break;
             default:
               throw new Error('worker function not found in web-worker');
@@ -253,13 +255,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         surveySearch(query) {
           return this._startJob('search', {query});
         },
+
+        // called by invite-collaborator
+        invite(email, channel) {
+          return this._startJob('invite', {email, channel});
+        },
         // called by photo-capture, photo-selector, and selector-thumbnail
         // when attempting to reissue a temporary url
         getUrl(fileKey) {
           return this._startJob('getUrl', {fileKey});
         },
 
-
+        // must remove blobs from cached memory in the worker context
         revokeUrl(url) {
           const job = {func: 'revokeUrl', url};
           this.worker.postMessage(job);
@@ -286,7 +293,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
 
-          const key         = this._getKey();
+          const key         = this.getKey();
           const dispatch    = this._dispatch.bind(this);
           const metadataJob = {func: 'photoMetadata', key, file, fileName, extension};
           const processJob  = {func: 'processPhoto',  key};
@@ -295,28 +302,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
 
-          // const fakeUpload = () => {
-          //   return new Promise(resolve => this.async(() => resolve(), 2000)).
-          //     then(() => {
+          const fakeUpload = () => {
+            return new Promise(resolve => this.async(() => resolve(), 2000)).
+              then(() => {
 
-          //       const saved = {
-          //         blob: undefined,
-          //         extension: 'jpeg',
-          //         file: undefined,
-          //         fileName: 'Candelabra',
-          //         func: 'photoUpload',
-          //         key,
-          //         savedName: '24ef0ab62af8823104274d53f62be399_candelabra.jpeg',
-          //         savedUrl: 'https://test.redaap.net/parse/files/tY6Sbi9gcEzSqfNWXydt6pkAliMCUnT2fs8OVYAe/24ef0ab62af8823104274d53f62be399_candelabra.jpeg'
-          //       };
+                const saved = {
+                  blob: undefined,
+                  extension: 'jpeg',
+                  file: undefined,
+                  fileName: 'Candelabra',
+                  func: 'photoUpload',
+                  key,
+                  savedName: '24ef0ab62af8823104274d53f62be399_candelabra.jpeg',
+                  savedUrl: 'https://test.redaap.net/parse/files/tY6Sbi9gcEzSqfNWXydt6pkAliMCUnT2fs8OVYAe/24ef0ab62af8823104274d53f62be399_candelabra.jpeg'
+                };
 
-          //       this.set('savedPhotoData', saved);
+                this.set('savedPhotoData', saved);
 
-          //       this.set('queueSize', this.queueSize ? this.queueSize - 1 : 0);
+                this.set('queueSize', this.queueSize ? this.queueSize - 1 : 0);
 
-          //       return saved;
-          //     });
-          // };
+                return saved;
+              });
+          };
 
 
 
@@ -331,10 +338,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
               // return undefined;
 
-              // return fakeUpload();
+              return fakeUpload();
 
 
-              return dispatch(uploadJob);
+              // return dispatch(uploadJob);
 
 
             } 

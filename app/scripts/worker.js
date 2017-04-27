@@ -346,19 +346,18 @@
 
 	// get current user after localstorage initializes and pass it to web-worker.html
 	// must use .currentAsync since all localstorage operations are promised based
-	const getCurrentUser = () => {
+	const getCurrentUser = job => {
 		Db.User.currentAsync().
 			then(currentUser => {
-				const currentUserJob = {func: 'user'};
 				if (currentUser) {
 					const current = {
 						first: 		currentUser.attributes.first,
 						username: currentUser.attributes.username
 					};
 
-					successful(currentUserJob, current);
+					successful(job, current);
 				} else {
-					successful(currentUserJob, null);
+					successful(job, null);
 				}
 			});
 	};
@@ -505,7 +504,7 @@
 
 				if (jobIsOnDreadingList) {
 					const resolvedJob = renameFunc(job, 'resolved');
-					successful(resolvedJob);
+					successful(resolvedJob, null);
 					dreading.remove(resolvedJob);
 				} else {
 					const savedJob = renameFunc(job, 'photoUpload');
@@ -614,7 +613,7 @@
 			});
 	};
 
-
+	// runs one of three cloud functions: save/review/send
 	const save = job => {
 		// type from email-options
 		// type === 'save'/'review'/'send'
@@ -661,6 +660,16 @@
         errored(job, error);
       });
 	};
+	// send an email to another surveyor containing a url link 
+	// for linking apps with firebase realtime collaboration
+	const invite = job => {
+		Db.Cloud.run('invite', {email: job.email, channel: job.channel}).
+			then(() => {
+				successful(job, null);
+			}, error => {
+				errored(job, error);
+			});
+	};
 
 
 	// handle all incoming messages
@@ -669,6 +678,9 @@
 		const func = job.func;
 
 		switch (func) {
+			case 'user':
+				getCurrentUser(job);
+				break;
 			case 'login':
 				login(job);
 				break;
@@ -717,6 +729,9 @@
 			case 'search':
 				surveySearch(job);
 				break;
+			case 'invite':
+				invite(job);
+				break;
 			default:
 				throw new Error('worker function not found in worker.js');
 		}
@@ -725,8 +740,6 @@
 
 	// listen for online event and cycle through the queue if necessary
 	Self.addEventListener('online', processQueue, false);
-
-	getCurrentUser();
 
 }(self)); // jshint ignore:line
 
