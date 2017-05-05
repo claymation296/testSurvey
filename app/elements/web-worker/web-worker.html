@@ -58,7 +58,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
         },
 
-        // get ref to app-security to pass current user
+        
         attached() {
           this.async(() => {
             if (!this.worker) {
@@ -97,7 +97,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // general worker response handling
         _workerResponse(response) {
-          // console.log('worker response: ', response);
           if (response.status === 'success') {
             this._jobDone(response.job);
           } else {
@@ -108,14 +107,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // listening to worker specific errors
         _workerError(event) {
           console.log('worker error: ', event);
-        },
-
-         // job status 'error' message event
-        _jobError(job) {
-          // bad session token handler
-          if (job.func === 'user') {
-            window.Redaap.appSecurity.currentUserError();
-          }
         },
 
 
@@ -146,13 +137,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           });
 
           return promise;
-        },
-
-        // Thanks MDN!
-        _getRandomInt(min, max)  {
-          min = Math.ceil(min);
-          max = Math.floor(max);
-          return Math.floor(Math.random() * (max - min)) + min;
         },
         // takes a string representing the worker function to run and an object 
         // containing the data to pass into the worker function        
@@ -206,6 +190,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               throw new Error('worker function not found in web-worker');
           }
         },  
+
+        // job status 'error' message event
+        _jobError(job) {
+          // bad session token handler
+          if (job.func === 'user') {
+            window.Redaap.appSecurity.currentUserError();
+          }
+        },
+
+        // Thanks MDN!
+        _getRandomInt(min, max)  {
+          min = Math.ceil(min);
+          max = Math.floor(max);
+          return Math.floor(Math.random() * (max - min)) + min;
+        },
 
 
 
