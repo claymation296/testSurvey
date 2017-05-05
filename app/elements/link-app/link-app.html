@@ -37,16 +37,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
     </style>
-
-
     
 
     <paper-card heading="Link Apps">
     	<div class="card-content">
     		<p>You can invite other surveyors to help complete the survey faster by linking apps in real time.</p>
     		<p>If you choose to add a collaborator, an email will be sent to them which contains a link to setup the realtime collaboration process.</p>
-
-
   			<!-- dont allow spaces, newline, carriage returns, etc. 
            allow any alphanumeric combo before one '@' followed by 
            any alphanumeric combo followed by one '.' followed by any alphanumeric combo -->
@@ -62,8 +58,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                      invalid="{{invalid}}"
                      value="{{email}}">
         </paper-input>
-
-
     	</div>
 
     	<div class="card-actions">
@@ -74,16 +68,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     			<iron-icon icon="custom-icons:send"></iron-icon>
     			Send Invitation
     		</paper-button>
-        <paper-button id="unlinkBtn" 
-                      on-tap="_unlink">
+        <paper-button on-tap="_unlink">
           <iron-icon icon="custom-icons:link"></iron-icon>
           Unlink App
         </paper-button>
     	</div>
 
     </paper-card>
-
-    
 
   </template>
 
@@ -112,7 +103,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _send() {
         	const send = () => {
-
             if (this.invalid) {
               this.warn('Please check the email format.');
               return;
@@ -132,6 +122,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         	this.onTap = send;
         },
+
 
         _unlink() {
           const unlink = () => {

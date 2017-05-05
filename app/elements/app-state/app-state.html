@@ -34,20 +34,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </iron-localstorage>
 
 
-
     <iron-localstorage name="redaap-email"
                        value="{{email}}"
                        error-message="{{localStorageError}}">
     </iron-localstorage>
 
 
-
     <iron-localstorage name="redaap-channel"
                        value="{{channel}}"
                        error-message="{{localStorageError}}">
     </iron-localstorage>
-
-
 
 
     <firebase-app api-key="AIzaSyA7lC69yQkPBFAfl9dOLCFbSxnbReE7PFA"
@@ -69,12 +65,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                        on-error="_firebaseDocError">
     </firebase-document>
 
-
-
-
-
   </template>
-
 
 
   <script>
@@ -106,7 +97,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _channelChanged(channel) {
           if (!channel || !this.tempState) { return; }
-
+          // tempState has a non null value during unlinking process
+          // it holds the last state value in localstorage cache
+          // so as not to accedentally lose users's data
           this.$.doc.getStoredValue(`/channels/${channel}`).
             then(state => {
               if (!state) {
@@ -144,21 +137,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             catch(error => console.log('firebase sign in error: ', error));
         },
 
-        
+        // called by link-app _send()
         getChannel() {
           return this.channel;
         },
 
-
+        // called by realtime-collaboration _link()
         linkApp(channel) {
-
+          // switch to inviter's channel
           this.channel = channel;
-
+          // show success ui to user only after new data is initialized
           return this.$.doc.getStoredValue(`/channels/${channel}`);
         },
 
-
-
+        // called by link-app _unlink()
         unlinkApp() {
 
 
@@ -181,8 +173,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }).
             catch(error => console.log(error));
         },
-
-        
 
 
         signOut() {
@@ -216,9 +206,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // _stateChanged(state) {
         // 	console.log('state changed: ', state.base);
         // },
-
-
-
 
 
         // _initializeDefaultState() {
