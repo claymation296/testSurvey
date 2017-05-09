@@ -68,7 +68,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     	<paper-toolbar id="toolbar">
 
         <photo-capture id="capture" 
-                       filename="[[label]]"
+                       filename="[[_computeFileName(label)]]"
                        disable-thumbnail
                        disable-viewer>
         </photo-capture>
@@ -142,11 +142,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   ],
                   timing: {duration: 200, delay: 250, easing: 'ease-out'}
                 }],
-
-
-
                 'deletePhoto': [{
-                  name: 'slide-up-animation',
+                  name: 'slide-down-animation',
                   // node set imperatively in updateDelete()
                   timing: {duration: 300, easing: 'ease-in'}
                 }, {
@@ -154,10 +151,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   // node set imperatively in updateDelete()
                   timing: {duration: 200, delay: 100, easing: 'ease-in'}
                 }],
-
-
-
-
                 'selectorExit': [{
                   name: 'slide-up-animation',
                   node: this,
@@ -281,6 +274,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           );
         },
 
+        // remove bar from filename for file upload
+        _computeFileName: name => name.split('|').join(''),
+
 
         _resetThumbnailMorphAnimation() {
           if (this.selectedThumbnail) {
@@ -381,12 +377,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             // guarantee the image will animate above other images and toolbar
             this.$.toolbar.style.zIndex         = '-1'; // ios fix
             this.selectedThumbnail.style.zIndex = '1';
-
-
-
-            console.log('toolbar zIndex: ', this.$.toolbar.getComputedStyleValue('z-index'));
-
-
             // correct rotated thumbnail to be fullscreen
             if (orientation === 6 || orientation === 8) {
               Polymer.dom(this.selectedThumbnail.$.img).classList.add('fullscreenRotation');

@@ -59,37 +59,29 @@
 											 new Db.Promise((resolve, reject) => 
 												 parseLocalforage.
 												 	 getItem(path).
-												 	 then(item => 
-													 	 resolve(item)).
-												 	 catch(err => 
-													 	 reject(err))),
+												 	 then(item => resolve(item)).
+												 	 catch(err => reject(err))),
 
 		setItemAsync: 	 (path, value) => 
 											 new Db.Promise((resolve, reject) =>
 												 parseLocalforage.
 												 	 setItem(path, value).
-												 	 then(() => 
-													 	 resolve('item set')).
-												 	 catch(err => 
-												 	 	 reject(err))),
+												 	 then(() => 	resolve('item set')).
+												 	 catch(err => reject(err))),
 
 		removeItemAsync: path => 
 											 new Db.Promise((resolve, reject) =>
 										 	 	 parseLocalforage.
 										 	 	 	 removeItem(path).
-										 	 	 	 then(() => 
-										 	 	 	 	 resolve('item removed')).
-										 	 	 	 catch(err => 
-										 	 	 	 	 reject(err))),
+										 	 	 	 then(() => 	resolve('item removed')).
+										 	 	 	 catch(err => reject(err))),
 
 		clear: 					 () => 
 					 	 					 new Db.Promise((resolve, reject) =>
 							 				 	 parseLocalforage.
 							 				 	 	 clear().
-							 				 	 	 then(() => 
-							 	 					 	 resolve('localstorage cleared')).
-							 				 	 	 catch(err => 
-							 				 	 	 	 reject(err)))
+							 				 	 	 then(() => 	resolve('localstorage cleared')).
+							 				 	 	 catch(err => reject(err)))
 	};
 
 	// start Parse Server Api

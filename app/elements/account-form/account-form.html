@@ -59,14 +59,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[a-zA-Z\s]"
                          prevent-invalid-input 
-                         value="{{inputs.clientName}}">
+                         value="{{client.clientName}}">
             </paper-input>
             <gold-phone-input id="phone"
                               label="Phone Number *"
-                              auto-validate 
+                              auto-validate="[[_computePhoneAutoValidate(client.phone)]]"
                               required
                               maxLength="12"
-                              value="{{inputs.phone}}">
+                              value="{{client.phone}}">
             </gold-phone-input>
             <!-- dont allow spaces, newline, carriage returns, etc. 
                  allow any alphanumeric combo before one '@' followed by 
@@ -77,10 +77,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          allowed-pattern="[^\s\f\n\r\t\v]"
                          prevent-invalid-input 
                          pattern=".+@{1}.+\.{1}.+"
-                         auto-validate 
+                         auto-validate="[[_computeEmailAutoValidate(client.email)]]" 
                          required 
                          error-message="Please enter a valid email format"
-                         value="{{inputs.email}}">
+                         value="{{client.email}}">
             </paper-input>
             <paper-input label="Company *"
                          autocapitalize 
@@ -91,7 +91,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[0-9a-zA-Z\s]"
                          prevent-invalid-input 
-                         value="{{inputs.companyName}}">
+                         value="{{client.companyName}}">
             </paper-input>
             <paper-input label="Address"
                          autocapitalize 
@@ -101,7 +101,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[.#0-9a-zA-Z\s]"
                          prevent-invalid-input 
-                         value="{{inputs.address}}">
+                         value="{{client.address}}">
             </paper-input>
             <paper-input label="City"
                          autocapitalize 
@@ -112,7 +112,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter 
                          allowed-pattern="[a-zA-Z\s]"
                          prevent-invalid-input
-                         value="{{inputs.city}}">
+                         value="{{client.city}}">
             </paper-input>
             <paper-input id="state"
                          label="State Abbreviation"
@@ -124,11 +124,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          minLength="2" 
                          maxLength="2"
                          error-message="Please use two letter state code only"
-                         value="{{inputs.state}}">
+                         value="{{client.state}}">
             </paper-input>
             <gold-zip-input id="zip"
-                            auto-validate
-                            value="{{inputs.zip}}">
+                            auto-validate="[[_computeZipAutoValidate(client.zip)]]" 
+                            value="{{client.zip}}">
             </gold-zip-input>
           </div>
           <paper-item class="noSelect">* required fields</paper-item>
@@ -145,7 +145,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          maxLength="30" char-counter
                          allowed-pattern="[#0-9a-zA-Z\s]"
                          prevent-invalid-input 
-                         value="{{inputs.projectName}}">
+                         value="{{client.projectName}}">
             </paper-input>
             <paper-input label="Project Address"
                          autocapitalize 
@@ -155,7 +155,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[.#0-9a-zA-Z\s]"
                          prevent-invalid-input
-                         value="{{inputs.projectAddress}}">
+                         value="{{client.projectAddress}}">
             </paper-input>
             <paper-input label="Project City"
                          autocapitalize 
@@ -166,7 +166,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter 
                          allowed-pattern="[a-zA-Z\s]"
                          prevent-invalid-input
-                         value="{{inputs.projectCity}}">
+                         value="{{client.projectCity}}">
             </paper-input>
             <paper-input id="projectState"
                          label="Project State Abbreviation"
@@ -178,11 +178,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          minLength="2" 
                          maxLength="2"
                          error-message="Please use two letter state code only"
-                         value="{{inputs.projectState}}">
+                         value="{{client.projectState}}">
             </paper-input>
             <gold-zip-input id="projectZip"
-                            auto-validate
-                            value="{{inputs.projectZip}}">
+                            auto-validate="[[_computeProjZipAutoValidate(client.projectZip)]]"
+                            value="{{client.projectZip}}">
             </gold-zip-input>
             <paper-input label="Project Site Contact"
                          autocapitalize 
@@ -192,7 +192,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[a-zA-Z\s]"
                          prevent-invalid-input
-                         value="{{inputs.projectContact}}">
+                         value="{{client.projectContact}}">
             </paper-input>
             <paper-input label="Project Job Description"
                          autocapitalize 
@@ -200,7 +200,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          autocorrect
                          maxLength="30" 
                          char-counter
-                         value="{{inputs.projectDescription}}">
+                         value="{{client.projectDescription}}">
             </paper-input>
           </div>    
         </paper-card>
@@ -217,47 +217,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         is: 'account-form',
 
         behaviors: [
-          window.Redaap.Behaviors.Utilities,                
-          window.Redaap.Behaviors.TabPageAnimationBehavior, 
-          window.Redaap.Behaviors.OnTapBehavior             
+          window.Redaap.Behaviors.Utilities,   
+          window.Redaap.Behaviors.OnTapBehavior,                         
+          window.Redaap.Behaviors.TabPageAnimationBehavior
         ],
 
         properties: {
-          // shares data with main-page and localstorage
+
           client: {
-          	type: Object,
-          	notify: true,
-            observer: '_clientChanged'
-          },
-
-
-          inputs: {
             type: Object,
-            value: {
-              clientName: '',
-              phone: null,
-              email: '',
-              companyName: '',
-              address: '',
-              city: '',
-              state: '',
-              zip: '',
-              projectName: '',
-              projectAddress: '',
-              projectCity: '',
-              projectState: '',
-              projectZip: '',
-              projectContact: '',
-              projectDescription: '',
-              surveyVersion: null
-            }
+            notify: true,
           },
           // used to clear inputs
           clearInputs: {
             type: Object,
             value: {
               clientName: '',
-              phone: null,
+              phone: '',
               email: '',
               companyName: '',
               address: '',
@@ -274,11 +250,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               surveyVersion: null
             }
           },
-          // displayed in app main toolbar middle
+
           displayedClientCompanyName: {
             type: String,
             notify: true,
-            computed: '_computeDisplayedClientCompanyName(inputs.companyName)'
+            computed: '_computeDisplayedClientCompanyName(client.companyName)'
           },
           // a list of element id's that will be checked for proper format validity
           idArray: {
@@ -319,10 +295,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         observers: [
-        	'_inputsChanged(inputs.*)'
+         '_clientChanged(client.*)'
         ],
-
-
+        
         // !!!!!!!!!!@@@@@@####### temporary solution until a 'home' page is created $$$$$$$$%%%%
         attached() {
           if (this.route === 'home') {
@@ -331,46 +306,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _computeDisplayedClientCompanyName: str => (str.length > 25) ? `${str.slice(0, 22)}...` : str,
+        _isNotEmptyString: str => (str && str.length > 0) ? true : false,
+
+        // dont show invalid state on initial default empty string
+        _computePhoneAutoValidate(phoneNum) { return this._isNotEmptyString(phoneNum); },
+
+        // dont show invalid state on initial default empty string
+        _computeEmailAutoValidate(email)    { return this._isNotEmptyString(email); },
+
+        // dont show invalid state on initial default empty string
+        _computeZipAutoValidate(zip)        { return this._isNotEmptyString(zip); },
+
+        // dont show invalid state on initial default empty string
+        _computeProjZipAutoValidate(zip)    { return this._isNotEmptyString(zip); },
 
 
-        _updateInputsFromLocalstorage(client) {
-          // must iterate through this.inputs in order to propagate data down
-          // to local dom inputs (Object.assign will not work here 3/10/2017)
-          const keys = Object.keys(client);
-
-          keys.forEach(key => {
-            const val = client[key];
-            if (val) {
-              this.set(`inputs.${key}`, val);
-            }
-          });
+        _computeDisplayedClientCompanyName: str => {
+          if (!str) { return ''; }
+          return str.length > 25 ? `${str.slice(0, 22)}...` : str;
         },
 
-
-        _clientChanged(client, oldClient) {
+        // any peterbations in the client account form requires a new validation check
+        _clientChanged() {
           this.set('clientValid', false);
-          // oldClient undefined on initial page load 
-          // and client becomes truthy when app-state sets it
-          if (client && !oldClient) {
-            this._updateInputsFromLocalstorage(client);
-          }
-        },
-
-
-        _inputsChanged(inputs) {
-          this.debounce('account-inputs-debounce', () => {
-            // the first time inputs is changed is when it is initially defined
-            // which blows away this.client if there is data saved in app-state
-            // so skip the initial inputs definition
-            if (this.initialLoad) {
-              this.initialLoad = false;
-              return;
-            }
-
-            this.client = null;
-            this.set('client', inputs.base);
-          }, 100);
         },
 
         
@@ -390,6 +348,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.schedule(scrollUp);
           }
         },
+        
 
         _searchObject(obj, value) {
           const requiredFields = key => {
@@ -446,13 +405,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const setInputs = () => {
             // allow user to copy entries to matching project inputs if
             // they are the same place 
-            const {companyName, address, city, state, zip} = this.inputs;
+            const {companyName, address, city, state, zip} = this.client;
 
-            this.set('inputs.projectName',    companyName);
-            this.set('inputs.projectAddress', address);
-            this.set('inputs.projectCity',    city);
-            this.set('inputs.projectState',   state);
-            this.set('inputs.projectZip',     zip);
+            this.set('client.projectName',    companyName);
+            this.set('client.projectAddress', address);
+            this.set('client.projectCity',    city);
+            this.set('client.projectState',   state);
+            this.set('client.projectZip',     zip);
           };
           // onTap property found in redaap-behaviors/on-tap-behavior
           this.onTap = setInputs;
@@ -461,8 +420,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // called by survey-search.html anytime the user loads in an old survey
         reloadClientFromSavedSurvey(obj) {
           const reload = () => {
-            this.inputs = undefined;
-            this.set('inputs', obj);
+            this.client = null;
+            this.set('client', obj);
           };
           
           this.schedule(reload);
@@ -471,8 +430,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // when user chooses to clear the survey
         clearClient() {
           const clear = () => {
-            this.inputs = undefined;
-            this.set('inputs', Object.assign({}, this.clearInputs));
+            this.client = null;
+            this.set('client', Object.assign({}, this.clearInputs));
           };
           
           this.schedule(clear);
@@ -480,7 +439,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // passed in from main-page
         _newVersion(v) {
-        	this.set('inputs.surveyVersion', v);
+          this.set('client.surveyVersion', v);
         }
 
       });

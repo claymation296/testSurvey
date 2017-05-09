@@ -108,7 +108,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         <photo-capture id="capture" 
-                       filename="[[light.type]]"
+                       filename="[[_computeFileName(light.type)]]"
                        keys="{{light.photos}}"
                        orientation="{{light.orientation}}"
                        placeholder="{{light.placeholder}}"
@@ -342,6 +342,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.$.backgroundImg.reset();
         	this.schedule(this.open.bind(this, callback));
         },
+
+        // remove bar from filename for file upload
+        _computeFileName: name => name.split('|').join(''),
 
 
         _photoCapturePlaceholder(event) {

@@ -97,7 +97,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <span id="title" class="title">[[areaName]]</span>
 
         <photo-capture id="capture" 
-                       filename="[[existingFixture.label]]"
+                       filename="[[_computeFileName(existingFixture.label)]]"
                        placeholder="{{existingFixture.placeholder}}"
                        key="{{existingFixture.key}}"
                        keys="{{existingFixture.keys}}"
@@ -269,6 +269,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.animationConfig.preCancel[0].node = header;
           });
         },
+
+        // remove bar from filename for file upload
+        _computeFileName: name => name.split('|').join(''),
 
         // photo-capture placeholder event
         _photoCapturePlaceholder(event) {
