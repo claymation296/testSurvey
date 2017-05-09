@@ -348,7 +348,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             const areaKey        = name.split(' ').join('_');
             const areaToDel      = bom.areas[areaKey];
             const fixKeysToDel   = Object.keys(areaToDel.fixtures);
-            const photoKeysToDel = Object.keys(areaToDel.photos);
 
             delete bom.areas[areaKey];
 
@@ -362,9 +361,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               }
             });
 
-            photoKeysToDel.forEach(photoKey => {
-              delete bom.photos[photoKey];
-            });
+            if (areaToDel.photos) {
+              const photoKeysToDel = Object.keys(areaToDel.photos);
+
+              photoKeysToDel.forEach(photoKey => {
+                delete bom.photos[photoKey];
+              });
+            }
             // force repeater to update
             this.bom = null;
             this.set('bom', bom);
@@ -376,7 +379,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _computeBomArray(obj) {
-          if (!obj || !obj.base) { return this.bomArray; }
+
+
+          console.log('bom changed: ', obj);
+
+
+          if (!obj || !obj.base) { 
+            // to catch last area deleted by another user when apps are linked
+            if (this.bom === undefined) {
+              return [];
+            }
+            return this.bomArray; 
+          }
 
           const bom   = obj.base;
           const areas = Object.keys(bom.areas);
@@ -410,9 +424,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           return array.findIndex(testAreaNames);
         },
 
-        // area deletes
+        
         _bomArrayChanged(obj) {
           if (!obj) { return; }
+          // area deletes
           if (obj.path === 'bomArray.splices') {
             const areaToDel = obj.value.indexSplices[0].removed[0].name;
             // wait for slide-delete animations and cleanup

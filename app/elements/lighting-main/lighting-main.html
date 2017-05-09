@@ -569,6 +569,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.set('lightingTab', 'quoteSelector');
           }
         },
+        
         // observe client to maintain version in quote-viewer
         _clientUpdated(obj) {
           if (obj && obj.surveyVersion) {
@@ -593,7 +594,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             const navigate = () => {
               this.set('route', 'client');
               this.async(() => {
-                this.set('mode', null);
+                this.set('mode', '');
                 this.set('lightingTab', 'areaPage');
               }, 500);
             };
@@ -603,6 +604,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // onTap property found in redaap-behaviors/on-tap-behavior
           this.onTap = clearData; 
         },
+
         // determine if all the data that constitues a completed quote is present
         _quoteIsReadyToSave() {
           // need recipients email, first and last name, and 
@@ -619,6 +621,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           return ready;
         },
+
         // change the version number after Parse function returns successfully
         _createNewVersion(version) {
           // increment the survey version number to help keep track of edits
@@ -630,6 +633,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             return version += 1;
           }
         },
+
         // create a new version number and open the success screen
         _saveSuccess() {
           this.set('version', this._createNewVersion(this.client.surveyVersion));
@@ -638,6 +642,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // trigger quote-page to close
           window.Redaap.emailOptions.saveSuccess();
         },
+
         // show user an error toast and stop the spinner in email-options
         _saveError(error) {
           console.log(error);
@@ -651,29 +656,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.async(() => {
             window.Redaap.emailOptions.saveError();
           }, 2000);
-        },
-
-
-
-//*********** test dummy to fake successfull response **********************
-
-        // save(type, options) {
-        //   if (!this._quoteIsReadyToSave()) { return; }
-        //   // options === {brochure: bool, credit: bool, contract: bool, capture: dataURL}
-        //   console.log('running email dummy function: ', options);
-          
-
-        //   this.async(() => {
-        //     window.Redaap.emailOptions.saveSuccess();
-        //     // run success-page method to play its entry animation
-        //     window.Redaap.successPage.open();
-        //   }, 2000);
-          
-        // },
-
-//**************** production code ************************
-
-        
+        },        
 
         // called by email-options
         save(type, options) {
@@ -699,7 +682,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this._saveError(error);
             });
         },
-
 
         // fired from bom-send in order to process any enqueued photos before sending bom
         _processWorkerPhotoQueue() {

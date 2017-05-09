@@ -301,6 +301,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.data           = undefined;
           this.listen(this.$.fixtureRepeater, 'dom-change', '_repeaterDomInit');
           this.schedule(setData);
+        }, 
+        // called by area-page updateUSA method any time the uSA is updated by solution-view
+        // and by area-page _bomChanged observer when bom is changed by bom-catagory-selector
+        update(newData) {
+          // no need to run the update if area-edit is not already open
+          if (!this.isDisplayed(this)) { return; }
+
+          const setData = () => {
+            this.set('data', newData);
+            this.deferPhoto = true;
+          };
+
+          this.data = undefined;
+          this.$.closeButton.makeCheck();
+          this.schedule(setData);
         },
         // pull fixtures out of data object for the template repeater
         // cannot use a computed property here because of a dom-repeat bug
@@ -496,23 +511,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             const open = this.open.bind(this, loadCardsCallback);
             this.schedule(open);
           }, 100);
-        },  
-
-        // called by area-page updateUSA method any time the uSA is updated by solution-view
-        // and by area-page _bomChanged observer when bom is changed by bom-catagory-selector
-        update(newData) {
-          // no need to run the update if area-edit is not already open
-          if (!this.isDisplayed(this)) { return; }
-
-          const setData = () => {
-            this.set('data', newData);
-            this.deferPhoto = true;
-          };
-
-          this.data = undefined;
-          this.$.closeButton.makeCheck();
-          this.schedule(setData);
-        },
+        }, 
 
 
         _addFixtureButtonTapped() {

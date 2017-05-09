@@ -298,34 +298,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const processJob  = {func: 'processPhoto',  key};
           const uploadJob   = {func: 'photoUpload',   key};
 
-
-
-
-          const fakeUpload = () => {
-            return new Promise(resolve => this.async(() => resolve(), 2000)).
-              then(() => {
-
-                const saved = {
-                  blob: undefined,
-                  extension: 'jpeg',
-                  file: undefined,
-                  fileName: 'Candelabra',
-                  func: 'photoUpload',
-                  key,
-                  savedName: '24ef0ab62af8823104274d53f62be399_candelabra.jpeg',
-                  savedUrl: 'https://test.redaap.net/parse/files/tY6Sbi9gcEzSqfNWXydt6pkAliMCUnT2fs8OVYAe/24ef0ab62af8823104274d53f62be399_candelabra.jpeg'
-                };
-
-                this.set('savedPhotoData', saved);
-
-                this.set('queueSize', this.queueSize ? this.queueSize - 1 : 0);
-
-                return saved;
-              });
-          };
-
-
-
           function* runPhotos() {   
             try {
               yield dispatch(metadataJob);  // returns key, orientation, and temp url of original file
@@ -337,10 +309,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
               // return undefined;
 
-              return fakeUpload();
 
-
-              // return dispatch(uploadJob);
+              return dispatch(uploadJob);
 
 
             } 

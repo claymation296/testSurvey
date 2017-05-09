@@ -28,8 +28,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </iron-localstorage> -->
 
 
-    <iron-localstorage name="redaap-tempState"
-                       value="{{tempState}}"
+    <iron-localstorage name="redaap-cachedState"
+                       value="{{cachedState}}"
                        error-message="{{localStorageError}}">
     </iron-localstorage>
 
@@ -79,6 +79,43 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         		type: Object,
         		notify: true
         	},
+          // cachedState has a non null value during unlinking process
+          // it holds the last state value in localstorage cache
+          // so as not to accedentally lose users's data
+          cachedState: Object,
+
+          defaultState: {
+            type: Object,
+            value: {
+              bom: {
+                areas: {}, 
+                fixtures: {}, 
+                photos: {}
+              },
+              client: {
+                clientName: '',
+                phone: '',
+                email: '',
+                companyName: '',
+                address: '',
+                city: '',
+                state: '',
+                zip: '',
+                projectName: '',
+                projectAddress: '',
+                projectCity: '',
+                projectState: '',
+                projectZip: '',
+                projectContact: '',
+                projectDescription: '',
+                surveyVersion: null
+              },
+              clientValid: false,
+              mode: '',
+              userSelectedArray: []
+            }
+          },
+
           // cache email for user experience during login
           email: {
             type: String,
@@ -88,37 +125,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           channel: {
             type: String,
             observer: '_channelChanged'
-          },
-
-          tempState: Object
+          }
 
         },
 
 
+        _objIsEmpty: obj => Object.keys(obj).length === 0,
+
+
         _channelChanged(channel) {
-          if (!channel || !this.tempState) { return; }
-          // tempState has a non null value during unlinking process
-          // it holds the last state value in localstorage cache
-          // so as not to accedentally lose users's data
+          if (!channel) { return; }
+          
           this.$.doc.getStoredValue(`/channels/${channel}`).
             then(state => {
-              if (!state) {
-                this.set('state', this.tempState);
-                this.tempState = null;
-
-                console.log('setting state from tempState: ', this.state);
-
-              } else if (typeof state === 'object') {
-                const stateIsEmpty = Object.keys(state).length === 0;
-                if (stateIsEmpty) {
-                  this.set('state', this.tempState);
-                  this.tempState = null;
-
-                  console.log('setting state from tempState: ', this.state);
-
+              if (this._objIsEmpty(state)) {
+                if (this.cachedState === null) {
+                  this.set('state', this.defaultState);
+                } else {
+                  this.set('state', this.cachedState);
+                  this.cachedState = null;
                 }
               }
-            });
+            }).
+            catch(error => console.log('firebase getStoredValue error: ', error));
         },
 
 
@@ -161,7 +190,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
           // hold state in localstorage incase of page refresh
-          this.tempState = this.state;
+          this.cachedState = this.state;
           // switch to new channel to guarantee the previously linked
           // user can no longer make changes to this user's data
           return this.$.doc.destroy().
@@ -217,7 +246,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           console.log('app-state localstorage error: ', error);
         }
 
-        // example
+        // example bom object
         // bom: {
           //   type: Object,
           //   value: {
