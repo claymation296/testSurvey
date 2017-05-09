@@ -380,6 +380,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         
         // called by photo-viewer when user deletes last photo from the list
         resetCapture() {
+          this.placeholderSrc = '#';
+          this.pic            = '#';
           this.set('orientation', null);
           this.set('placeholder', null);
           this.set('savedUrl',    null);
@@ -517,6 +519,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _placeholderSrcLoaded() {
           const loaded = () => {
             this._resetTrigger();
+            this.pic = '#';
             this.fire('photo-capture-placeholder-loaded', this._makeEventPayload());
 
             if (this.placeholderSrc && this.placeholderSrc !== '#') {
@@ -580,7 +583,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // photo successfully saved to db so now use the url string as the image src
         // to save memory and cache in localstorage
         _loadSavedUrl(url) {
-          this.placeholderSrc = '#';
           // must force iron-image to take new url even if it is the same as previously loaded
           this.pic = '#';
           this.pic = url;
@@ -589,7 +591,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _loadPlaceholderSrc(tempUrl) {
-          this.pic = '#';
           // force update
           this.placeholderSrc        = '#';
           this.placeholderSrc        = tempUrl;
