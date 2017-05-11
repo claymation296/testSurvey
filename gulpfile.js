@@ -182,6 +182,7 @@ gulp.task('html', function () {
   var assets = $.useref.assets();
 
   return gulp.src(['dist/**/*.html', '!dist/{elements,test}/**/*.html'])
+
     // no longer needed since elements are being lazyloaded after check for
     // web component support in app.js
     // Replace path for vulcanized assets
@@ -217,7 +218,8 @@ gulp.task('remaining-scripts', function () {
 
 
 
-// polybuild/vulcanize break firebase.js
+// polybuild/vulcanize breaks firebase.js
+// https://github.com/PolymerElements/polymer-starter-kit/issues/378
 
 // // Polybuild will take care of inlining HTML imports,
 // // scripts and CSS for you.
@@ -229,6 +231,7 @@ gulp.task('remaining-scripts', function () {
 
 
 // polybuild/vulcanize break firebase.js so exclude it
+// https://github.com/PolymerElements/polymer-starter-kit/issues/378
 
 // Polybuild will take care of inlining HTML imports,
 // scripts and CSS for you.
@@ -242,6 +245,13 @@ gulp.task('vulcanize-elements', function () {
     }))
     .pipe(gulp.dest('dist/elements'));
 });
+
+
+
+
+
+
+
 
 
 // If you require more granular configuration of Vulcanize
