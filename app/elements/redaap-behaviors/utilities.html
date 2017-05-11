@@ -25,6 +25,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }, 1);
       },
 
+      // partial application
       curry(func) {
       	const arity = func.length;
 
@@ -47,6 +48,32 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       // 	return curried;
       // },
+
+
+      // chain multiple pure functions together
+      compose(...funcs) {
+        const arity = funcs.length;
+        if (arity === 0) { return; }
+
+        const foundNonFunction = funcs.find(func => typeof func !== 'function');
+        if (foundNonFunction) { throw new Error('compose only accepts functions as arguments'); }
+
+        return x => {
+          // work array last to first
+          const index = arity - 1;
+          if (index === 0) { return funcs[0](x); }
+
+          const run = (f, g, i) => {
+            if (i === 0) {
+              return f(g(x));
+            }
+
+            return f(run(g, funcs[i - 1], i - 1));
+          };
+
+          return run(funcs[index], funcs[index - 1], index - 1);
+        };
+      },
 
 
       isDisplayed(element) {
