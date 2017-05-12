@@ -23,9 +23,11 @@ const glob               = require('glob');
 const historyApiFallback = require('connect-history-api-fallback');
 const packageJson        = require('./package.json');
 const crypto             = require('crypto');
-// const polybuild          = require('polybuild');
+// const polybuild          = require('polybuild'); polybuild errors with firebase.js
 const gulpMatch          = require('gulp-match'); // used to ignore transpiling min.js files
-const cache              = require('gulp-cache'); // 'gulp clear' task added 3/27/2017
+const cssSlam            = require('css-slam');
+const HtmlSplitter       = require('polymer-build').HtmlSplitter;
+const htmlSplitter       = new HtmlSplitter();
 
 
 
@@ -42,7 +44,7 @@ const AUTOPREFIXER_BROWSERS = [
   'bb >= 10'
 ];
 
-var styleTask = function (stylesPath, srcs) {
+const styleTask = (stylesPath, srcs) => {
   return gulp.src(srcs.map(function(src) {
       return path.join('app', stylesPath, src);
     }))
@@ -57,14 +59,14 @@ var styleTask = function (stylesPath, srcs) {
 
 
 // Transpile all JS to ES5.
-gulp.task('js', function () {
+gulp.task('js', () => {
 
   // using an array of globs threw errors in gulp-if and gulp-match
   // so had to break them out individually in this function
-  var isESNextCode = function (file) {
-    var isJS = gulpMatch(file, '*.js');
-    var isMin = gulpMatch(file, '*.min.js');
-    var isWorkerExif = gulpMatch(file, '**/worker-exif.js');
+  const isESNextCode = file => {
+    const isJS         = gulpMatch(file, '*.js');
+    const isMin        = gulpMatch(file, '*.min.js');
+    const isWorkerExif = gulpMatch(file, '**/worker-exif.js');
 
     return (isJS && !isMin && !isWorkerExif);
   };
@@ -126,7 +128,7 @@ gulp.task('images', function () {
 // fixes bug where images/touch arent being carried over to dist
 // caused by an issue with image caching
 // 3/27/2017
-gulp.task('clear', done => cache.clearAll(done));
+gulp.task('clear', done => $.cache.clearAll(done));
 
 
 // Copy all files at the root level (app)
@@ -207,9 +209,71 @@ gulp.task('html', function () {
     .pipe($.size({title: 'html'}));
 });
 
+
+
+
+
+
+
+// Scan your HTML for assets & optimize them
+gulp.task('minify-elements', () => {
+
+  return gulp.src('dist/elements/**/*.*')
+    .pipe($.if('*.html', cssSlam.gulp()))
+    .pipe($.if('*.html', $.minifyHtml({
+      quotes: true,
+      empty: true,
+      spare: true
+    })))
+    .pipe($.if('*.js', $.babili()))
+    // Output files
+    .pipe(gulp.dest('dist/elements'))
+    .pipe($.size({title: 'minify-elements'}));
+});
+
+
+
+// must optimize bower_components before vulcanize
+// because firebase.js breaks polybuild and vulcanize
+// so must pre-minify and bypass firebase
+gulp.task('minify-components', () => {
+
+  return gulp.src([
+      'dist/bower_components/**/*.*',
+      '!dist/bower_components/**/*.min.js',
+      // ignored for speed/time constraints
+      '!dist/bower_components/{chai, mocha, sinonjs, webcomponentsjs}/*.*',
+      '!dist/bower_components/{hydrolysis, marked, marked-element, prism, prism-element}/**/*.*',
+      '!dist/bower_components/{sinon-chai, stacky, test-fixture}/**/*.*',
+      '!dist/bower_components/{web-animations-js, web-component-tester}/**/*.*',
+      // removed because of a post build error
+      '!dist/bower_components/firebase/*.*',
+      // removed because of a pre build error
+      '!dist/bower_components/web-component-tester/**/*.*',
+    ], {base: './'})
+    .pipe(htmlSplitter.split())
+    .pipe($.if('*.html', cssSlam.gulp()))
+    .pipe($.if('*.html', $.minifyHtml({
+      quotes: true,
+      empty: true,
+      spare: true
+    })))
+    .pipe($.if('*.js', $.babili()))
+    .pipe(htmlSplitter.rejoin())
+    // Output files
+    .pipe(gulp.dest('.'))
+    .pipe($.size({title: 'minify-components'}));
+});
+
+
+
+
+
+
+
 // need seperate 'remaining-scripts' task since the build only catches app.js
 // run scripts through uglify 
-gulp.task('remaining-scripts', function () {
+gulp.task('remaining-scripts', () => {
   return gulp.src(['dist/scripts/*.js', '!dist/scripts/app.js', '!dist/scripts/*.min.js'])
     // Concatenate and minify JavaScript
     .pipe($.uglify({preserveComments: 'some'}))
@@ -233,7 +297,7 @@ gulp.task('remaining-scripts', function () {
 // polybuild/vulcanize break firebase.js so exclude it
 // https://github.com/PolymerElements/polymer-starter-kit/issues/378
 
-// Polybuild will take care of inlining HTML imports,
+// vulcanize will take care of inlining HTML imports,
 // scripts and CSS for you.
 gulp.task('vulcanize-elements', function () {
   return gulp.src('dist/elements/elements.html')
@@ -245,11 +309,6 @@ gulp.task('vulcanize-elements', function () {
     }))
     .pipe(gulp.dest('dist/elements'));
 });
-
-
-
-
-
 
 
 
@@ -410,6 +469,10 @@ gulp.task('default', ['clean', 'clear'], function (cb) {
     ['elements', 'js'],
     // added 'remaining-scripts' 8/29/2016
     ['jshint', 'images', 'fonts', 'html', 'remaining-scripts'],
+
+    'minify-elements', 'minify-components',
+
+
     // added 'delete-merged-with-appjs' 9/1/2016
     'vulcanize-elements', 'rename-elements', 'delete-merged-with-appjs', 'cache-config',
     cb);

@@ -63,6 +63,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const index = arity - 1;
           if (index === 0) { return funcs[0](x); }
 
+          // const run = (f, g, i) => i === 0 ? f(g(x)) : f(run(g, funcs[i - 1], i - 1));
+
           const run = (f, g, i) => {
             if (i === 0) {
               return f(g(x));
