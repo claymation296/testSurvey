@@ -59,14 +59,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[a-zA-Z\s]"
                          prevent-invalid-input 
-                         value="{{client.clientName}}">
+                         value="{{client.clientName}}"
+                         disabled="[[readOnly]]">
             </paper-input>
             <gold-phone-input id="phone"
                               label="Phone Number *"
                               auto-validate="[[_computePhoneAutoValidate(client.phone)]]"
                               required
                               maxLength="12"
-                              value="{{client.phone}}">
+                              value="{{client.phone}}"
+                              disabled="[[readOnly]]">
             </gold-phone-input>
             <!-- dont allow spaces, newline, carriage returns, etc. 
                  allow any alphanumeric combo before one '@' followed by 
@@ -80,7 +82,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          auto-validate="[[_computeEmailAutoValidate(client.email)]]" 
                          required 
                          error-message="Please enter a valid email format"
-                         value="{{client.email}}">
+                         value="{{client.email}}"
+                         disabled="[[readOnly]]">
             </paper-input>
             <paper-input label="Company *"
                          autocapitalize 
@@ -91,7 +94,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[0-9a-zA-Z\s]"
                          prevent-invalid-input 
-                         value="{{client.companyName}}">
+                         value="{{client.companyName}}"
+                         disabled="[[readOnly]]">
             </paper-input>
             <paper-input label="Address"
                          autocapitalize 
@@ -101,7 +105,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[.#0-9a-zA-Z\s]"
                          prevent-invalid-input 
-                         value="{{client.address}}">
+                         value="{{client.address}}"
+                         disabled="[[readOnly]]">
             </paper-input>
             <paper-input label="City"
                          autocapitalize 
@@ -112,7 +117,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter 
                          allowed-pattern="[a-zA-Z\s]"
                          prevent-invalid-input
-                         value="{{client.city}}">
+                         value="{{client.city}}"
+                         disabled="[[readOnly]]">
             </paper-input>
             <paper-input id="state"
                          label="State Abbreviation"
@@ -124,11 +130,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          minLength="2" 
                          maxLength="2"
                          error-message="Please use two letter state code only"
-                         value="{{client.state}}">
+                         value="{{client.state}}"
+                         disabled="[[readOnly]]">
             </paper-input>
             <gold-zip-input id="zip"
                             auto-validate="[[_computeZipAutoValidate(client.zip)]]" 
-                            value="{{client.zip}}">
+                            value="{{client.zip}}"
+                            disabled="[[readOnly]]">
             </gold-zip-input>
           </div>
           <paper-item class="noSelect">* required fields</paper-item>
@@ -138,14 +146,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <div class="card-content">
             <paper-button class="buttons" 
                           on-tap="_sameAsClientButtonTapped" 
-                          raised>same as client
+                          raised
+                          disabled="[[readOnly]]">same as client
             </paper-button>
             <paper-input label="Project Name"
                          autocapitalize autocomplete autocorrect
                          maxLength="30" char-counter
                          allowed-pattern="[#0-9a-zA-Z\s]"
                          prevent-invalid-input 
-                         value="{{client.projectName}}">
+                         value="{{client.projectName}}"
+                         disabled="[[readOnly]]">
             </paper-input>
             <paper-input label="Project Address"
                          autocapitalize 
@@ -155,7 +165,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[.#0-9a-zA-Z\s]"
                          prevent-invalid-input
-                         value="{{client.projectAddress}}">
+                         value="{{client.projectAddress}}"
+                         disabled="[[readOnly]]">
             </paper-input>
             <paper-input label="Project City"
                          autocapitalize 
@@ -166,7 +177,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter 
                          allowed-pattern="[a-zA-Z\s]"
                          prevent-invalid-input
-                         value="{{client.projectCity}}">
+                         value="{{client.projectCity}}"
+                         disabled="[[readOnly]]">
             </paper-input>
             <paper-input id="projectState"
                          label="Project State Abbreviation"
@@ -178,11 +190,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          minLength="2" 
                          maxLength="2"
                          error-message="Please use two letter state code only"
-                         value="{{client.projectState}}">
+                         value="{{client.projectState}}"
+                         disabled="[[readOnly]]">
             </paper-input>
             <gold-zip-input id="projectZip"
                             auto-validate="[[_computeProjZipAutoValidate(client.projectZip)]]"
-                            value="{{client.projectZip}}">
+                            value="{{client.projectZip}}"
+                            disabled="[[readOnly]]">
             </gold-zip-input>
             <paper-input label="Project Site Contact"
                          autocapitalize 
@@ -192,7 +206,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          char-counter
                          allowed-pattern="[a-zA-Z\s]"
                          prevent-invalid-input
-                         value="{{client.projectContact}}">
+                         value="{{client.projectContact}}"
+                         disabled="[[readOnly]]">
             </paper-input>
             <paper-input label="Project Job Description"
                          autocapitalize 
@@ -200,7 +215,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          autocorrect
                          maxLength="30" 
                          char-counter
-                         value="{{client.projectDescription}}">
+                         value="{{client.projectDescription}}"
+                         disabled="[[readOnly]]">
             </paper-input>
           </div>    
         </paper-card>
@@ -290,7 +306,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           initialLoad: {
             type: Boolean,
             value: true
-          }
+          },
+          // from app-state
+          readOnly: Boolean
         },
 
 

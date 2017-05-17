@@ -125,7 +125,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                         template-id="replacementsRepeater"
                         template-item-class-name="label"
                         index="[[index]]"
-                        disable-last-element-delete>
+                        disable-last-element-delete
+                        disabled="[[disabled]]">
 
             <div class$="labelContainer noSelect hightlightedTransitions [[item.highlighted]]">
               <iron-icon class="labelIcon" 
@@ -153,7 +154,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                            min="0"
                            allowed-pattern="[0-9]"
                            prevent-invalid-input 
-                           value="{{item.customProduct}}">
+                           value="{{item.customProduct}}"
+                           disabled="[[disabled]]">
                 <div prefix>$</div>
               </paper-input>
               <paper-input id="centerCustomInput"
@@ -164,7 +166,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                            min="0"
                            allowed-pattern="[0-9]"
                            prevent-invalid-input 
-                           value="{{item.customInstall}}">
+                           value="{{item.customInstall}}"
+                           disabled="[[disabled]]">
                 <div prefix>$</div>
               </paper-input>
               <paper-input class="customInput" 
@@ -174,7 +177,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                            min="0"
                            allowed-pattern="[0-9]"
                            prevent-invalid-input 
-                           value="{{item.count}}">
+                           value="{{item.count}}"
+                           disabled="[[disabled]]">
               </paper-input>
             </div>
           </template>
@@ -182,7 +186,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <div class="inputsContainer">
             <inputs-repeater class="inputs" 
                              array="{{item.tallies}}" 
-                             hidden$="[[item.custom]]">
+                             hidden$="[[item.custom]]"
+                             disabled="[[disabled]]">
             </inputs-repeater>
           </div>
 
@@ -198,6 +203,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         is: 'replacements-repeater',
         properties: {
         	replacements: Array,
+
+          disabled: Boolean
         },
 
         listeners: {

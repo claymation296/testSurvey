@@ -24,7 +24,7 @@ const historyApiFallback = require('connect-history-api-fallback');
 const packageJson        = require('./package.json');
 const crypto             = require('crypto');
 // const polybuild          = require('polybuild'); polybuild errors with firebase.js
-const gulpMatch          = require('gulp-match'); // used to ignore transpiling min.js files
+// const gulpMatch          = require('gulp-match'); // used to ignore transpiling min.js files
 const cssSlam            = require('css-slam');
 const HtmlSplitter       = require('polymer-build').HtmlSplitter;
 const htmlSplitter       = new HtmlSplitter();
@@ -45,9 +45,7 @@ const AUTOPREFIXER_BROWSERS = [
 ];
 
 const styleTask = (stylesPath, srcs) => {
-  return gulp.src(srcs.map(function(src) {
-      return path.join('app', stylesPath, src);
-    }))
+  return gulp.src(srcs.map(src => path.join('app', stylesPath, src)))
     .pipe($.changed(stylesPath, {extension: '.css'}))
     .pipe($.autoprefixer(AUTOPREFIXER_BROWSERS))
     .pipe(gulp.dest('.tmp/' + stylesPath))
@@ -58,29 +56,42 @@ const styleTask = (stylesPath, srcs) => {
 
 
 
-// Transpile all JS to ES5.
+// // Transpile all JS to ES5.
+// gulp.task('js', () => {
+
+//   // using an array of globs threw errors in gulp-if and gulp-match
+//   // so had to break them out individually in this function
+//   const isESNextCode = file => {
+//     const isJS         = gulpMatch(file, '*.js');
+//     const isMin        = gulpMatch(file, '*.min.js');
+//     const isWorkerExif = gulpMatch(file, '**/worker-exif.js');
+
+//     return (isJS && !isMin && !isWorkerExif);
+//   };
+
+//   return gulp.src('app/**/*.{js,html}')
+//     .pipe($.sourcemaps.init())
+//     .pipe($.if('*.html', $.crisper({
+//       scriptInHead: false
+//     }))) // Extract JS from .html files
+//     // .pipe($.if('*.js', $.babel({
+//     .pipe($.if(isESNextCode, $.babel({
+//       presets: ['es2015', 'stage-0'],
+//       plugins: ['transform-regenerator', 'syntax-async-functions']
+//     })))
+//     .pipe($.sourcemaps.write('.'))
+//     .pipe(gulp.dest('.tmp/'))
+//     .pipe(gulp.dest('dist/'));
+// });
+
+
 gulp.task('js', () => {
-
-  // using an array of globs threw errors in gulp-if and gulp-match
-  // so had to break them out individually in this function
-  const isESNextCode = file => {
-    const isJS         = gulpMatch(file, '*.js');
-    const isMin        = gulpMatch(file, '*.min.js');
-    const isWorkerExif = gulpMatch(file, '**/worker-exif.js');
-
-    return (isJS && !isMin && !isWorkerExif);
-  };
 
   return gulp.src('app/**/*.{js,html}')
     .pipe($.sourcemaps.init())
     .pipe($.if('*.html', $.crisper({
       scriptInHead: false
     }))) // Extract JS from .html files
-    // .pipe($.if('*.js', $.babel({
-    .pipe($.if(isESNextCode, $.babel({
-      presets: ['es2015', 'stage-0'],
-      plugins: ['transform-regenerator', 'syntax-async-functions']
-    })))
     .pipe($.sourcemaps.write('.'))
     .pipe(gulp.dest('.tmp/'))
     .pipe(gulp.dest('dist/'));
@@ -192,7 +203,8 @@ gulp.task('html', function () {
 
     .pipe(assets)
     // Concatenate and minify JavaScript
-    .pipe($.if('*.js', $.uglify({preserveComments: 'some'})))
+    // .pipe($.if('*.js', $.uglify({preserveComments: 'some'})))
+    .pipe($.if('*.js', $.babili()))
     // Concatenate and minify styles
     // In case you are still using useref build blocks
     .pipe($.if('*.css', $.cssmin()))
@@ -213,7 +225,7 @@ gulp.task('html', function () {
 
 
 
-
+// @@@@@@@@@@@@@@@ remove when firebase.js no longer breaks when vulcanized @@@@@@@@@@@@@@@
 
 // Scan your HTML for assets & optimize them
 gulp.task('minify-elements', () => {
@@ -232,6 +244,7 @@ gulp.task('minify-elements', () => {
 });
 
 
+// @@@@@@@@@@@@@@@ remove when firebase.js no longer breaks when vulcanized @@@@@@@@@@@@@@@
 
 // must optimize bower_components before vulcanize
 // because firebase.js breaks polybuild and vulcanize
@@ -276,7 +289,7 @@ gulp.task('minify-components', () => {
 gulp.task('remaining-scripts', () => {
   return gulp.src(['dist/scripts/*.js', '!dist/scripts/app.js', '!dist/scripts/*.min.js'])
     // Concatenate and minify JavaScript
-    .pipe($.uglify({preserveComments: 'some'}))
+    .pipe($.babili())
     .pipe(gulp.dest('dist/scripts'));
 });
 
@@ -305,8 +318,22 @@ gulp.task('vulcanize-elements', function () {
       stripComments: true,
       inlineCss: true,
       inlineScripts: true,
-      excludes: [path.resolve('./dist/bower_components/firebase/firebase.js')]
+      excludes: [
+        path.resolve('./dist/bower_components/firebase/firebase.js'), // vulcanize blows up firebase
+        'dist/elements/photo-capture/photo-capture.js' // async/await blows up vulcanize
+      ]
     }))
+    // @@@@@@@@@@@@@@@@ uncomment when vulcanize works with firebase.js @@@@@@@@@@@@@@@@
+    // .pipe(htmlSplitter.split())
+    // .pipe($.if('*.html', cssSlam.gulp()))
+    // .pipe($.if('*.html', $.minifyHtml({
+    //   quotes: true,
+    //   empty: true,
+    //   spare: true
+    // })))
+    // // .pipe($.if('*.js', $.print()))
+    // .pipe($.if('*.js', $.babili()))
+    // .pipe(htmlSplitter.rejoin())
     .pipe(gulp.dest('dist/elements'));
 });
 
@@ -330,9 +357,9 @@ gulp.task('rename-elements', function () {
 // so that they do not appear in cache-config
 // must also remove these files from the file list used by the cache-config task
 // by filtering the array off cache files 
-gulp.task('delete-merged-with-appjs', function () {
-  return del(['dist/scripts/babel-polyfill.min.{js,js.map}']);
-});
+// gulp.task('delete-merged-with-appjs', function () {
+//   return del(['dist/scripts/babel-polyfill.min.{js,js.map}']);
+// });
 
 
 
@@ -368,9 +395,12 @@ gulp.task('cache-config', function (callback) {
 
       // must remove these files from the array since they dont exist in the build version of the
       // scripts folder even though the files are removed in the 'delete-merged-with-appjs' task
-      const filteredFiles = files.filter(file => file !== 'scripts/babel-polyfill.min.js' && 
-                                                 file !== 'scripts/babel-polyfill.min.js.map' &&
-                                                 file !== 'elements/elements.build.html');
+      // const filteredFiles = files.filter(file => file !== 'scripts/babel-polyfill.min.js' && 
+      //                                            file !== 'scripts/babel-polyfill.min.js.map' &&
+      //                                            file !== 'elements/elements.build.html');
+
+
+      const filteredFiles = files.filter(file => file !== 'elements/elements.build.html');
 
       // config.precache = files;
       config.precache = filteredFiles;
@@ -469,12 +499,11 @@ gulp.task('default', ['clean', 'clear'], function (cb) {
     ['elements', 'js'],
     // added 'remaining-scripts' 8/29/2016
     ['jshint', 'images', 'fonts', 'html', 'remaining-scripts'],
-
+    // added 5/12/17
+    // remove pre-vulcanization minification when firebase.js does not break when vulcanized
     'minify-elements', 'minify-components',
-
-
     // added 'delete-merged-with-appjs' 9/1/2016
-    'vulcanize-elements', 'rename-elements', 'delete-merged-with-appjs', 'cache-config',
+    'vulcanize-elements', 'rename-elements', /*'delete-merged-with-appjs',*/ 'cache-config',
     cb);
 });
 

@@ -190,19 +190,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <saved-view id="saved" 
                     surveys="[[surveys]]"
                     run-card-animation="[[runCardAnimation]]" 
-                    reverse-animation="[[reverseAnimation]]">
+                    reverse-animation="[[reverseAnimation]]"
+                    disabled="[[disabled]]">
         </saved-view> 
         
         <review-view id="review" 
                      surveys="[[surveys]]"
                      run-card-animation="[[runCardAnimation]]" 
-                     reverse-animation="[[reverseAnimation]]">
+                     reverse-animation="[[reverseAnimation]]"
+                     disabled="[[disabled]]">
         </review-view> 
 
         <sent-view id="sent" 
                    surveys="[[surveys]]"
                    run-card-animation="[[runCardAnimation]]" 
-                   reverse-animation="[[reverseAnimation]]">
+                   reverse-animation="[[reverseAnimation]]"
+                   disabled="[[disabled]]">
         </sent-view>
 
 
@@ -417,7 +420,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             notify: true,
           },
 
-          searchScrollerCache: Number
+          searchScrollerCache: Number,
+
+          disabled: Boolean
         },
 
 

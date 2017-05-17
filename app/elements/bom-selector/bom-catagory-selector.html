@@ -117,7 +117,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <bom-type-selector id="typeSelector" 
                        area-name="[[areaName]]" 
-                       catagory="[[catagory]]">
+                       catagory="[[catagory]]"
+                       disabled="[[readOnly]]">
     </bom-type-selector>
 
 
@@ -194,7 +195,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
           // ref to area-page
           // used to clear areaName
-          areaPageCE: Object,        
+          areaPageCE: Object, 
+
+          readOnly: Boolean       
         },
 
 
@@ -223,6 +226,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // this.selectionIndex observer
         // set fixture data out to main-page, area-tab, and solution-page
         _catagorySelected(index) {
+          if (this.readOnly) { return; }
           // this.selectionIndex is set to undefined to reset all
           // selected attributes so ignore the change until it is defined to a number
           if (typeof index === 'number') {

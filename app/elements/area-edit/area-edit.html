@@ -57,8 +57,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <paper-toolbar id="toolbar">
         <paper-icon-button id="bulb" 
                            on-tap="_addFixtureButtonTapped" 
-                           icon="custom-icons:lightbulb-outline">
+                           icon="custom-icons:lightbulb-outline"
+                           disabled="[[readOnly]]">
         </paper-icon-button>
+
         <span id="title" class="title noSelect">[[data.name]]</span>
 
         <close-save-button id="closeButton"></close-save-button>
@@ -78,7 +80,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <quote-edit-card class="card"
                                item="{{item}}" 
                                index="[[index]]" 
-                               defer-photo="{{deferPhoto}}">
+                               defer-photo="{{deferPhoto}}"
+                               disabled="[[readOnly]]">
               </quote-edit-card>
             </template>
 
@@ -86,7 +89,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <bom-edit-row class="card"
                             area="[[data.name]]"
                             light="[[item]]" 
-                            index="[[index]]">
+                            index="[[index]]"
+                            disabled="[[readOnly]]">
               </bom-edit-row>
             </template>
 
@@ -172,6 +176,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           fixtures:  Array,
 
           mode: String,
+
+          readOnly: Boolean,
 
           showQuoteCards: Boolean,
 

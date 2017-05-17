@@ -36,12 +36,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                      user-surveys="{{userSurveys}}" 
                      selected-item="{{selectedItem}}"
                      string="{{string}}"
-                     computed-search-tab="{{computedSearchTab}}">
+                     computed-search-tab="{{computedSearchTab}}"
+                     disabled="[[readOnly]]">
         </search-page>
 
         <preview-page id="previewPage"
                       selected="[[selected]]" 
-                      survey="[[survey]]">
+                      survey="[[survey]]"
+                      disabled="[[readOnly]]">
         </preview-page>
 
       </neon-animated-pages>
@@ -127,7 +129,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // child el
           searchPageCustomElement: Object,
           // child el
-          previewPageCustomElement: Object
+          previewPageCustomElement: Object,
+
+          readOnly: Boolean
         },
 
 

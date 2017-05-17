@@ -186,7 +186,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 	                   min="0"
 	                   allowed-pattern="[0-9]"
 	                   prevent-invalid-input 
-	                   value="{{solution.customProduct}}">
+	                   value="{{solution.customProduct}}"
+                     disabled="[[disabled]]">
 	        <div prefix>$</div>
 	      </paper-input>
 	      <paper-input id="centerCustomInput"
@@ -197,7 +198,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 	                   min="0"
 	                   allowed-pattern="[0-9]"
 	                   prevent-invalid-input 
-	                   value="{{solution.customInstall}}">
+	                   value="{{solution.customInstall}}"
+                     disabled="[[disabled]]">
 	        <div prefix>$</div>
 	      </paper-input>
 	      <paper-input class="customInput"
@@ -207,13 +209,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 	                   min="0"
 	                   allowed-pattern="[0-9]"
 	                   prevent-invalid-input 
-	                   value="{{solution.count}}">
+	                   value="{{solution.count}}"
+                     disabled="[[disabled]]">
 	      </paper-input>
 	    </div>
 
 	    <inputs-repeater class="inputs" 
 	                     array="[[solution.tallies]]" 
-	                     hidden$="[[solution.custom]]">
+	                     hidden$="[[solution.custom]]"
+                       disabled="[[disabled]]">
 	    </inputs-repeater>
 
 	    <div id="cardButtons" class="cardButtons">
@@ -221,9 +225,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 	        class="buttons" 
 	        hidden$="[[solution.custom]]"
 	        on-tap="_addTallyButtonTapped"
-	        icon="custom-icons:add">
+	        icon="custom-icons:add"
+          disabled="[[disabled]]">
 	      </paper-icon-button>
-	      <paper-button class="buttons" on-tap="_saveButtonTapped">save</paper-button>
+	      <paper-button class="buttons" 
+                      on-tap="_saveButtonTapped" 
+                      disabled="[[disabled]]">
+                      save
+        </paper-button>
 	    </div> 
 
 	    <div id="total" class$="total [[solution.openQty]]">[[solution.count]]</div>

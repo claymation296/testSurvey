@@ -1,0 +1,118 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+
+
+<link rel="import" href="../redaap-behaviors/utilities.html">
+<link rel="import" href="mode-ripple.html">
+
+
+
+<dom-module id="app-mode">
+  <template>
+
+    <mode-ripple id="ripple"></mode-ripple>
+
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+        is: 'app-mode',
+
+        behaviors: [ 
+          window.Redaap.Behaviors.Utilities
+        ],
+
+        properties: {
+
+        	mode: {
+        		type: String,
+        		notify: true,
+        		observer: '_modeChanged'
+        	},
+
+          readOnly: {
+          	type: Boolean,
+          	observer: '_readOnlyChanged'
+          },
+
+          modeStyles: {
+            type: Object,
+            value: {
+              bom: {
+                '--dark-primary-color':    'var(--bom-dark-color)',
+                '--default-primary-color': 'var(--bom-primary-color)',
+                '--light-primary-color':   'var(--bom-light-color)'
+              },
+              quote: {
+                '--dark-primary-color':    'var(--quote-dark-color)',
+                '--default-primary-color': 'var(--quote-primary-color)',
+                '--light-primary-color':   'var(--quote-light-color)'
+              },
+              readOnly: {
+                '--dark-primary-color':    'var(--read-only-dark-color)',
+                '--default-primary-color': 'var(--read-only-primary-color)',
+                '--light-primary-color':   'var(--read-only-light-color)'
+              }
+            }
+          }
+        },
+
+
+        listeners: {
+        	'mode-ripple-entry-done': '_rippleEntryDone'
+        },
+
+
+        _rippleEntryDone(event) {
+        	this.set('mode', event.detail.mode);
+        	// wait for lighting-tabs to hide
+        	this.async(() => {
+        		this.schedule.bind(this, this.$.ripple.exit());
+        	}, 1200);
+        },
+
+        // called by lighting-mode _modeSelected
+        modeSelected(mode, x, y) {
+        	const color = this.modeStyles[mode]['--default-primary-color'];
+
+        	this.$.ripple.enter(mode, color, x, y);
+        },
+
+
+        _setAppTheme(type) {
+        	this.schedule.bind(this, Polymer.updateStyles(this.modeStyles[type]));
+        },
+
+
+        _modeChanged(mode) {
+        	if (!mode || this.readOnly) { return; }
+        	this._setAppTheme(mode);
+        },
+
+
+        _readOnlyChanged(bool) {
+        	if (bool) {
+        		this._setAppTheme('readOnly');
+        	} else if (bool === false) {
+        		if (!this.mode) {
+        			this._setAppTheme('quote');
+        		} else {
+        			this._setAppTheme(this.mode);
+        		}
+        	}
+        }
+
+      });
+    })();
+  </script>
+
+</dom-module>

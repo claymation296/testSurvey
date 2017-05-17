@@ -31,6 +31,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   const customElements = {
     accountBadge:   '#accountBadge',
     accountForm:    'account-form',
+    appMode:        'app-mode',
     appSecurity:    'app-security',
     appState:       'app-state',
     areaEdit:       'area-edit',
@@ -42,7 +43,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     emailOptions:   'email-options',
     lightSelector:  'light-selector',
     lightingMain:   'lighting-main',
-    lightingRipple: 'lighting-mode-ripple',
     loadDialog:     '#loadDialog',
     logoutDialog:   '#logoutDialog',
     mainButtons:    'main-toolbar-buttons',
@@ -115,7 +115,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     let middleContainer;
 
     document.body.addEventListener('paper-header-transform', event => {
-
       const transformHeader = () => {
         if (!middleContainer) {
           middleContainer = Polymer.dom(mainToolbar).querySelector('#middle');

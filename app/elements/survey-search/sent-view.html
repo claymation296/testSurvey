@@ -28,7 +28,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
    
     <search-cards surveys="[[sentSurveys]]"
-                  run-card-animation="[[runCardAnimation]]">
+                  run-card-animation="[[runCardAnimation]]"
+                  disabled="[[disabled]]">
     </search-cards> 
 
 
@@ -52,7 +53,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // used with child card animations
           runCardAnimation: Boolean,
 
-          searchPageCustomElement: Object
+          searchPageCustomElement: Object,
+
+          disabled: Boolean
         },
 
         attached() {

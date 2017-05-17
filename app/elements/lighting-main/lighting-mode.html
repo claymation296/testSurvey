@@ -11,6 +11,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
 <link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
+<link rel="import" href="../redaap-behaviors/utilities.html">
 
 
 
@@ -103,7 +104,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 	    	<paper-button id="quoteBtn" 
 	    								active="[[quoteBtnActive]]" 
 	    								raised
-	    								on-tap="_quoteButtonTapped">
+	    								on-tap="_quoteButtonTapped"
+                      disabled="[[disabled]]">
 	    								quote
 	    	</paper-button>
         <div class="desc noSelect">
@@ -116,7 +118,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 	    	<paper-button id="bomBtn" 
 	    								acitve="[[!quoteBtnActive]]" 
 	    								raised
-	    								on-tap="_bomButtonTapped">
+	    								on-tap="_bomButtonTapped"
+                      disabled="[[disabled]]">
 	    								bom
 	    	</paper-button>
         <div class="desc noSelect">
@@ -169,69 +172,54 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           	value: true
           },
 
-          modeStyles: {
-            type: Object,
-            value: {
-              bom: {
-                '--default-primary-color': 'var(--bom-primary-color)',
-                '--dark-primary-color':    'var(--bom-dark-color)',
-                '--light-primary-color':   'var(--bom-light-color)'
-              },
-              quote: {
-                '--default-primary-color': 'var(--quote-primary-color)',
-                '--dark-primary-color':    'var(--quote-dark-color)',
-                '--light-primary-color':   'var(--quote-light-color)'
-              }
-            }
-          }
+          disabled: Boolean
         },
 
         // called by lighting-main
         enter() {
-          this.style.display = 'block';
-          this.cancelAnimation();
-          this.playAnimation('entry');
+          const enter = () => {
+            this.style.display = 'block';
+            this.cancelAnimation();
+            this.playAnimation('entry');
+          };
+          
+          this.schedule(enter);
         },
 
         // called by lighting-main on _modeChanged
-        hide(mode) {
-          this.style.display = 'none';
-          // update app theme if mode is saved in app-state.html
-          if (mode) {
-            this.async(() => {
-              Polymer.updateStyles(this.modeStyles[mode]);
-            });
-          }
-        },
-
-        // called by lighting-mode-ripple between entry and exit animations
-        fireMode(mode) {
-          this.fire('lighting-mode-set', {mode});
-        },
-        // pass user touch event coords and new styles to be set by
-        // lighting-mode-ripple between its entry and exit animations
-        _runRippleAnimation(mode, styles, event) {
-          const source = event.detail.sourceEvent;
-          const obj = {
-            color:   styles['--default-primary-color'],
-            element: this,
-            mode,
-            x:       source.clientX || source.pageX,
-            y:       source.clientY || source.pageY,
-            styles
+        hide() {
+          const hide = () => {
+            this.style.display = 'none';
           };
 
-          this.schedule.bind(this, window.Redaap.lightingRipple.enter(obj));
+          this.schedule(hide);
+        },
+
+
+        _modeSelected(mode, event) {
+          const selected = () => {
+            const source = event.detail.sourceEvent;
+            const x      = source.clientX || source.pageX;
+            const y      = source.clientY || source.pageY;
+
+            window.Redaap.appMode.modeSelected(mode, x, y);
+          };
+
+          this.onTap = selected;
         },
 
 
         _quoteButtonTapped(event) {
-          this.onTap = this._runRippleAnimation('quote', this.modeStyles.quote, event);
+          if (this.disabled) { return; }
+
+          this._modeSelected('quote', event);
         },
 
 
         _bomButtonTapped(event) {
-          this.onTap = this._runRippleAnimation('bom', this.modeStyles.bom, event);
+          if (this.disabled) { return; }
+
+          this._modeSelected('bom', event);
         }
 
       });

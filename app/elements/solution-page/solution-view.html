@@ -103,7 +103,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                        keys="{{existingFixture.keys}}"
                        saved-url="{{existingFixture.savedUrl}}"
                        orientation="{{existingFixture.orientation}}"
-                       disable-thumbnail>
+                       disable-thumbnail
+                       disabled="[[disabled]]">
         </photo-capture>
 
 
@@ -130,7 +131,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       <solution-content id="solutionContent" 
                         solutions="[[solutions]]"
-                        can-play-items-animation="{{canPlayItemsAnimation}}">
+                        can-play-items-animation="{{canPlayItemsAnimation}}"
+                        disabled="[[disabled]]">
       </solution-content>
 
 
@@ -243,6 +245,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           areaPageCustomElement: Object,
           // data payload to be passed to area-tab via its updateUSA() method
           savedData: Object,
+
+          disabled: Boolean
         },
         
         

@@ -70,10 +70,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  value="{{light.qty}}"
                  allowed-pattern="[0-9]"
                  prevent-invalid-input
-                 hidden$="[[_computeEditState(setting)]]">
+                 hidden$="[[_computeEditState(setting)]]"
+                 disabled="[[disabled]]">
     </paper-input>
 
-    <paper-dropdown-menu label="Number of Lamps per Fixture">
+    <paper-dropdown-menu label="Number of Lamps per Fixture" disabled="[[disabled]]">
       <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.lamps}}">
         <paper-item id="1">1</paper-item>
         <paper-item id="2">2</paper-item>
@@ -92,11 +93,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  maxLength="4" 
                  value="{{light.watts}}"
                  allowed-pattern="[0-9]"
-                 prevent-invalid-input>
+                 prevent-invalid-input
+                 disabled="[[disabled]]">
       <div suffix>W</div>
     </paper-input>
 
-    <paper-dropdown-menu label="Color Temperature (Kelvin)">
+    <paper-dropdown-menu label="Color Temperature (Kelvin)" disabled="[[disabled]]">
       <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.kelvin}}">
         <paper-item id="2700">2700K</paper-item>
         <paper-item id="3000">3000K</paper-item>
@@ -107,7 +109,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </paper-listbox>
     </paper-dropdown-menu>
 
-    <paper-dropdown-menu label="Input Voltage">
+    <paper-dropdown-menu label="Input Voltage" disabled="[[disabled]]">
       <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.volts}}">
         <paper-item id="120">120V</paper-item>
         <paper-item id="208">208V</paper-item>
@@ -117,7 +119,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </paper-listbox>
     </paper-dropdown-menu>
 
-    <paper-dropdown-menu label="Fixture Color">
+    <paper-dropdown-menu label="Fixture Color" disabled="[[disabled]]">
       <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.color}}">
         <paper-item id="white">White</paper-item>
         <paper-item id="grey">Grey</paper-item>
@@ -135,11 +137,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  char-counter
                  allowed-pattern="[0-9a-zA-Z\s]"
                  prevent-invalid-input 
-                 value="{{light.base}}">
+                 value="{{light.base}}"
+                 disabled="[[disabled]]">
     </paper-input>
 
 
-    <paper-dropdown-menu label="Mount Type">
+    <paper-dropdown-menu label="Mount Type" disabled="[[disabled]]">
       <paper-listbox class="dropdown-content" attr-for-selected="id" selected="{{light.mount}}">
         <paper-item id="none">None</paper-item>
         <paper-item id="pendant">Pendant</paper-item>
@@ -159,7 +162,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  maxLength="3" 
                  value="{{light.height}}"
                  allowed-pattern="[0-9]"
-                 prevent-invalid-input>
+                 prevent-invalid-input
+                 disabled="[[disabled]]">
       <div suffix>ft</div>
     </paper-input>
 
@@ -170,7 +174,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  maxLength="2" 
                  value="{{light.hours}}"
                  allowed-pattern="[0-9]"
-                 prevent-invalid-input>
+                 prevent-invalid-input
+                 disabled="[[disabled]]">
       <div suffix>hours per day</div>
     </paper-input>
 
@@ -180,7 +185,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  maxLength="1" 
                  value="{{light.days}}"
                  allowed-pattern="[0-9]"
-                 prevent-invalid-input>
+                 prevent-invalid-input
+                 disabled="[[disabled]]">
       <div suffix>days per week</div>
     </paper-input>
 
@@ -191,7 +197,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  maxLength="2" 
                  value="{{light.contactors}}"
                  allowed-pattern="[0-9]"
-                 prevent-invalid-input>
+                 prevent-invalid-input
+                 disabled="[[disabled]]">
     </paper-input>
 
 
@@ -201,7 +208,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  maxLength="4" 
                  value="{{light.emergency}}"
                  allowed-pattern="[0-9]"
-                 prevent-invalid-input>
+                 prevent-invalid-input
+                 disabled="[[disabled]]">
     </paper-input>
 
     <paper-input label="Dimmer"
@@ -210,7 +218,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  maxLength="4" 
                  value="{{light.dimmer}}"
                  allowed-pattern="[0-9]"
-                 prevent-invalid-input>
+                 prevent-invalid-input
+                 disabled="[[disabled]]">
     </paper-input>
 
     <paper-input label="Timer"
@@ -219,7 +228,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  maxLength="4" 
                  value="{{light.timer}}"
                  allowed-pattern="[0-9]"
-                 prevent-invalid-input>
+                 prevent-invalid-input
+                 disabled="[[disabled]]">
     </paper-input>
 
     <paper-input label="Occupancy Sensor"
@@ -228,7 +238,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  maxLength="4" 
                  value="{{light.motion}}"
                  allowed-pattern="[0-9]"
-                 prevent-invalid-input>
+                 prevent-invalid-input
+                 disabled="[[disabled]]">
     </paper-input>
 
     <paper-input label="Daylight Sensor"
@@ -237,7 +248,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  maxLength="4" 
                  value="{{light.ambient}}"
                  allowed-pattern="[0-9]"
-                 prevent-invalid-input>
+                 prevent-invalid-input
+                 disabled="[[disabled]]">
     </paper-input>
 
 
@@ -245,7 +257,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   class="lastButton"
                   on-tap="_deleteButtonTapped"
                   raised
-                  hidden$="[[_computeEditState(setting)]]">
+                  hidden$="[[_computeEditState(setting)]]"
+                  disabled="[[disabled]]">
       <iron-icon icon="custom-icons:delete"></iron-icon>
       delete fixture
     </paper-button>
@@ -257,14 +270,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </div>
 
     <inputs-repeater array="[[tallies]]" 
-                     hidden$="[[!_computeEditState(setting)]]">
+                     hidden$="[[!_computeEditState(setting)]]"
+                     disabled="[[disabled]]">
     </inputs-repeater>
 
     <paper-button id="addTallyButton" 
                   class="lastButton"
                   on-tap="_addTallyButtonTapped"
                   raised
-                  hidden$="[[!_computeEditState(setting)]]">
+                  hidden$="[[!_computeEditState(setting)]]"
+                  disabled="[[disabled]]">
       <iron-icon icon="custom-icons:add"></iron-icon>
       Add Tally Row
     </paper-button>
@@ -315,7 +330,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               tally2: null, 
               tally3: null
             }])
-          }
+          },
+
+          disabled: Boolean
         },
 
 

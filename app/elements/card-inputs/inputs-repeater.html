@@ -33,9 +33,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     template-id="inputRepeater"
                     template-item-class-name="slide"
                     index="[[index]]"
-                    disable-last-element-delete>
+                    disable-last-element-delete
+                    disabled="[[disabled]]">
 
-        <card-input rows="[[rows]]"></card-input>
+        <card-input rows="[[rows]]" disabled="[[disabled]]"></card-input>
 
       </slide-delete>
       
@@ -54,7 +55,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           sumHolderArray: {
             type: Array,
             computed: '_computeSumHolderArray(array)'
-          }
+          },
+
+          disabled: Boolean
         },
 
         observers: [

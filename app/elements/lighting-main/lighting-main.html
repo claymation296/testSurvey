@@ -41,6 +41,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <area-page id="areaPage"
                  bom="{{bom}}"
                  mode="[[mode]]"
+                 disabled="[[readOnly]]"
                  reverse-animation="[[reverseAnimation]]"
                  user-selected-array="{{userSelectedArray}}">
       </area-page>
@@ -50,6 +51,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                       selected-pricing="{{selectedPricing}}"
                       client-valid="[[clientValid]]"
                       tallies-valid="[[talliesValid]]"
+                      disabled="[[readOnly]]"
                       reverse-animation="[[reverseAnimation]]">
       </quote-selector>
 
@@ -59,13 +61,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 client="[[client]]"
                 computed-tab="[[computedTab]]"
                 queue-size="[[queueSize]]"
+                disabled="[[readOnly]]"
                 reverse-animation="[[reverseAnimation]]">
       </bom-send>
 
 
   	</neon-animated-pages>
 
-    <lighting-mode id="mode"></lighting-mode>
+
+    <lighting-mode id="mode" disabled="[[readOnly]]"></lighting-mode>
+
 
   </template>
 
@@ -95,6 +100,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             notify: true,
             observer: '_modeChanged'
           },
+          // from app-state
+          readOnly: Boolean,
           // quote data collection
           // userSelectedArray === [{count, 
           //                         fixture: {name, label, icon, checked}, 
@@ -102,14 +109,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           //                         tallyArray: [{name, tally0, tally1, tally2, tally3}]}]
           userSelectedArray: {
             type: Array,
-            notify: true,
-            value: () => ([])
+            notify: true
           },
 
           bom: {
             type: Object,
-            notify: true,
-            value: () => ({areas: {}, fixtures: {}, photos: {}})
+            notify: true
           },
           // saved photo data from web-worker.html
           savedPhotoData: {
@@ -122,7 +127,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // their current work
           dreading: {
             type: Object,
-            value: () => ({})
+            notify: true
           },
           // save a snapshot of the uSA to be passed to the database
           // in order to guarantee the data strictly aligns with its pricing
@@ -216,8 +221,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         listeners: {
-          // fired by lighting-mode.html
-          'lighting-mode-set':            '_lightingModeSet',
           // fired by bom-send.html
           'bom-send-process-photo-queue': '_processWorkerPhotoQueue',
           // fired by bom-send.html
@@ -249,18 +252,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             false
           );
         },
-
-        // fired by lighting-mode
-        _lightingModeSet(event) {
-          this.set('mode', event.detail.mode);
-        },
         
 
         _modeChanged(mode, oldMode) {
           if (mode) { 
             // from app-state
             if (!oldMode) {
-              this.$.mode.hide(mode);
+              this.$.mode.hide();
               return;
             }
             // direct user input
@@ -342,12 +340,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _removeFromDreading(data) {
+          if (!this.dreading) { return; }
           delete this.dreading[data.key];
+          const dreading = this.dreading;
+          this.dreading  = null;
+          this.set('dreading', dreading);
         },
 
 
         _addSavedPhotoDataToDreading(data) {
-          this.dreading[data.key] = data;
+          if (!this.dreading) {
+            this.dreading = {};
+          }
+          this.set(`dreading.${data.key}`, data);
         },
 
 
@@ -398,6 +403,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               photo.placeholder = null;
               photo.savedUrl    = data.savedUrl;
 
+              const fixtures    = this.bom.fixtures;
+              this.bom.fixtures = null;
+              this.set('bom.fixtures', fixtures);
               this._removeFromDreading(data);
             } else {
               this._addSavedPhotoDataToDreading(data);
@@ -478,6 +486,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // navigate user to account-form if they choose a price plan but dont have
         // the account form filled in
         _selectedPricingChanged(obj) {
+          if (this.readOnly) { return; }
           if (obj === undefined || obj === null || this.clientValid) { return; }
           this._navigateBackToAccountForm();
         },

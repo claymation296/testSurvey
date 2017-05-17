@@ -45,8 +45,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     </style>
 
-    
-
     <template id="areaRepeater" 
               is="dom-repeat" 
               items="{{cards}}"
@@ -58,7 +56,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <slide-delete class="cardContainer"
                     template-id="areaRepeater"
                     template-item-class-name="cardContainer"
-                    index="[[index]]">
+                    index="[[index]]"
+                    disabled="[[disabled]]">
 
         <paper-card class="savedArea">
           <div class="card-content">
@@ -74,8 +73,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     </template>
 
-
-
   </template>
 
   <script>
@@ -90,7 +87,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         		notify: true
         	},
 
-        	filter: String
+        	filter: String,
+
+          disabled: Boolean
         },
 
 

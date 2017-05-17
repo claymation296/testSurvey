@@ -228,11 +228,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </div>
           <div class="checkboxLabels">
             <span>Brochure</span>
-            <paper-checkbox checked="{{brochureChecked}}"></paper-checkbox>
+            <paper-checkbox disabled="[[readOnly]]" checked="{{brochureChecked}}"></paper-checkbox>
           </div>
           <div class="checkboxLabels">
             <span>Credit Application Form</span>
-            <paper-checkbox checked="{{creditChecked}}"></paper-checkbox>
+            <paper-checkbox disabled="[[readOnly]]" checked="{{creditChecked}}"></paper-checkbox>
           </div>
           <div class="checkboxLabels">
             <span>Contract</span>
@@ -254,21 +254,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <div id="buttons">
         <paper-button id="saveButton" 
                       on-tap="_saveButtonTapped"
-                      disabled="[[disableBtns]]"
+                      disabled="[[readOnly]]"
                       raised>
           <iron-icon icon="custom-icons:save"></iron-icon>
           Save For Later
         </paper-button>
         <paper-button id="reviewButton" 
                       on-tap="_reviewButtonTapped"
-                      disabled="[[disableBtns]]" 
+                      disabled="[[readOnly]]" 
                       raised>
           <iron-icon icon="custom-icons:assignment-turned-in"></iron-icon>
           Engineering Review
         </paper-button>
         <paper-button id="sendButton" 
                       on-tap="_sendButtonTapped" 
-                      disabled="[[disableBtns]]"
+                      disabled="[[readOnly]]"
                       raised>
           <iron-icon icon="custom-icons:send"></iron-icon>
           Send To Client
@@ -330,8 +330,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // must inform photo-upload-progress of elements below it
           // for its custom slide-up animation
           remainingElements: Array,
-          // disable button if photos are still uploading
-          disableBtns: Boolean,
           // paper checkbox
           brochureChecked: Boolean,
           // paper checkbox
@@ -361,7 +359,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             value: true
           },
           // data url from signature pad
-          capture: String
+          capture: String,
+          // disable button if photos are still uploading or in readOnly mode
+          readOnly: Boolean
         },
 
 
@@ -389,7 +389,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // photo-upload-progress event
         _setBtnDisableState(event) {
-          this.disableBtns = event.detail.disable;
+          this.readOnly = event.detail.disable;
         },
 
 

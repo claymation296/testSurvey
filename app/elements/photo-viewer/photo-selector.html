@@ -70,7 +70,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <photo-capture id="capture" 
                        filename="[[_computeFileName(label)]]"
                        disable-thumbnail
-                       disable-viewer>
+                       disable-viewer
+                       disabled="[[disabled]]">
         </photo-capture>
 
     		<span id="title" class="title noSelect" style="margin-left: 0px;">[[label]]</span>
@@ -170,7 +171,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // array of photo data objs with src property and no dead data
           photos: Array,
 
-          selectedThumbnail: Object
+          selectedThumbnail: Object,
+
+          disabled: Boolean
         },
 
 

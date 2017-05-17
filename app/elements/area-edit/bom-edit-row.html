@@ -56,7 +56,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   template-id="fixtureRepeater"
                   template-item-class-name="card"
                   index="[[index]]"
-                  disable-last-element-delete>
+                  disable-last-element-delete
+                  disabled="[[disabled]]">
 
       <div class="content noSelect" on-tap="_rowTapped"> 
         <paper-icon-item>
@@ -92,7 +93,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           light: Object,
 
-          index: Number
+          index: Number,
+
+          disabled: Boolean
         },
 
 

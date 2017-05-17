@@ -188,7 +188,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           selectionIndex: {
             type: Number,
             observer: '_existingFixtureSelected'
-          }
+          },
+
+          readOnly: Boolean
         },
 
         // called by area-tab before open
@@ -210,6 +212,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _listboxTapped(event) {
+          if (this.readOnly) { return; }
+
           const source = event.detail.sourceEvent;
           const obj = {
             x: source.clientX || source.pageX,
@@ -221,6 +225,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // this.selectionIndex observer
         // set fixture data out to main-page, area-tab, and solution-page
         _existingFixtureSelected(index) {
+          if (this.readOnly) { return; }
           // this.selectionIndex is set to undefined to reset all
           // selected attributes so ignore the change until it is defined to a number
           if (typeof index === 'number') {
