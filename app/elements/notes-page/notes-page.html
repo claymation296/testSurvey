@@ -45,8 +45,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <paper-scroll-header-panel id="panel">
       <paper-toolbar id="toolbar" class="medium-tall">
         <paper-icon-button id="trash" on-tap="_deleteButtonTapped" 
-        									 icon="custom-icons:delete">
+        									 icon="custom-icons:delete"
+                           disabled="[[readOnly]]">
 				</paper-icon-button>
+
         <span id="title" class="title">Notes</span>
 
         <close-save-button id="closeButton"></close-save-button>
@@ -65,7 +67,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       	<iron-autogrow-textarea placeholder="add notes here"
       													value="{{notes}}"
       													rows="5"
-      													autocomplete>
+      													autocomplete
+                                disabled="[[readOnly]]">
       	</iron-autogrow-textarea>
 	    </div>
 
@@ -129,7 +132,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             observer: '_editMade'
           },
 
-          callback: Object
+          callback: Object,
+
+          readOnly: Boolean
         },
 
 

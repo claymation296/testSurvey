@@ -183,15 +183,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                        autocomplete 
                        autocorrect
                        allowed-pattern="[-.0-9a-zA-Z\s]" 
-                       prevent-invalid-input>
+                       prevent-invalid-input
+                       disabled="[[disabled]]">
           </paper-input>
-
-
           
           <paper-icon-button id="addArea" 
                              class="buttonRight"
                              on-tap="_addAreaButtonTapped" 
-                             icon="custom-icons:add">
+                             icon="custom-icons:add"
+                             disabled="[[disabled]]">
           </paper-icon-button>
 
           <paper-input id="filterInput"
@@ -232,12 +232,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           <area-cards cards="{{userSelectedArray}}" 
                       filter="[[filter]]"
-                      hidden$="[[_computeQuoteCardsVisibility(mode)]]">
+                      hidden$="[[_computeQuoteCardsVisibility(mode)]]"
+                      disabled="[[disabled]]">
           </area-cards>
 
           <area-cards cards="{{bomArray}}" 
                       filter="[[filter]]"
-                      hidden$="[[!_computeQuoteCardsVisibility(mode)]]">
+                      hidden$="[[!_computeQuoteCardsVisibility(mode)]]"
+                      disabled="[[disabled]]">
           </area-cards>
 
         </div>
@@ -290,6 +292,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
 
           mode: String,
+
+          disabled: Boolean,
           // name of currently selected area to edit
           // used to properly update area-edit rows in bom mode
           currentEditArea: String

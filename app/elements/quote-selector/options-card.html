@@ -131,7 +131,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         		notify: true
         	},
           // from quote-selector
-        	displayedPrices: Object
+        	displayedPrices: Object,
+
+          disabled: Boolean
         },
 
 
@@ -164,6 +166,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         
         // send tap coordinates to quote-page for ripple animation
         _listboxTapped(event) {
+          if (this.disabled) { return; }
+
           const source = event.detail.sourceEvent;
           const obj = {
             x: source.clientX || source.pageX,

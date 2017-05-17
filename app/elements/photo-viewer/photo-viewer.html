@@ -31,11 +31,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <photo-selector id="photoSelector" 
                     label="[[label]]" 
-                    photo-data-array="[[photoDataArray]]">
+                    photo-data-array="[[photoDataArray]]"
+                    disabled="[[readOnly]]">
     </photo-selector>
 
     <fullscreen-photo id="fullscreenPhoto" 
-                      label="[[label]]">
+                      label="[[label]]"
+                      disabled="[[readOnly]]">
     </fullscreen-photo>
 
   </template>
@@ -62,7 +64,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // and update capture after a delete
           photoDataArray: Array,
 
-          deleteWhenDone: Object
+          deleteWhenDone: Object,
+
+          readOnly: Boolean
         },
 
 

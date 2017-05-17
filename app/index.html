@@ -58,7 +58,48 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <meta name="msapplication-TileImage" content="images/touch/ms-touch-icon-144x144-precomposed.png">
   
   <!-- inlining styles for first paint perf -->
-  <style>body {background: #fafafa;font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;color: #333;/*remove after upgrade to app layout elements*/overflow: visible;}/*remove after upgrade to app layout elements*/#paperDrawerPanel {position: fixed;}#splash {display: flex;align-items: center;justify-content: center;position: fixed;top: 0;bottom: 0;left: 0;right: 0;width: 100%;height: 100vh;background-color: #7c0000;opacity: 0;transition: opacity 0.3s ease-out;z-index: 101;}body.loading #splash {opacity: 1;}#whiteRedaapLogo {width: 80%;max-width: 500px;position: relative;top: -33.33%;}
+  <style>
+
+    body {
+      background: #fafafa;
+      font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #333;
+      /*remove after upgrade to app layout elements*/
+      overflow: visible;
+    }
+    /*remove after upgrade to app layout elements*/
+    #paperDrawerPanel {
+      position: fixed;
+    }
+
+    #splash {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: 100vh;
+      background-color: #7c0000;
+      opacity: 0;
+      transition: opacity 0.3s ease-out;
+      z-index: 101;
+    }
+
+    body.loading #splash {
+      opacity: 1;
+    }
+
+    #whiteRedaapLogo {
+      width: 80%;
+      max-width: 500px;
+      position: relative;
+      top: -33.33%;
+    }
+    
   </style>
 
 </head>
@@ -96,7 +137,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <template is="dom-bind" id="app">
 
     
-    <app-state state="{{state}}" email="{{email}}"></app-state>
+    <app-state state="{{state}}" email="{{email}}" read-only="{{readOnly}}"></app-state>
 
     <web-worker saved-photo-data="{{savedPhotoData}}" queue-size="{{queueSize}}"></web-worker>
 
@@ -234,10 +275,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           <section data-route="client">
             <account-form client="{{state.client}}"
-                          displayed-client-company-name="{{displayedClientCompanyName}}"
-                          version="[[version]]" 
                           client-valid="{{state.clientValid}}"
-                          route="{{route}}">
+                          displayed-client-company-name="{{displayedClientCompanyName}}"
+                          read-only="[[readOnly]]"
+                          route="{{route}}"
+                          version="[[version]]">
             </account-form>
           </section>
 
@@ -250,9 +292,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                            client="[[state.client]]"
                            client-valid="{{state.clientValid}}"
                            displayed-client-company-name="{{displayedClientCompanyName}}"
+                           dreading="{{state.dreading}}"
                            lighting-tab="{{lightingTab}}"
                            mode="{{state.mode}}"
                            queue-size="[[queueSize]]"
+                           read-only="[[readOnly]]"
                            route="{{route}}"
                            saved-photo-data="[[savedPhotoData]]"
                            selected-pricing="{{selectedPricing}}"
@@ -285,7 +329,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                             style="background-color: white; padding: 16px;">
               <h2 class="page-title">Contact Us</h2>
               <p>quicksale@teuservices.com</p>
-              <p>v0.6.14</p>
+              <p>v0.6.19</p>
             </paper-material>
           </section>
 
@@ -314,34 +358,37 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <app-security email="{{email}}" displayed-user-name="{{userName}}"></app-security>
 
-    <lighting-mode-ripple></lighting-mode-ripple>
+    <app-mode mode="{{state.mode}}" read-only="[[readOnly]]"></app-mode>
 
-    <area-edit></area-edit>
+    <area-edit read-only="[[readOnly]]"></area-edit>
 
-    <light-selector></light-selector>
+    <light-selector read-only="[[readOnly]]"></light-selector>
 
-    <bom-catagory-selector bom="{{state.bom}}"></bom-catagory-selector>
+    <bom-catagory-selector bom="{{state.bom}}" read-only="[[readOnly]]"></bom-catagory-selector>
 
-    <solution-page id="solutions"></solution-page>
+    <solution-page id="solutions" read-only="[[readOnly]]"></solution-page>
 
-    <bom-fullscreen-edit></bom-fullscreen-edit>
+    <bom-fullscreen-edit read-only="[[readOnly]]"></bom-fullscreen-edit>
 
-    <notes-page></notes-page>
+    <notes-page read-only="[[readOnly]]"></notes-page>
 
-    <photo-viewer></photo-viewer>
+    <photo-viewer read-only="[[readOnly]]"></photo-viewer>
 
     <account-nav route="{{route}}" client-valid="[[state.clientValid]]"></account-nav>
 
-    <quote-page selected-pricing="[[selectedPricing]]"
-                client="[[state.client]]"
+    <quote-page client="[[state.client]]"
+                selected-pricing="[[selectedPricing]]"
                 version="[[version]]">
     </quote-page>
 
-    <email-options queue-size="[[queueSize]]"></email-options>
+    <email-options queue-size="[[queueSize]]" read-only="[[readOnly]]"></email-options>
 
     <success-page mode="[[state.mode]]"></success-page>
 
-    <survey-search lighting-tab="{{lightingTab}}" mode="[[state.mode]]"></survey-search>
+    <survey-search lighting-tab="{{lightingTab}}" 
+                   mode="[[state.mode]]" 
+                   read-only="[[readOnly]]">
+    </survey-search>
 
     
 
@@ -469,7 +516,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
   <!-- build:js scripts/app.js -->
-  <script src="scripts/babel-polyfill.min.js"></script>
   <script src="scripts/app.js"></script>
   <!-- endbuild-->
 

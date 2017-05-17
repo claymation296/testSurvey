@@ -12,7 +12,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../redaap-behaviors/utilities.html">
 
 
-<dom-module id="lighting-mode-ripple">
+<dom-module id="mode-ripple">
   <template>
     <style>
 
@@ -33,7 +33,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <script>
     (function() {
       Polymer({
-        is: 'lighting-mode-ripple',
+        is: 'mode-ripple',
 
         behaviors: [
           Polymer.NeonAnimationRunnerBehavior,
@@ -66,12 +66,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         listeners: {
           'neon-animation-finish': '_rippleAnimationFinished'
         },
-
-        // x y pos of tap event from light-selector to center the ripple origin
-        enter({color, element, mode, styles, x, y}) {
-        	const cookie = {element, mode, styles, type: 'entry'};
-        	this.style.top 			= `calc(${y}px - 200vh)`;
-        	this.style.left 		= `calc(${x}px - 200vh)`;
+        // called by app-mode
+        // x y pos of tap event from lighting-mode to center the ripple origin
+        enter(mode, color, x, y) {
+        	const cookie 		= {type: 'entry', mode};
+        	this.style.top 	= `calc(${y}px - 200vh)`;
+        	this.style.left = `calc(${x}px - 200vh)`;
         	this.customStyle['--ripple-color'] = color;
         	this.updateStyles();
 
@@ -80,36 +80,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         		this.cancelAnimation();
             this.playAnimation('entry', cookie);
         	};
-          // async for animation fine tuning
+          // async for button ripple animation fine tuning
           this.async(() => {
             this.schedule(run);
           }, 100);
+        },
+
+        // called by app-mode
+        exit() {
+        	this.cancelAnimation();
+          this.playAnimation('exit', 'exit');
         },
 
 
         _rippleAnimationFinished(_, cookie) {
         	if (typeof cookie === 'string' && cookie === 'exit') {
         		this.style.display = 'none';
-        	} else if (typeof cookie === 'object') {
-        		if (cookie.type === 'entry') {
-
-              const playExit = () => {
-                this.cancelAnimation();
-                this.playAnimation('exit', 'exit');
-              };
-
-        			const hideLightingMode = () => {
-         				cookie.element.fireMode(cookie.mode);
-                // allow mode changes to propagate through app
-                this.async(() => {
-                  this.schedule(playExit);
-                }, 800);
-		        	};
-
-              this.async(() => {
-                this.schedule(hideLightingMode);
-              }, 50);
-	          }
+        	} else if (typeof cookie === 'object' && cookie.type === 'entry') {
+        		this.fire('mode-ripple-entry-done', {mode: cookie.mode});
         	}
         }
  

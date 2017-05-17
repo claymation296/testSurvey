@@ -125,7 +125,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           transitionString: {
             type: String,
             value: 'transform 0.3s ease-out, opacity 0.1s ease-in'
-          }
+          },
+          // ignore track events if disabled
+          disabled: Boolean
         },
 
 
@@ -146,6 +148,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // paper-card on-track listener func
         _sliderTracked(event) {
+          if (this.disabled) { return; }
           // slide-left-to-delete redaap behavior
           // this method takes the track event, transition class, open state class
           // and the slide travel which is the max distance in pixels that the slider 

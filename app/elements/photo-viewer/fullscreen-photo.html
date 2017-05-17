@@ -54,7 +54,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </paper-icon-button>
     	</paper-toolbar>
 
-      <paper-fab id="trash" on-tap="_deletePhotoButtonTapped" icon="custom-icons:delete"></paper-fab>
+      <paper-fab id="trash" 
+                 on-tap="_deletePhotoButtonTapped" 
+                 icon="custom-icons:delete"
+                 disabled="[[disabled]]">
+      </paper-fab>
 
   	</paper-scroll-header-panel>
     
@@ -158,6 +162,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           label: String,
           // used for correct photo delete
           photo: Object,
+
+          disabled: Boolean
         },
 
 

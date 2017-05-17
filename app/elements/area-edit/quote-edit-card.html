@@ -78,7 +78,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     template-id="fixtureRepeater"
                     template-item-class-name="card"
                     index="[[index]]"
-                    disable-last-element-delete>
+                    disable-last-element-delete
+                    disabled="[[disabled]]">
 
         <div class$="card-content hightlightedTransitions [[item.highlighted]]">
           <div class="dialogTitle noSelect">
@@ -96,7 +97,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          placeholder="{{item.placeholder}}"
                          saved-url="{{item.savedUrl}}" 
                          defer-load 
-                         defer-trigger="{{deferPhoto}}">
+                         defer-trigger="{{deferPhoto}}"
+                         disabled="[[disabled]]">
           </photo-capture>
 
           <notes-button existing-fixture="{{item}}"></notes-button>
@@ -105,7 +107,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </slide-delete>
       
       <replacements-repeater id="replacementsRepeater" 
-                             replacements="{{item.replacements}}">
+                             replacements="{{item.replacements}}"
+                             disabled="[[disabled]]">
       </replacements-repeater>
 
     </paper-card>
@@ -126,7 +129,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           deferPhoto: {
             type: Boolean,
             notify: true
-          }
+          },
+
+          disabled: Boolean
         },
 
 

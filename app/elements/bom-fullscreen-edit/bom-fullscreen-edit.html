@@ -116,7 +116,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                        key="{{light.key}}"
                        disable-thumbnail
                        defer-load="{{deferLoad}}"
-                       defer-trigger="{{deferTrigger}}">
+                       defer-trigger="{{deferTrigger}}"
+                       disabled="[[readOnly]]">
         </photo-capture>
 
 
@@ -138,7 +139,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       <bom-edit-inputs id="editInputs" 
                        light="{{light}}" 
-                       setting="[[setting]]">
+                       setting="[[setting]]"
+                       disabled="[[readOnly]]">
       </bom-edit-inputs>
 
       
@@ -289,7 +291,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           headerState: {
             type: Number,
             observer: '_headerStateChanged'
-          }
+          },
+
+          readOnly: Boolean
         },
 
 

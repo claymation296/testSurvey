@@ -220,6 +220,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _typeTapped(event) {
+          if (this.disabled) { return; }
+
         	const open = () => {
             // expected format and initial valuse for bom fixture
             const fixObj = {

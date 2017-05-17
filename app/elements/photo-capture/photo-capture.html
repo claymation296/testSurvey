@@ -6,9 +6,9 @@ The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
 The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
 Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
 
-
- photo-caputre example usage
+ <!-- photo-caputre example usage
 
     events 
       'photo-capture-placeholder-loaded'
@@ -43,7 +43,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                    filename="[[label]]"
                    disable-thumbnail
                    disable-viewer>
-    </photo-capture> -->
+    </photo-capture>  -->
 
 
 
@@ -89,6 +89,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       .cameraIcon {
         margin-top: 12px;
         margin-left: 12px;
+      }
+      /* iron-icon _computeDisabledIcon(disabled)*/
+      .disabled {
+        color: var(--disabled-text-color);
       }
 
       .centeredAboveFileInput {
@@ -190,7 +194,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <div id="captureButton">
 
-      <iron-icon class="cameraIcon" icon="[[buttonIcon]]"></iron-icon>
+      <iron-icon class$="cameraIcon [[_computeDisabledIcon(disabled)]]" icon="[[buttonIcon]]"></iron-icon>
 
       <iron-label id="camera" for="input">
         <input id="input" 
@@ -198,7 +202,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                iron-label-target
                type="file" 
                accept="image/*"
-               on-change="_userSelectedPictureFile"/> 
+               on-change="_userSelectedPictureFile"
+               disabled="[[disabled]]"/> 
         <paper-ripple class="circle" recenters></paper-ripple>
       </iron-label>
 
@@ -312,6 +317,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           disableThumbnail: Boolean,
           // disable the viewer if this capture element is inside the viewer itself
           disableViewer: Boolean,
+          // dont allow new photos to be added
+          disabled: Boolean,
           // camera orientation data from image file
           orientation: {
             type: Number,
@@ -336,6 +343,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         observers: [
           '_keysChanged(keys.*)'
         ],
+
+
+
+
+
+
+        _computeDisabledIcon: disabled => disabled ? 'disabled' : '',
+
+
+
+
+
+
         // called by photo-viewer if user updates the photo pertaining to this
         // capture instance
         updateThumbnail({key, orientation, placeholder, url}) {

@@ -36,7 +36,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                      selection-index="{{selectionIndex}}"
                      area-name="[[areaName]]" 
                      existing-fixture="[[existingFixture]]"
-                     prepare-shared-element-animation="{{prepareSharedElementAnimation}}">
+                     prepare-shared-element-animation="{{prepareSharedElementAnimation}}"
+                     disabled="[[readOnly]]">
       </solution-view>
 
     </neon-animated-pages>
@@ -59,7 +60,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	selectionIndex: Number,
           // displayed in header and used to find the correct userSelectedArray index
           // for captured data
-          existingFixture: Object
+          existingFixture: Object,
+
+          readOnly: Boolean
         },
 
         // fire up to fixture-list when animation is completed

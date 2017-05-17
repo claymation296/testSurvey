@@ -27,9 +27,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     </style> 
     
-    <options-card
-      plan-index="{{planIndex}}"
-      displayed-prices="[[displayedPrices]]">
+    <options-card plan-index="{{planIndex}}"
+                  displayed-prices="[[displayedPrices]]"
+                  disabled="[[disabled]]">
     </options-card>
 
   </template>
@@ -101,7 +101,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           planSelected: {
             type: Boolean,
             value: false
-          }
+          },
+
+          disabled: Boolean
         },
 
 

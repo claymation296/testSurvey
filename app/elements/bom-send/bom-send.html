@@ -139,7 +139,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         	<div class="card-actions">
         		<paper-button id="sendButton" 
                           on-tap="_sendBomButtonTapped"
-                          disabled="[[disableSendBtn]]"
+                          disabled="[[disabled]]"
                           raised>
               <iron-icon icon="custom-icons:send"></iron-icon>
               Send BOM
@@ -190,7 +190,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // for its custom slide-up animation
           remainingElements: Array,
 
-          disableSendBtn: Boolean
+          disabled: Boolean
         },
 
 
@@ -207,7 +207,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // fired by photo-upload-progress.html
         _setSendBtnDisableState(event) {
-          this.disableSendBtn = event.detail.disable;
+          this.disabled = event.detail.disable;
         },
         // cannot use queueSize in this computed property here since it
         // blocks the function from running until defined

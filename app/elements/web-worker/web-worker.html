@@ -154,10 +154,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             case 'user':
               window.Redaap.appSecurity.checkCurrentUser(job.output);
               break;
-            case 'login':
-            case 'signup':
-              window.Redaap.appState.signIn();
-              break;
             case 'logout':
               window.Redaap.lightingMain.clearSurvey();
               window.Redaap.appState.signOut();
@@ -178,6 +174,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               console.log(...job.output);
               break;
             // no action for the following functions
+            case 'login':
+            case 'signup':
             case 'processPhoto':
             case 'getUrl':
             case 'pricing':

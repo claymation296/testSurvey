@@ -110,7 +110,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <solution-card id="solutionCard" 
                              solution="{{item}}"
                              index="[[index]]"
-                             selected-index="[[itemIndex]]">
+                             selected-index="[[itemIndex]]"
+                             disabled="[[disabled]]">
               </solution-card>
             </template>
 
@@ -193,7 +194,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           initialCardExpandedHeight: {
             type: Number,
             value: 188
-          }
+          },
+
+          disabled: Boolean
         },
 
         
@@ -345,6 +348,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // using requestAnimationFrame since these calculations are happening during
         // the css background-color transition
         _itemIndexChanged(index) {
+          if (this.disabled) { return; }
           if (typeof index !== 'number') { return; }
           // set currently selected card elements for animations
           this.holder          = this.holders[index];

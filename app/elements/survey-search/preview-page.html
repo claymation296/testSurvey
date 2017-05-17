@@ -107,7 +107,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </style>
 
     
-    <paper-fab id="fab" on-tap="_loadFabTapped"></paper-fab>
+    <paper-fab id="fab" on-tap="_loadFabTapped" disabled="[[disabled]]"></paper-fab>
     
     <div id="iconMask">
       <div id="slide">
@@ -315,7 +315,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         		computed: '_computePricing(survey)'
         	},
           // bound from survey-search used to rememeber scroll position on reopen
-          previewScrollerCache: Number
+          previewScrollerCache: Number,
+
+          disabled: Boolean
         },
 
         // called by survey-search on neon-animated-pages animation finish

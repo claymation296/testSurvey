@@ -108,11 +108,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               return;
             }
 
-            const channel = window.Redaap.appState.getChannel();
-
-            window.Redaap.webWorker.invite(this.email, channel).
+            window.Redaap.appState.getChannel().
+              then(channel => window.Redaap.webWorker.invite(this.email, channel)).
               then(() => {
-                this.message(`Invitation sent to ${this.email}!`);
+                this.message(`Invitation sent to ${this.email}`);
               }).
               catch(error => {
                 console.log('invite-collaborator error: ', error);
