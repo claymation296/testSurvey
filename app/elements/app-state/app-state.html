@@ -9,8 +9,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 
-
-
 <dom-module id="app-state">
   <template>
     <style>
@@ -22,31 +20,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </style>
 
 
-    <iron-localstorage name="redaap-state"
-                       value="{{state}}"
-                       on-iron-localstorage-load="_stateLocalstorageLoaded"
-                       on-iron-localstorage-load-empty="_initializeDefaultState"
+    <iron-localstorage name="redaap-shared-state"
+                       value="{{sharedState}}"
+                       on-iron-localstorage-load-empty="initializeSharedState"
                        error-message="{{localStorageError}}">
     </iron-localstorage>
 
-
-    <iron-localstorage name="redaap-cachedState"
-                       value="{{cachedState}}"
+    <iron-localstorage name="redaap-local-state"
+                       value="{{localState}}"
+                       on-iron-localstorage-load-empty="_initializeDefaultLocalState"
                        error-message="{{localStorageError}}">
     </iron-localstorage>
-
-
-    <iron-localstorage name="redaap-email"
-                       value="{{email}}"
-                       error-message="{{localStorageError}}">
-    </iron-localstorage>
-
-
-    <iron-localstorage name="redaap-channel"
-                       value="{{channel}}"
-                       error-message="{{localStorageError}}">
-    </iron-localstorage>
-
 
     <firebase-app api-key="AIzaSyA7lC69yQkPBFAfl9dOLCFbSxnbReE7PFA"
                   auth-domain="redaapsurvey.firebaseapp.com"
@@ -55,17 +39,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   messaging-sender-id="887370986753">
     </firebase-app>
 
-
     <firebase-auth id="auth" 
                    signed-in="{{signedIn}}"
                    on-error="_firebaseAuthError">
     </firebase-auth>
 
-
     <firebase-document id="doc" 
-                       path="/channels/[[channel]]"
-                       data="{{state}}"
-                       disabled="[[disableFirebase]]"
+                       path="/channels/[[localState.channel]]"
+                       data="{{sharedState}}"
+                       disabled="[[localState.disableFirebase]]"
                        on-error="_firebaseDocError">
     </firebase-document>
 
@@ -79,17 +61,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         is: 'app-state',
 
         properties: {
-
-        	state: {
+          // sharable data that is persisted across devices/users via firebase
+        	sharedState: {
         		type: Object,
         		notify: true
         	},
-          // cachedState has a non null value during unlinking process
-          // it holds the last state value in localstorage cache
-          // so as not to accedentally lose users's data
-          cachedState: Object,
 
-          defaultState: {
+          defaultSharedState: {
             type: Object,
             value: {
               bom: {
@@ -116,40 +94,38 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 surveyVersion: null
               },
               clientValid: false,
+              // saved photo data list in lighting-main
               dreading: {},
-              mode: 'quote',
+              firebaseUsers: {},
+              // quote or bom
+              mode: '',
               userSelectedArray: []
             }
           },
-          // cache email for user experience during login
-          email: {
-            type: String,
+
+          localState: {
+            type: Object,
             notify: true
           },
-          // firebase data channel that can be shared across devices/users
-          channel: {
-            type: String,
-            // observer: '_channelChanged'
-          },
-          // when not in app-link mode revert back to localstorage
-          // for full offline capabilities
-          disableFirebase: {
-            type: Boolean,
-            value: true
+
+          defaultLocalState: {
+            type: Object,
+            value: {
+              // firebase channel to link apps
+              channel: '',
+              disableFirebase: true,
+              // cached for better relogin ux
+              email: '',
+              // only true when user is both in app linked mode and offline
+              // during this state, firebase can no longer sync to other users
+              // and there is not currently a vialbe method for conflict resolution
+              // for offline edits, so put app in read only state 
+              // disable all inputs and theme app in grey
+              readOnly: false
+            }
           },
           // firebase user
-          signedIn: Boolean,
-          // only true when user is both in app linked mode and offline
-          // during this state, firebase can no longer sync to other users
-          // and there is not currently a vialbe method for conflict resolution
-          // for offline edits, so put app in read only state 
-          // disable all inputs and theme app in grey
-          readOnly: {
-            type: Boolean,
-            value: false,
-            notify: true
-          }
-
+          signedIn: Boolean
         },
 
 
@@ -161,13 +137,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _handleLinkedAppConnectivity(event) {
           // this.channel truthy when in app linking mode
-          if (event.type === 'offline' && this.channel) {
-            this.set('readOnly', true);
+          if (event.type === 'offline' && this.localState.channel) {
+            this.set('localState.readOnly', true);
+            this.set('localState.disableFirebase', true);
           } else if (event.type === 'online') {
-            this.set('readOnly', false);
+            this.set('localState.readOnly', false);
             // if user unlinked app while offline
             // cleanup firebase registered users
-            if (!this.channel && this.signedIn) {
+            if (this.localState.channel) {
+              this.set('localState.disableFirebase', false);
+            } else if (this.signedIn) {
               this.$.auth.user.delete();
             }
           }
@@ -177,99 +156,43 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _objIsEmpty: obj => Object.keys(obj).length === 0,
 
 
-        _setState(newState) {
-          this.set('state', Object.assign({}, newState));
+        _setState(state, value) {
+          if (typeof value !== 'object') { throw new Error('_setState value must be of type object'); }
+          this.set(state, Object.assign({}, value));
         },
 
 
-        // _channelChanged(channel) {
-        //   if (!channel) { return; }
+        _setSharedState(value) {
+          this._setState('sharedState', value);
+        },
 
 
-        //   // console.log('channel changed: ', this.state);
+        _setLocalState(value) {
+          this._setState('localState', value);
+        },
 
-        //   if (window.navigator.onLine) {
-        //     this.$.doc.getStoredValue(`/channels/${channel}`).
-        //     then(state => {
-
-        //       console.log('firebase state init: ', this.tempState);
-
-
-        //       // if (this._objIsEmpty(state)) {
-        //       //   if (this.cachedState === null) {
-        //       //     this.set('state', this.defaultState);
-
-        //       //     console.log('firebase default state: ', this.state);
-        //       //   } else {
-        //       //     this.set('state', this.cachedState);
-        //       //     this.cachedState = null;
-
-
-        //       //     console.log('firebase cached state: ', this.state);
-        //       //   }
-        //       // }
-
-
-
-        //       if (this.tempState === null || this.tempState === undefined) {
-        //         if (this._objIsEmpty(state)) {
-        //           this._setState(this.defaultState);
-
-        //           console.log('firebase default state: ', this.state);
-        //         }
-        //       } else {
-        //         this._setState(this.tempState);
-        //         this.tempState = null;
-
-
-        //         console.log('firebase temp state: ', this.state);
-        //       }
-
-
-
-
-
-
-        //     }).
-        //     catch(error => console.log('firebase getStoredValue error: ', error));
-
-        //   } else {
-        //     if (this.tempState === null || this.tempState === undefined) {
-        //       if (this._objIsEmpty(this.state)) {
-        //         this._setState(this.defaultState);
-
-        //         console.log('offline default state: ', this.state);
-        //       }
-        //     } else {
-        //       this._setState(this.tempState);
-        //       this.tempState = null;
-
-
-        //       console.log('offline temp state: ', this.state);
-        //     }
-        //   }
-          
-          
-        // },
-
-        // called by link-app _send()
+        // called by link-app.html _send()
         getChannel() {
 
           // TODO:
           //      switch to this.$.auth.signInWithCustomToken()
           //      and get new channel from web-worker getKey()
 
-          this.cachedState     = this.state;
-          this.disableFirebase = false;
-
           return this.$.auth.signInAnonymously().
             then(user => {
               const {uid: channel} = user;
-              this.channel         = channel;
+              this.set('localState.channel', channel);
+              // add user to a list of users that us used to determine when
+              // the last user signs out or unlinks from this channel
+              this.set(`sharedState.firebaseUsers.${channel}`, true);
 
-              return this.$.doc.setStoredValue(`/channels/${channel}`, this.cachedState);
+              return this.$.doc.setStoredValue(`/channels/${channel}`, this.sharedState);
             }).
-            then(() => this.channel);
+            then(() => {
+              this.set('localState.disableFirebase', false);
+
+              return this.localState.channel;
+            });
         },
 
         // called by realtime-collaboration _link()
@@ -280,15 +203,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           //      and get new channel from web-worker getKey()
 
 
-          this.disableFirebase = false;
+          this.set('localState.disableFirebase', false);
           // show toast only after firebase fully initializes
           return this.$.auth.signInAnonymously().
-            then(() => {
+            then(user => {
               // switch to inviter's channel
-              this.channel = channel;
-              return this.$.doc.getStoredValue(`/channels/${channel}`);
-            }).
-            catch(error => console.log('firebase sign in error: ', error));
+              this.set('localState.channel', channel);
+              return this.$.doc.getStoredValue(`/channels/${channel}`).
+                then(() => {
+                  // add user to a list of users that us used to determine when
+                  // the last user signs out or unlinks from this channel
+                  this.set(`sharedState.firebaseUsers.${user.uid}`, true);
+                  return;
+                });
+            });
         },
 
         // called by link-app _unlink()
@@ -299,44 +227,33 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           //      switch to using this.$.auth.signOut() and web-worker's getKey()
           //      for new channel after moving to this.$.auth.signInWithCustomToken()
 
+          this.set('localState.disableFirebase', true);
+          this.set('localState.channel',         null);
+          this.set('localState.readOnly',        false);
 
-          // TODO: 
-          //      destroy the channel when the last person signed into it
-          //      signs out or unlinks
+          if (this.signedIn) {
+            // switch to new channel to guarantee the previously linked
+            // user can no longer make changes to this user's data
+            this.set(`sharedState.firebaseUsers.${this.$.auth.user.uid}`, false);
+            // check if there are any remaining linked user on this channel
+            // and destroy the channel if this is the last user
+            const users                = this.sharedState.firebaseUsers;
+            const userKeys             = Object.keys(users);
+            const remainingLinkedUsers = userKeys.filter(key => users[key] === true);
 
+            if (remainingLinkedUsers.length === 0) {
+              return this.$.doc.destroy().
+                then(() => this.$.auth.user.delete());
+            }
 
-
-
-          // hold state in localstorage in case of page refresh
-//          this.cachedState     = this.state;
-
-
-          this.disableFirebase = true;
-          this.channel         = null;
-          this.set('readOnly', false);
-          // switch to new channel to guarantee the previously linked
-          // user can no longer make changes to this user's data
-          return this.$.auth.user.delete().
-            catch(error => console.log(error));
+            return this.$.auth.user.delete();
+          }
+          
+          return Promise.resolve();
         },
 
         // called by web-worker
         signOut() {
-
-
-
-          // TODO:
-          //      test to make sure a user signing out does not 
-          //      destroy the linked channel data for other users
-          //      who may still be linked
-
-          // TODO: 
-          //      destroy the channel when the last person signed into it
-          //      signs out or unlinks
-
-
-
-
           if (this.signedIn) {
             this.unlinkApp();
           }
@@ -354,33 +271,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         // observers: [
-        // 	'_stateChanged(state.*)'
+        // 	'_stateChanged(sharedState.*)'
         // ],
 
 
         // _stateChanged(state) {
-        // 	console.log('state changed: ', state.base);
+        // 	console.log('shared state changed: ', state.base);
         // },
 
 
-
-        _initializeDefaultState() {
-          this._setState(this.defaultState);
+        // called by redaap-shared-state localStorage and lighting-main.html clearSurvey()
+        initializeSharedState() {
+          this._setSharedState(this.defaultSharedState);
         },
 
 
-
-        _stateLocalstorageLoaded() {
-          // if (!this._objIsEmpty(this.state)) {
-          //   this.tempState = this.state;
-          //   console.log('state localstorage not empty: ', this.tempState);
-          // }
+        _initializeDefaultLocalState() {
+          this._setLocalState(this.defaultLocalState);
         },
-
-
-        // _initializeDefaultState() {
-        // 	this.set('state', {});
-        // },
         
 
         _localStorageError(error) {

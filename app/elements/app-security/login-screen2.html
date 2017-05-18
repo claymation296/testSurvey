@@ -163,27 +163,36 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <paper-card id="login" animated-shadow heading="[[type]]" 
         elevation="[[cardElevation]]" hidden$="[[hidden]]">
         <div class="card-content">
-          <paper-input id="email" label="email" type="email"
-            auto-validate required value="{{email}}"
-            error-message="Please enter a valid email format">
+          <paper-input id="email" 
+                       label="email" 
+                       type="email"
+                       auto-validate
+                       autofocus
+                       required 
+                       value="{{email}}"
+                       tabindex="1"
+                       error-message="Please enter a valid email format">
           </paper-input>
           <iron-a11y-keys 
             target="[[a11yTarget]]" 
             keys="enter" 
             on-keys-pressed="_login">
           </iron-a11y-keys>
-          <paper-input id="password" label="password" type="password" 
-            value="{{password}}">
+          <paper-input id="password" 
+                       label="password" 
+                       type="password" 
+                       value="{{password}}"
+                       tabindex="2">
           </paper-input>
         </div>
         <div class="card-actions">
         	<paper-material id="loginButton" class="whiteButtons opacityTransition" 
             animated elevation="[[loginElevation]]">
-          	<paper-button on-tap="_login" noink>[[type]]</paper-button>
+          	<paper-button on-tap="_login" noink tabindex="3">[[type]]</paper-button>
 		      </paper-material>
 		      <paper-material id="cancelButton" class="whiteButtons floated opacityTransition" 
             animated elevation="[[cancelElevation]]">
-          	<paper-button on-transitionend="_cancel">Cancel</paper-button>
+          	<paper-button on-transitionend="_cancel" tabindex="4">Cancel</paper-button>
 		      </paper-materail>
         </div>
       </paper-card>

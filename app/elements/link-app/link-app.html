@@ -129,7 +129,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               then(() => {
                 this.message('Your app has been unlinked');
               }).
-              catch(() => {
+              catch(error => {
+                console.log(error);
                 this.warn('An error occured while unlinking your app. Please try again.');
               });
           };
