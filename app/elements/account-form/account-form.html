@@ -244,28 +244,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Object,
             notify: true,
           },
-          // used to clear inputs
-          clearInputs: {
-            type: Object,
-            value: {
-              clientName: '',
-              phone: '',
-              email: '',
-              companyName: '',
-              address: '',
-              city: '',
-              state: '',
-              zip: '',
-              projectName: '',
-              projectAddress: '',
-              projectCity: '',
-              projectState: '',
-              projectZip: '',
-              projectContact: '',
-              projectDescription: '',
-              surveyVersion: null
-            }
-          },
 
           displayedClientCompanyName: {
             type: String,
@@ -293,7 +271,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // paper-fab tap calls _load function which checks input validity
           clientValid: {
           	type: Boolean,
-          	value: false,
           	notify: true,
             observer: '_clientValidChanged'
           },
@@ -500,16 +477,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           };
           
           this.schedule(reload);
-        },
-        // clearClient is called by lighting-main
-        // when user chooses to clear the survey
-        clearClient() {
-          const clear = () => {
-            this.client = null;
-            this.set('client', Object.assign({}, this.clearInputs));
-          };
-          
-          this.schedule(clear);
         },
 
         // passed in from main-page

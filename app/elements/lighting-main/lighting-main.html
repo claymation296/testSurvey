@@ -315,7 +315,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.debounce('emptyDreadingDebounce', () => {
             // any edits to the uSA after the data has been sent to the cloud
             // makes the quote invalid
-            this.set('talliesValid', false);
+            this.talliesValid = false;
 
             this._workQuoteDreadingList();
           }, 10);
@@ -493,15 +493,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // called by survey-search when user selects a saved survey
         // reset both valid states and hide badges after a survey is loaded in
         resetQuoteMode(data) {
+          this.talliesValid = false;
           this.set('userSelectedArray', data);
           this.set('clientValid',       false);
-          this.set('talliesValid',      false);
         },
 
         // action to take in case any of the cards has no quantity entered
         _isNotValid() {
           // disallow main-page from creating a quote with partial data
-          this.set('talliesValid', false);
+          this.talliesValid = false;
           this.warn('Oops! Please start by adding an area to the list');
           this.async(() => {
             this.set('lightingTab', 'areaPage');
@@ -535,7 +535,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           window.Redaap.webWorker.
             pricing(this.userSelectedArray).
             then(({uSA, pricing}) => {
-              this.set('talliesValid', true);
+              this.talliesValid = true;
               // set the new data to this.surveyDataSnapShot to be passed to the database
               // in order to guarantee the data strictly aligns with its pricing
               // just in case the uSA is altered and the pricing not updated
@@ -586,24 +586,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           } else {
             this.set('version', 0);
           }
-        },
+        }, 
         // called by clear survey dialog in index.html 
         // and by web-worker on logout
         clearSurvey() {
           const clearData = () => {
-            this.dreading = {};
-            this.set('userSelectedArray', []);
-            this.set('bom', {areas: {}, fixtures: {}, photos: {}});
             this.surveyDataSnapShot = undefined;
-            window.Redaap.accountForm.clearClient();
+            this.talliesValid       = false;
             window.Redaap.webWorker.clearPhotoData();
-            this.set('clientValid',  false);
-            this.set('talliesValid', false);
+            window.Redaap.appState.initializeSharedState();
             // reset page to account-form
             const navigate = () => {
               this.set('route', 'client');
               this.async(() => {
-                this.set('mode', '');
                 this.set('lightingTab', 'areaPage');
               }, 500);
             };

@@ -137,7 +137,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <template is="dom-bind" id="app">
 
     
-    <app-state state="{{state}}" email="{{email}}" read-only="{{readOnly}}"></app-state>
+    <app-state shared-state="{{sharedState}}" local-state="{{localState}}"></app-state>
 
     <web-worker saved-photo-data="{{savedPhotoData}}" queue-size="{{queueSize}}"></web-worker>
 
@@ -224,7 +224,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                      signage-tab="[[signageTab]]"
                      lighting-tab="[[lightingTab]]"
                      route="[[route]]"
-                     mode="[[state.mode]]">
+                     mode="[[sharedState.mode]]">
           </nav-title>
 
           <span class="flex"></span>
@@ -241,18 +241,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           <!-- lighting-tabs are hidden when not on 'lighting' menu selection -->
           <lighting-tabs class="bottom bottom-container center horizontal layout"
-                         bom="[[state.bom]]"
-                         client-valid="[[state.clientValid]]"
+                         bom="[[sharedState.bom]]"
+                         client-valid="[[sharedState.clientValid]]"
                          lighting-tab="{{lightingTab}}"
-                         mode="[[state.mode]]"
+                         mode="[[sharedState.mode]]"
                          route="[[route]]"
                          selected-label="{{selectedLabel}}"
-                         user-selected-array="[[state.userSelectedArray]]">
+                         user-selected-array="[[sharedState.userSelectedArray]]">
           </lighting-tabs>
 
           <signage-tabs class="bottom bottom-container center horizontal layout"
                         signage-tab="{{signageTab}}"
-                        client-valid="[[state.clientValid]]"
+                        client-valid="[[sharedState.clientValid]]"
                         route="[[route]]">
           </signage-tabs>
 
@@ -274,10 +274,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </section> -->
 
           <section data-route="client">
-            <account-form client="{{state.client}}"
-                          client-valid="{{state.clientValid}}"
+            <account-form client="{{sharedState.client}}"
+                          client-valid="{{sharedState.clientValid}}"
                           displayed-client-company-name="{{displayedClientCompanyName}}"
-                          read-only="[[readOnly]]"
+                          read-only="[[localState.readOnly]]"
                           route="{{route}}"
                           version="[[version]]">
             </account-form>
@@ -288,19 +288,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </section>
 
           <section data-route="lights">
-            <lighting-main bom="{{state.bom}}"
-                           client="[[state.client]]"
-                           client-valid="{{state.clientValid}}"
+            <lighting-main bom="{{sharedState.bom}}"
+                           client="[[sharedState.client]]"
+                           client-valid="{{sharedState.clientValid}}"
                            displayed-client-company-name="{{displayedClientCompanyName}}"
-                           dreading="{{state.dreading}}"
+                           dreading="{{sharedState.dreading}}"
                            lighting-tab="{{lightingTab}}"
-                           mode="{{state.mode}}"
+                           mode="{{sharedState.mode}}"
                            queue-size="[[queueSize]]"
-                           read-only="[[readOnly]]"
+                           read-only="[[localState.readOnly]]"
                            route="{{route}}"
                            saved-photo-data="[[savedPhotoData]]"
                            selected-pricing="{{selectedPricing}}"
-                           user-selected-array="{{state.userSelectedArray}}"
+                           user-selected-array="{{sharedState.userSelectedArray}}"
                            version="{{version}}">
             </lighting-main>
           </section>
@@ -329,7 +329,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                             style="background-color: white; padding: 16px;">
               <h2 class="page-title">Contact Us</h2>
               <p>quicksale@teuservices.com</p>
-              <p>v0.6.19</p>
+              <p>v0.6.22</p>
             </paper-material>
           </section>
 
@@ -356,38 +356,38 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <!-- ************************ overlays *************************** -->
 
-    <app-security email="{{email}}" displayed-user-name="{{userName}}"></app-security>
+    <app-security email="{{localState.email}}" displayed-user-name="{{userName}}"></app-security>
 
-    <app-mode mode="{{state.mode}}" read-only="[[readOnly]]"></app-mode>
+    <app-mode mode="{{sharedState.mode}}" read-only="[[localState.readOnly]]"></app-mode>
 
-    <area-edit read-only="[[readOnly]]"></area-edit>
+    <area-edit read-only="[[localState.readOnly]]"></area-edit>
 
-    <light-selector read-only="[[readOnly]]"></light-selector>
+    <light-selector read-only="[[localState.readOnly]]"></light-selector>
 
-    <bom-catagory-selector bom="{{state.bom}}" read-only="[[readOnly]]"></bom-catagory-selector>
+    <bom-catagory-selector bom="{{sharedState.bom}}" read-only="[[localState.readOnly]]"></bom-catagory-selector>
 
-    <solution-page id="solutions" read-only="[[readOnly]]"></solution-page>
+    <solution-page id="solutions" read-only="[[localState.readOnly]]"></solution-page>
 
-    <bom-fullscreen-edit read-only="[[readOnly]]"></bom-fullscreen-edit>
+    <bom-fullscreen-edit read-only="[[localState.readOnly]]"></bom-fullscreen-edit>
 
-    <notes-page read-only="[[readOnly]]"></notes-page>
+    <notes-page read-only="[[localState.readOnly]]"></notes-page>
 
-    <photo-viewer read-only="[[readOnly]]"></photo-viewer>
+    <photo-viewer read-only="[[localState.readOnly]]"></photo-viewer>
 
-    <account-nav route="{{route}}" client-valid="[[state.clientValid]]"></account-nav>
+    <account-nav route="{{route}}" client-valid="[[sharedState.clientValid]]"></account-nav>
 
-    <quote-page client="[[state.client]]"
+    <quote-page client="[[sharedState.client]]"
                 selected-pricing="[[selectedPricing]]"
                 version="[[version]]">
     </quote-page>
 
-    <email-options queue-size="[[queueSize]]" read-only="[[readOnly]]"></email-options>
+    <email-options queue-size="[[queueSize]]" read-only="[[localState.readOnly]]"></email-options>
 
-    <success-page mode="[[state.mode]]"></success-page>
+    <success-page mode="[[sharedState.mode]]"></success-page>
 
     <survey-search lighting-tab="{{lightingTab}}" 
-                   mode="[[state.mode]]" 
-                   read-only="[[readOnly]]">
+                   mode="[[sharedState.mode]]" 
+                   read-only="[[localState.readOnly]]">
     </survey-search>
 
     
@@ -399,7 +399,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
     
-    <paper-toast id="caching-complete"
+    <!-- <paper-toast id="caching-complete"
                  duration="6000"
                  text="REDAAP can now work offline.">
     </paper-toast>
@@ -411,7 +411,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <platinum-sw-cache default-cache-strategy="fastest"
                          cache-config-file="cache-config.json">
       </platinum-sw-cache>
-    </platinum-sw-register>
+    </platinum-sw-register> -->
 
 
 
