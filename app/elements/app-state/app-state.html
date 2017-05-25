@@ -39,6 +39,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   messaging-sender-id="887370986753">
     </firebase-app>
 
+
+
+
+    
+
     <firebase-auth id="auth" 
                    signed-in="{{signedIn}}"
                    on-error="_firebaseAuthError">
@@ -50,6 +55,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                        disabled="[[localState.disableFirebase]]"
                        on-error="_firebaseDocError">
     </firebase-document>
+
+
+
+    <!-- <firebase-auth id="auth" 
+                   user="{{user}}"
+                   signed-in="{{signedIn}}"
+                   on-error="_firebaseAuthError">
+    </firebase-auth>
+
+
+    <template is="dom-if" if="[[user]]">
+      <firebase-document id="doc" 
+                         path="/channels/[[localState.channel]]"
+                         data="{{sharedState}}"
+                         disabled="[[localState.disableFirebase]]"
+                         on-error="_firebaseDocError">
+      </firebase-document>
+    </template> -->
+
 
 
   </template>
@@ -142,11 +166,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.set('localState.disableFirebase', true);
           } else if (event.type === 'online') {
             this.set('localState.readOnly', false);
-            // if user unlinked app while offline
-            // cleanup firebase registered users
             if (this.localState.channel) {
               this.set('localState.disableFirebase', false);
             } else if (this.signedIn) {
+              // if user unlinked app while offline
+              // cleanup firebase registered users
               this.$.auth.user.delete();
             }
           }
@@ -157,7 +181,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _setState(state, value) {
-          if (typeof value !== 'object') { throw new Error('_setState value must be of type object'); }
+          if (!value || typeof value !== 'object') { 
+            throw new Error('_setState value must be of type object'); 
+          }
           this.set(state, Object.assign({}, value));
         },
 
