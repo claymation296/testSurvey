@@ -39,11 +39,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   messaging-sender-id="887370986753">
     </firebase-app>
 
-
-
-
-    
-
     <firebase-auth id="auth" 
                    signed-in="{{signedIn}}"
                    on-error="_firebaseAuthError">
@@ -55,29 +50,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                        disabled="[[localState.disableFirebase]]"
                        on-error="_firebaseDocError">
     </firebase-document>
-
-
-
-    <!-- <firebase-auth id="auth" 
-                   user="{{user}}"
-                   signed-in="{{signedIn}}"
-                   on-error="_firebaseAuthError">
-    </firebase-auth>
-
-
-    try dom if template as a fix for ios reconnect not updating state without
-    a browser refresh.  works on android as is.
-
-
-    <template is="dom-if" if="[[user]]">
-      <firebase-document id="doc" 
-                         path="/channels/[[localState.channel]]"
-                         data="{{sharedState}}"
-                         disabled="[[localState.disableFirebase]]"
-                         on-error="_firebaseDocError">
-      </firebase-document>
-    </template> -->
-
 
 
   </template>
@@ -163,6 +135,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
+        attached() {
+          // %%%%   HACK  &&&&&&&&
+          // firebase race condition coming back online and setting disabled to false
+          // overwrite firebase-document's firebase-database-behavior __onlineChanged()
+          // method and add an async() to guarantee it runs after __computeRef completes
+          this.$.doc.__onlineChanged = function(online) {
+            this.async(() => {
+              if (!this.ref) {
+                return;
+              }
+
+              if (online) {
+                this.db.goOnline();
+              } else {
+                this.db.goOffline();
+              }
+            }, 1);
+          }.bind(this.$.doc);
+        },
+
+
         _handleLinkedAppConnectivity(event) {
           const channel = this.localState.channel;
           // this.channel truthy when in app linking mode
@@ -173,18 +166,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.set('localState.readOnly', false);
             if (channel) {
               this.set('localState.disableFirebase', false);
-
-
-
-              this.$.doc.getStoredValue(`/channels/${channel}`).
-                then(state => {
-                  this.set('sharedState', state);
-                }).
-                catch(error => console.log('firebase reconnect error: ', error));
-
-
-
-
             } else if (this.signedIn) {
               // if user unlinked app while offline
               // cleanup firebase registered users
