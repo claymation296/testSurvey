@@ -329,7 +329,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                             style="background-color: white; padding: 16px;">
               <h2 class="page-title">Contact Us</h2>
               <p>quicksale@teuservices.com</p>
-              <p>v0.6.30</p>
+              <p>v0.6.33</p>
             </paper-material>
           </section>
 
@@ -399,7 +399,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
     
-    <!-- <paper-toast id="caching-complete"
+    <paper-toast id="caching-complete"
                  duration="6000"
                  text="REDAAP can now work offline.">
     </paper-toast>
@@ -412,7 +412,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          cache-config-file="cache-config.json">
       </platinum-sw-cache>
     </platinum-sw-register>
- -->
+
 
 
 
@@ -438,7 +438,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <div class="noSelect">
         <iron-icon icon="custom-icons:warning"></iron-icon>
         <strong>Warning!</strong>
-        <div>This will DELETE the app DATA including any work you have not uploaded!</div>        
+        <div>
+          This will DELETE all DATA currently cached on this device, including any work you have not uploaded!
+        </div>        
       </div>
       <div class="buttons">
         <paper-button class="buttonColor" on-tap="logOutUser">Yes</paper-button>

@@ -65,6 +65,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </firebase-auth>
 
 
+    try dom if template as a fix for ios reconnect not updating state without
+    a browser refresh.  works on android as is.
+
+
     <template is="dom-if" if="[[user]]">
       <firebase-document id="doc" 
                          path="/channels/[[localState.channel]]"
@@ -160,14 +164,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
         _handleLinkedAppConnectivity(event) {
+          const channel = this.localState.channel;
           // this.channel truthy when in app linking mode
-          if (event.type === 'offline' && this.localState.channel) {
+          if (event.type === 'offline' && channel) {
             this.set('localState.readOnly', true);
             this.set('localState.disableFirebase', true);
           } else if (event.type === 'online') {
             this.set('localState.readOnly', false);
-            if (this.localState.channel) {
+            if (channel) {
               this.set('localState.disableFirebase', false);
+
+
+
+              this.$.doc.getStoredValue(`/channels/${channel}`).
+                then(state => {
+                  this.set('sharedState', state);
+                }).
+                catch(error => console.log('firebase reconnect error: ', error));
+
+
+
+
             } else if (this.signedIn) {
               // if user unlinked app while offline
               // cleanup firebase registered users
@@ -237,7 +254,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this.set('localState.channel', channel);
               return this.$.doc.getStoredValue(`/channels/${channel}`).
                 then(() => {
-                  // add user to a list of users that us used to determine when
+                  // add user to a list of users that is used to determine when
                   // the last user signs out or unlinks from this channel
                   this.set(`sharedState.firebaseUsers.${user.uid}`, true);
                   return;

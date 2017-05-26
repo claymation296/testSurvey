@@ -72,11 +72,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         opacity: 1;
       }
 
-
     </style>
 
 
-    <iron-ajax auto
+    <iron-ajax id="ajax"
                url="[[photo.src]]"
                on-error="_imgLoadError">
     </iron-ajax>
@@ -115,6 +114,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Boolean,
             value: true
           }
+        },
+
+        // iron-ajax fix after update to v1.4.4
+        observers: [
+          '_srcChanged(photo.src)'
+        ],
+        // iron-ajax fix after update to v1.4.4
+        // cannot use iron-ajax auto attribute anymore
+        _srcChanged(src) {
+          if (!src || src === '#') { return; }
+          this.$.ajax.generateRequest();
         },
 
 
@@ -166,6 +176,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const status = event.detail.request.status;
           // Not Found or ERR_INTERNET_DISCONNECTED
           // ObjectUrl invalid so issue a new one
+          // from worker localforage
           if (status === 404 || status === 0) {
             const setSrc = url => {
               this.errorRetry = false;
