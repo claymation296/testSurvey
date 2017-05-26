@@ -253,8 +253,8 @@ gulp.task('minify-components', () => {
 
   return gulp.src([
       'dist/bower_components/**/*.*',
+      // the following files ignored for better build performance
       '!dist/bower_components/**/*.min.js',
-      // ignored for speed/time constraints
       '!dist/bower_components/{chai, mocha, sinonjs, webcomponentsjs}/*.*',
       '!dist/bower_components/{hydrolysis, marked, marked-element, prism, prism-element}/**/*.*',
       '!dist/bower_components/{sinon-chai, stacky, test-fixture}/**/*.*',
@@ -262,7 +262,7 @@ gulp.task('minify-components', () => {
       // removed because of a post build error
       '!dist/bower_components/firebase/*.*',
       // removed because of a pre build error
-      '!dist/bower_components/web-component-tester/**/*.*',
+      '!dist/bower_components/web-component-tester/**/*.*'
     ], {base: './'})
     .pipe(htmlSplitter.split())
     .pipe($.if('*.html', cssSlam.gulp()))

@@ -180,14 +180,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
          src="[[placeholderSrc]]"
          on-load="_placeholderSrcLoaded"> 
     <!-- placeholder error handling only -->
-    <iron-ajax auto
+    <iron-ajax id="placeholderSrcAjax"
                url="[[placeholderSrc]]"
                on-error="_placeholderSrcError">
     </iron-ajax>
-    <!-- pic error handling only -->
-    <iron-ajax auto
-               url="[[pic]]"
-               on-error="_picError">
+    <!-- savedUrlSrc error handling only -->
+    <iron-ajax id="savedUrlSrcAjax"
+               url="[[savedUrlSrc]]"
+               on-error="_savedUrlSrcError">
     </iron-ajax>
 
     
@@ -216,7 +216,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     placeholder="[[placeholderSrc]]"
                     preload
                     sizing="cover"
-                    src="[[pic]]">
+                    src="[[savedUrlSrc]]">
         </iron-image>
       </div>
 
@@ -255,17 +255,34 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         ],
 
         properties: {
-          // saved file url sent back from db after save
-        	pic: String,
-
-          loaded: {
-            type: Boolean,
-            observer: '_picLoaded'
-          },
           // image objectURL
           placeholder: {
             type: String,
             notify: true
+          },
+          // decoupled from placeholder for proper image loading timing and error handling
+          placeholderSrc: {
+            type: String,
+            // iron-ajax fix after update to v1.4.4
+            observer: '_placeholderSrcChanged'
+          },
+          // returned from web-worker enqueue method once promise is fulfilled
+          // Parse.file database url to replace the image src with since the saved
+          // file has been deleted
+          savedUrl: {
+            type: String,
+            notify: true
+          },
+          // decoupled from savedUrl for proper image loading timing and error handling
+        	savedUrlSrc: {
+            type: String,
+            // iron-ajax fix after update to v1.4.4
+            observer: '_savedUrlSrcChanged'
+          },
+
+          loaded: {
+            type: Boolean,
+            observer: '_savedUrlSrcLoaded'
           },
           // passed to worker to create the photo file name prefix
           filename: String,
@@ -280,13 +297,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Object,
             notify: true
           },
-          // returned from web-worker enqueue method once promise is fulfilled
-          // Parse.file database url to replace the image src with since the saved
-          // file has been deleted
-          savedUrl: {
-            type: String,
-            notify: true
-          },
+          
           // only attempt to correct a 404 on the placeholder once per instance
           placeholderErrorRetry: {
             type: Boolean,
@@ -339,10 +350,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
         },
 
-        // used for badge state and count
+        
         observers: [
+          // used for badge state and count
           '_keysChanged(keys.*)'
         ],
+        // iron-ajax fix after update to v1.4.4
+        // cannot use iron-ajax auto attribute anymore
+        _placeholderSrcChanged(src) {
+          if (!src || src === '#') { return; }
+          this.$.placeholderSrcAjax.generateRequest();
+        },
+        // iron-ajax fix after update to v1.4.4
+        // cannot use iron-ajax auto attribute anymore
+        _savedUrlSrcChanged(src) {
+          if (!src || src === '#') { return; }
+          this.$.savedUrlSrcAjax.generateRequest();
+        },
 
 
         _computeDisabledIcon: disabled => disabled ? 'disabled' : '',
@@ -391,7 +415,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // called by photo-viewer when user deletes last photo from the list
         resetCapture() {
           this.placeholderSrc = '#';
-          this.pic            = '#';
+          this.savedUrlSrc            = '#';
           this.set('orientation', null);
           this.set('placeholder', null);
           this.set('savedUrl',    null);
@@ -488,7 +512,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // need to reset the trigger before it will be used again by parent
         _resetTrigger() {
-          // allow instant updates to placeholder and pic
+          // allow instant updates to placeholder and savedUrlSrc
           // now that parent entry animations are complete
           this.set('deferLoad',    false);
           this.set('deferTrigger', false);
@@ -529,7 +553,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _placeholderSrcLoaded() {
           const loaded = () => {
             this._resetTrigger();
-            this.pic = '#';
+            this.savedUrlSrc = '#';
             this.fire('photo-capture-placeholder-loaded', this._makeEventPayload());
 
             if (this.placeholderSrc && this.placeholderSrc !== '#') {
@@ -558,7 +582,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
         
 
-        _picLoaded(bool) {
+        _savedUrlSrcLoaded(bool) {
           if (!bool) { return; }
 
           const loaded = () => {
@@ -568,7 +592,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.set('orientation', 0);
             // fire the external src only after the file has been loaded into the browser
             // using iron-image for load timing wether it is hidden or not
-            this.fire('photo-capture-saved-url-loaded', this._makeEventPayload(this.pic));
+            this.fire('photo-capture-saved-url-loaded', this._makeEventPayload(this.savedUrlSrc));
             this._showImageTag();
             // then wait for the background-image css to take so there is not a flicker
             // between switching from placeholder to main background div in parent
@@ -582,7 +606,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
 
-        _picError(event) {
+        _savedUrlSrcError(event) {
           const status = event.detail.request.status;
           // ERR_INTERNET_DISCONNECTED
           if (status === 0) {
@@ -594,8 +618,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // to save memory and cache in localstorage
         _loadSavedUrl(url) {
           // must force iron-image to take new url even if it is the same as previously loaded
-          this.pic = '#';
-          this.pic = url;
+          this.savedUrlSrc = '#';
+          this.savedUrlSrc = url;
           this._showSpinner();
         },
 
