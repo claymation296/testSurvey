@@ -65,8 +65,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       paper-toolbar {
+        /*style fixes for fake toolbar*/
         --paper-toolbar: {
           box-shadow: none;
+          position: initial;
         };
       	background-color: var(--default-primary-color);
       }
@@ -129,30 +131,59 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <span class="flex bottom"></span>
 
         <div id="mainStats" class="bottom centerText noSelect">
-          <paper-item id="term" 
-                      class="dialogTitle inline stats" 
-                      disabled>
-            <paper-item-body class="statsBody" two-line>
-              <div>[[pricing.term]]</div>
-              <div secondary>term</div>
-            </paper-item-body>
-          </paper-item>
-          <paper-item id="payment" 
-                      class="dialogTitle inline stats" 
-                      disabled>
-            <paper-item-body class="statsBody" two-line>
-              <div>$[[pricing.grandMonthly]]</div>
-              <div secondary>service fee</div>
-            </paper-item-body>
-          </paper-item>
-          <paper-item id="qty" 
-                      class="dialogTitle inline stats" 
-                      disabled>
-            <paper-item-body class="statsBody" two-line>
-              <div>[[pricing.totalQuantity]]</div>
-              <div secondary>count</div>
-            </paper-item-body>
-          </paper-item>
+          <div hidden$="[[!survey.pricing]]">
+            <paper-item id="stat1" 
+                        class="dialogTitle inline stats" 
+                        disabled>
+              <paper-item-body class="statsBody" two-line>
+                <div>[[pricing.term]]</div>
+                <div secondary>term</div>
+              </paper-item-body>
+            </paper-item>
+            <paper-item id="stat2" 
+                        class="dialogTitle inline stats" 
+                        disabled>
+              <paper-item-body class="statsBody" two-line>
+                <div>$[[pricing.grandMonthly]]</div>
+                <div secondary>service fee</div>
+              </paper-item-body>
+            </paper-item>
+            <paper-item id="stat3" 
+                        class="dialogTitle inline stats" 
+                        disabled>
+              <paper-item-body class="statsBody" two-line>
+                <div>[[pricing.totalQuantity]]</div>
+                <div secondary>count</div>
+              </paper-item-body>
+            </paper-item>
+          </div>
+
+          <div hidden$="[[survey.pricing]]">
+            <paper-item id="stat1" 
+                        class="dialogTitle inline stats" 
+                        disabled>
+              <paper-item-body class="statsBody" two-line>
+                <div>[[_computeAreaCount(survey.bom)]]</div>
+                <div secondary>areas</div>
+              </paper-item-body>
+            </paper-item>
+            <paper-item id="stat2" 
+                        class="dialogTitle inline stats" 
+                        disabled>
+              <paper-item-body class="statsBody" two-line>
+                <div>[[_computeTypeCount(survey.bom)]]</div>
+                <div secondary>fixture types</div>
+              </paper-item-body>
+            </paper-item>
+            <paper-item id="stat3" 
+                        class="dialogTitle inline stats" 
+                        disabled>
+              <paper-item-body class="statsBody" two-line>
+                <div>[[_computeBomCount(survey.bom)]]</div>
+                <div secondary>count</div>
+              </paper-item-body>
+            </paper-item>
+          </div>
         </div>
 
         <span class="flex bottom"></span>
@@ -167,7 +198,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <pricing-table client="[[survey]]" 
                        date="[[survey.createdDate]]" 
                        version="[[survey.surveyVersion]]" 
-                       pricing="[[pricing]]">
+                       pricing="[[pricing]]"
+                       bom="[[survey.bom]]">
         </pricing-table>
 
       </div>
@@ -200,9 +232,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   animation: 'slide-from-top-animation',
                   nodes:  [
                     this.$.title,
-                    this.$.term,
-                    this.$.payment, 
-                    this.$.qty
+                    this.$.stat1,
+                    this.$.stat2, 
+                    this.$.stat3
                   ],
                   timing: {duration: 300, delay: 50, easing: 'ease-out'}
                 }, {
@@ -210,9 +242,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   animation: 'fade-in-animation',
                   nodes:  [
                     this.$.title,
-                    this.$.term,
-                    this.$.payment, 
-                    this.$.qty
+                    this.$.stat1,
+                    this.$.stat2, 
+                    this.$.stat3
                   ],
                   timing: {duration: 200, delay: 250, easing: 'ease-out'}
                 }, {
@@ -254,9 +286,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   animation: 'slide-up-animation',
                   nodes:  [
                     this.$.title,
-                    this.$.term,
-                    this.$.payment, 
-                    this.$.qty
+                    this.$.stat1,
+                    this.$.stat2, 
+                    this.$.stat3
                   ],
                   timing: {duration: 300, delay: 50, easing: 'ease-in'}
                 }, {
@@ -264,9 +296,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   animation: 'fade-out-animation',
                   nodes:  [
                     this.$.title,
-                    this.$.term,
-                    this.$.payment, 
-                    this.$.qty
+                    this.$.stat1,
+                    this.$.stat2, 
+                    this.$.stat3
                   ],
                   timing: {duration: 200, easing: 'ease-out'}
                 }, {
@@ -346,6 +378,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // called by survey-search after entry animation
         setCachedScrollPos(cachedPos) {
           this.$.panel.scroll(cachedPos, true);
+        },
+        
+
+        _computeAreaCount: bom => bom ? Object.keys(bom.areas).length : 0,
+
+
+        _computeTypeCount: bom => bom ? Object.keys(bom.fixtures).length : 0,
+
+
+        _computeBomCount(bom) {
+          if (!bom) { return 0; }
+          
+          const fixKeys = Object.keys(bom.fixtures);
+          const tot = fixKeys.reduce((prevTot, currFix) => {
+            const areaKeys = Object.keys(bom.fixtures[currFix]);
+            const qty = areaKeys.reduce((prevQty, currArea) => 
+                          prevQty += Number(bom.fixtures[currFix][currArea].qty), 0);
+            prevTot += qty;
+            return prevTot;
+          }, 0);
+
+          return tot;
         },
 
         // pricing out of survey obj

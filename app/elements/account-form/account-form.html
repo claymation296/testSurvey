@@ -474,6 +474,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const reload = () => {
             this.client = null;
             this.set('client', obj);
+
+            console.log('client reload: ', (typeof obj.phone), obj.phone);
+
+
           };
           
           this.schedule(reload);

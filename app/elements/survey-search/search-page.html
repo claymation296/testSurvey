@@ -78,8 +78,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           display: none;
         };
         --paper-input-container-underline-focus: {
-          -webkit-transition: all 0.3s ease-in-out;
-                  transition: all 0.3s ease-in-out;
+          transition: all 0.3s ease-in-out;
         };
       }
 
@@ -93,8 +92,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         bottom: 0px;
         left: 0px;
         background-color: rgba(255, 255, 255, 0.8);
-        -webkit-transition: opacity 0.3s ease-in-out;
-                transition: opacity 0.3s ease-in-out;
+        transition: opacity 0.3s ease-in-out;
       }
 
       /* Tablet+ */
@@ -120,9 +118,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" 
                  viewBox="0 0 24 24" enable-background="new 0 0 792 129.6" xml:space="preserve">
               <g>
-                <rect id="top" x="3" y="6" width="18" height="2"/>
-                <rect id="middle" x="6" y="11" width="12" height="2"/>
-                <rect id="bottom" x="10" y="16" width="4" height="2"/>
+                <rect id="top"    x="3"  y="6"  width="18" height="2"/>
+                <rect id="middle" x="6"  y="11" width="12" height="2"/>
+                <rect id="bottom" x="10" y="16" width="4"  height="2"/>
               </g>
             </svg>
           </paper-button>
@@ -148,8 +146,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </paper-icon-button>
 
         <span class="flex middle"></span>
-        <paper-toggle-button id="toggle" class$="middle [[checked]] noSelect"
-          checked="{{userSurveys}}">My quotes
+        <paper-toggle-button id="toggle" 
+                             class$="middle [[checked]] noSelect"
+                             checked="{{userSurveys}}">My quotes
         </paper-toggle-button>
         <span class="flex middle"></span>
 
@@ -176,31 +175,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <span class="flex"></span>
         </paper-tabs>
 
-    	</paper-toolbar>
-      
-      <div id="spinner" hidden$="[[!showSpinner]]">
-        <paper-spinner-lite alt="Searching..." active="[[showSpinner]]"></paper-spinner-lite>
-      </div>
+    	</paper-toolbar>      
 
       <neon-animated-pages id="neon" 
                            selected="[[computedSearchTab]]" 
                            attr-for-selected="id">
-
-
         <saved-view id="saved" 
                     surveys="[[surveys]]"
                     run-card-animation="[[runCardAnimation]]" 
                     reverse-animation="[[reverseAnimation]]"
                     disabled="[[disabled]]">
-        </saved-view> 
-        
+        </saved-view>
         <review-view id="review" 
                      surveys="[[surveys]]"
                      run-card-animation="[[runCardAnimation]]" 
                      reverse-animation="[[reverseAnimation]]"
                      disabled="[[disabled]]">
         </review-view> 
-
         <sent-view id="sent" 
                    surveys="[[surveys]]"
                    run-card-animation="[[runCardAnimation]]" 
@@ -208,8 +199,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                    disabled="[[disabled]]">
         </sent-view>
 
-
       </neon-animated-pages>
+
+
+      <div id="spinner" hidden$="[[!showSpinner]]">
+        <paper-spinner-lite alt="Searching..." active="[[showSpinner]]"></paper-spinner-lite>
+      </div>
+
   	</paper-scroll-header-panel>
 
 
@@ -421,6 +417,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
 
           searchScrollerCache: Number,
+          // app mode: 'quote' or 'bom'
+          mode: String,
 
           disabled: Boolean
         },
@@ -499,9 +497,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.$.panel.scroll(cachedPos, true);
           this.selectedSearchTab = cachedTab;
           // prepare for card entry animations if on this page
-          this.$.neon.style.webkitTransition = 'none';
           this.$.neon.style.transition = 'none';
-          this.$.neon.style.opacity = '0';
+          this.$.neon.style.opacity    = '0';
           // fresh search on first open
           if (str === 'search') {
             this.runCardAnimation = true;
@@ -608,17 +605,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // loading spinner control
         _showSpinner() {
-          this.spinner.style.webkitTransition = 'opacity 0.3s ease-in-out';
           this.spinner.style.transition = 'opacity 0.3s ease-in-out';
-          this.spinner.style.opacity = '0';
-          this.$.neon.style.webkitTransition = 'opacity 0.3s ease-in-out';
-          this.$.neon.style.transition = 'opacity 0.3s ease-in-out';
+          this.spinner.style.opacity    = '0';
+          this.$.neon.style.transition  = 'opacity 0.3s ease-in-out';
           this.set('showSpinner', true);
           // must wait 50ms and use $$ on dynamically created dom from conditional template
           // cannot use Polymer.dom.flush() because it clears the imperitively set opacity styling
           // so fade-in functionality is lost
           this.async(() => {
-            this.$.neon.style.opacity = '0';
+            this.$.neon.style.opacity  = '0';
             this.spinner.style.opacity = '1'; 
           }, 50);        
         },
@@ -631,7 +626,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // loading spinner control
         // also called by children tab elements
         hideSpinner() {
-          this.$.neon.style.opacity = '1';
+          this.$.neon.style.opacity  = '1';
           this.spinner.style.opacity = '0'; 
           this.listen(this.spinner, 'transitionend', '_hideSpinnerTransitionDone');
         },
@@ -681,13 +676,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // called on first open and changes to "my surveys" and filter
         _search() {
           this._showSpinner();
-          // runs 'search' cloud code func that searches previously generated surveys 
-          // found in the SurveyData Class
+          // runs 'bomSearch' or 'quoteSearch' cloud code func depending on app mode
+          // searches previously generated surveys in db
           // user can optionally narrow the search with params passed 
           // in via this.query object
-          window.Redaap.webWorker.surveySearch(this.query).
+          window.Redaap.webWorker.surveySearch(this.mode, this.query).
             then(response => {
-              // save the entire response array so the user can choose
+              // save the entire response obj so the user can choose
               // which survey they want to edit
               this.set('response', response);
               this._loadSurveys(response);
@@ -707,7 +702,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // called by search-card descendant on user selection
         getCardData(status, type, index, cb) {
-          const data = this.response[status][index].attr;
+          const data       = this.response[status][index].attr;
           data.createdDate = data.createdAt.toLocaleDateString();
 
           if (type === 'selected') {
@@ -727,7 +722,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this.$.middle.style.transform = 'translate(-3.25px, 0px) scale(1.2, 1)';
               this.$.bottom.style.transform = 'translate(-0.25px, -0.25px) rotate(-45deg) scale(2.85, 1)';
               this.$.searchInput.style.opacity = '0';
-              this.$.toggle.style.opacity = '0';
+              this.$.toggle.style.opacity      = '0';
               // reset cards from fullscreen back to normal card
               animationType.cb();
               // listened for in survey-search

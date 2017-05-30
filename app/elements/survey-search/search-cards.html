@@ -69,13 +69,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       .fullscreenContent {
         opacity: 0;
-        -webkit-transition: opacity 0.2s ease-in;
-                transition: opacity 0.2s ease-in;
+        transition: opacity 0.2s ease-in;
       }
 
       .fullscreenTransition {
-        -webkit-transition: transform 0.5s ease-out;
-                transition: transform 0.5s ease-out;
+        transition: transform 0.5s ease-out;
       }
 
       .centeredHor {
@@ -95,15 +93,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </style>
 
       
-		<template id="searchRepeater" is="dom-repeat" items="[[surveys]]" 
-	    initial-count="5" target-framerate="60" strip-whitespace>
+		<template id="searchRepeater" 
+              is="dom-repeat" 
+              items="[[surveys]]" 
+	            initial-count="5" 
+              target-framerate="60" 
+              strip-whitespace>
 
 	      <paper-card class="card" elevation="2">
 
           <div id="cardContent">
   	        <div class="heading noSelect">
   	          <paper-item class="inline company" disabled>
-  	            <div class="dialogTitle">[[item.company]]</div>
+  	            <div class="dialogTitle">[[_computeCapitalize(item.company)]]</div>
   	          </paper-item>
   	          <div class="date">[[item.createdAt]]
   	            <div class="rightAlign" hidden$="[[!item.surveyVersion]]">v[[item.surveyVersion]]</div>
@@ -112,11 +114,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   					<div class="centeredHor noSelect">
   	          <paper-item class="inline" disabled>
   	            <paper-item-body two-line>
-  	              <div>[[item.client]]</div>
+  	              <div>[[_computeCapitalize(item.client)]]</div>
   	              <div secondary>Client</div>
   	            </paper-item-body>
   	          </paper-item>
-  	          <paper-item class="inline" disabled>
+  	          <paper-item class="inline" disabled hidden$="[[!item.payment]]">
   	            <paper-item-body two-line>
   	              <div>$[[item.payment]]</div>
   	              <div secondary>Payment</div>
@@ -124,7 +126,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   	          </paper-item>
   	          <paper-item class="inline" disabled>
   	            <paper-item-body two-line>
-  	              <div>[[item.repFirstName]] [[_computeLastInitial(item.repLastName)]]</div>
+  	              <div>[[_computeFirstName(item.repFirstName)]] [[_computeLastInitial(item.repLastName)]]</div>
   	              <div secondary>Rep</div>
   	            </paper-item-body>
   	          </paper-item>
@@ -202,11 +204,34 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // include the version number in the card heading if not the original version
-        _computeCardHeading(title, version) {
-          return version ? `${title} v${version}` : title;
+        _computeCardHeading: (title, version) => version ? `${title} v${version}` : title,
+
+
+        _capFirst(str) {
+          const letters = str.split('');
+          const first   = letters[0].toUpperCase();
+          const rest    = letters.slice(1).join('');
+
+          return `${first}${rest}`;
         },
+
+        // capitalize first letter in each word of a string
+        _computeCapitalize(str) {
+          if (!str) { return ''; }
+          const words = str.trim().split(' ');
+
+          return words.map(this._capFirst).join(' ');
+        },
+
+
+        _computeFirstName(str) {
+          if (!str) { return ''; }
+
+          return this._capFirst(str);
+        },
+
         // display the first letter of the Rep's last name
-        _computeLastInitial: str => str ? str.charAt(0) : '',
+        _computeLastInitial: str => str ? str.charAt(0).toUpperCase() : '',
          // wait for the repeater to fully stamp its dom before starting the items entry animation
         _repeaterDomChanged() {
           // event is fired for each dom element that is stamped

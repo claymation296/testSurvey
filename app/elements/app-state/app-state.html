@@ -67,65 +67,71 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         		notify: true
         	},
 
-          defaultSharedState: {
-            type: Object,
-            value: {
-              bom: {
-                areas: {}, 
-                fixtures: {}, 
-                photos: {}
-              },
-              client: {
-                clientName: '',
-                phone: '',
-                email: '',
-                companyName: '',
-                address: '',
-                city: '',
-                state: '',
-                zip: '',
-                projectName: '',
-                projectAddress: '',
-                projectCity: '',
-                projectState: '',
-                projectZip: '',
-                projectContact: '',
-                projectDescription: '',
-                surveyVersion: null
-              },
-              clientValid: false,
-              // saved photo data list in lighting-main
-              dreading: {},
-              firebaseUsers: {},
-              // quote or bom
-              mode: '',
-              userSelectedArray: []
-            }
-          },
-
           localState: {
             type: Object,
             notify: true
           },
-
-          defaultLocalState: {
-            type: Object,
-            value: {
-              // firebase channel to link apps
-              channel: '',
-              disableFirebase: true,
-              // cached for better relogin ux
-              email: '',
-              // only true when user is both in app linked mode and offline
-              // during this state, firebase can no longer sync to other users
-              // and there is not currently a vialbe method for conflict resolution
-              // for offline edits, so put app in read only state 
-              // disable all inputs and theme app in grey
-              readOnly: false
-            }
-          },
           // firebase user
           signedIn: Boolean
+        },
+
+
+        _getDefaultSharedState() {
+          const defaultSharedState = {
+            bom: {
+              areas: {}, 
+              fixtures: {}, 
+              photos: {}
+            },
+            client: {
+              clientName: '',
+              phone: '',
+              email: '',
+              companyName: '',
+              address: '',
+              city: '',
+              state: '',
+              zip: '',
+              projectName: '',
+              projectAddress: '',
+              projectCity: '',
+              projectState: '',
+              projectZip: '',
+              projectContact: '',
+              projectDescription: '',
+              surveyVersion: null
+            },
+            clientValid: false,
+            // saved photo data list in lighting-main
+            dreading: {},
+            firebaseUsers: {},
+            // 'quote' or 'bom'
+            // must default to empty string so app-mode
+            // is displayed for user interaction
+            mode: '',
+            userSelectedArray: []
+          };
+
+          return defaultSharedState;
+        },
+
+
+        _getDefaultLocalState() {
+          const defaultLocalState = {
+            // firebase channel to link apps
+            channel: '',
+            disableFirebase: true,
+            // cached for better relogin ux
+            email: '',
+            // only true when user is both in app linked mode and offline
+            // during this state, firebase can no longer sync to other users
+            // and there is not currently a vialbe method for conflict resolution
+            // for offline edits, so put app in read only state 
+            // disable all inputs and theme app in grey
+            readOnly: false
+          };
+
+          return defaultLocalState;
         },
 
 
@@ -306,12 +312,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // called by redaap-shared-state localStorage and lighting-main.html clearSurvey()
         initializeSharedState() {
-          this._setSharedState(this.defaultSharedState);
+          this._setSharedState(this._getDefaultSharedState());
         },
 
 
         _initializeDefaultLocalState() {
-          this._setLocalState(this.defaultLocalState);
+          this._setLocalState(this._getDefaultLocalState());
         },
         
 
