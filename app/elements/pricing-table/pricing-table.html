@@ -77,19 +77,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         background-color: white;
       }
 
-      #exsisting {
+      .fixture {
         width: 42%;
-        text-align: left;
       }
 
-      #upgrade {
-        width: 38%;
+      .upgrade {
+        width: 40%;
         text-align: center;
       }
 
-      #quantity {
+      .attribute {
         width: 20%;
         text-align: center;
+      }
+
+      .quantity {
+        width: 18%;
+        text-align: right;
       }
 
       .areaName {
@@ -104,7 +108,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       	margin-bottom: 32px;
       }
 
-      #rows {
+      .rows {
       	display: inline-flex;
       	width: 100%;
         height: 44px; /*quick iphone hack 3/31/2016*/
@@ -112,19 +116,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         padding: 8px 0px;
       }
 
-      #fixture {
-        width: 42%;
-      }
-
-      #description {
-        width: 38%;
-        text-align: center;
-      }
-
-      #count {
-        width: 20%;
-        text-align: center;
-      }
 
       /* Tablet+ */
       @media (min-width: 601px) {
@@ -146,7 +137,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           font-size: 16px;
         }
 
-	      #rows {
+	      .rows {
 	        padding: 16px 0px;
 	      }        
       }
@@ -185,40 +176,73 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </div>
 
 
+    <div hidden$="[[_computeHideData(bom)]]">
+      <div class="tableLabels">
+        <div class="inline fixture">Existing Fixture</div>
+        <div class="inline upgrade">LED Upgrade</div>
+        <div class="inline quantity">Count</div>
+      </div>
+      
+      <template is="dom-repeat" 
+      					items="[[quoteArray]]" 
+      					as="area"
+              	initial-count="5" 
+              	target-framerate="60" 
+              	strip-whitespace> 
 
-    <div class="tableLabels">
-      <div id="exsisting" class="inline">Existing Fixture</div>
-      <div id="upgrade" class="inline">LED Upgrade</div>
-      <div id="quantity" class="inline">Count</div>
+        <div class="areaName">[[area.area]]</div> 
+
+        <div class="secondary">
+          <template is="dom-repeat" items="[[area.rows]]">
+            <div class="rows">
+              <div class="fixture">
+                <span hidden$="[[item.custom]]">[[item.fixture]]</span>
+                <span hidden$="[[!item.custom]]">Custom Product $[[item.customProduct]]</span>
+              </div>
+              <div class="upgrade">
+                <span hidden$="[[item.custom]]">[[item.replacement]]</span>
+                <span hidden$="[[!item.custom]]">Custom Install $[[item.customInstall]]</span>
+              </div>
+              <div class="quantity">[[item.count]]</div>
+            </div>
+          </template>
+        </div>
+
+      </template>
     </div>
 
-    
-    <template is="dom-repeat" 
-    					items="[[templateArray]]" 
-    					as="area"
-            	initial-count="5" 
-            	target-framerate="60" 
-            	strip-whitespace> 
 
-      <div class="areaName">[[area.area]]</div> 
 
-      <div class="secondary">
-        <template is="dom-repeat" items="[[area.rows]]">
-          <div id="rows">
-            <div id="fixture">
-              <span hidden$="[[item.custom]]">[[item.fixture]]</span>
-              <span hidden$="[[!item.custom]]">Custom Product $[[item.customProduct]]</span>
-            </div>
-            <div id="description">
-              <span hidden$="[[item.custom]]">[[item.replacement]]</span>
-              <span hidden$="[[!item.custom]]">Custom Install $[[item.customInstall]]</span>
-            </div>
-            <div id="count">[[item.count]]</div>
-          </div>
-        </template>
+    <div hidden$="[[_computeHideData(pricing)]]">
+      <div class="tableLabels">
+        <div class="inline fixture">Fixture</div>
+        <div class="inline attribute">Wattage</div>
+        <div class="inline attribute">Kelvin</div>
+        <div class="inline quantity">Count</div>
       </div>
 
-    </template>
+      <template is="dom-repeat" 
+              items="[[bomArray]]" 
+              as="area"
+              initial-count="5" 
+              target-framerate="60" 
+              strip-whitespace> 
+
+        <div class="areaName">[[area.area]]</div> 
+
+        <div class="secondary">
+          <template is="dom-repeat" items="[[area.rows]]">
+            <div class="rows">
+              <div class="fixture">[[item.type]]</div>
+              <div class="attribute">[[item.watts]]W</div>
+              <div class="attribute">[[item.kelvin]]K</div>
+              <div class="quantity">[[item.qty]]</div>
+            </div>
+          </template>
+        </div>
+
+      </template>
+    </div>
 
 
   </template>
@@ -237,6 +261,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           version: Number,
         	// from parent
         	pricing: Object,
+          // from parent
+          bom: Object,
           // control state of 'Project Information' line
           showProjectTitle: {
             type: Boolean,
@@ -247,13 +273,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Boolean,
             computed: '_computeHideVersion(version)'
           },
-        	// templateArray is decoupled from selectedPricing
+        	// quoteArray is decoupled from selectedPricing
           // in order to correctly update the template repeater
-          templateArray: {
+          quoteArray: {
             type: Array,
-            computed: '_computeTemplateArray(pricing)'
+            computed: '_computeQuoteArray(pricing)'
+          },
+          // bom specific data view
+          bomArray: {
+            type: Array,
+            computed: '_computeBomArray(bom)'
           }
         },
+
+
+        _computeHideData: obj => obj ? true : false,
 
         // show/hide state of 'Project Information' title
         _computeShowProjectTitle(obj) {
@@ -276,7 +310,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _computeHideVersion: version => version > 0 ? false : true,
         // holds area name which is checked during the reduce method
         // to group all like areas together to display in the quote table
-        _computeTemplateArray: pricing => {
+        _computeQuoteArray: pricing => {
           if (!pricing) { return; }
           const {collection} = pricing;
 
@@ -315,6 +349,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }, []);
 
           return areas;
+        },
+
+        // 2 dimentional array
+        _computeBomArray(bom) {
+          if (!bom) { return; }
+          const areaKeys = Object.keys(bom.areas);
+
+          const array = areaKeys.map(areaKey => {
+            const fixKeys = Object.keys(bom.areas[areaKey].fixtures);
+
+            const fixtures = fixKeys.map(fixKey => {
+              const fixture = bom.fixtures[fixKey];
+              if (fixture[areaKey]) {
+                return fixture[areaKey];
+              }
+              return;
+            });
+
+
+            return {area: areaKey, rows: fixtures};
+          });
+
+          return array;
         }
 
       });

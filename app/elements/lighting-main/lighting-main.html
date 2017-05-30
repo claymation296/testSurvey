@@ -490,12 +490,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (obj === undefined || obj === null || this.clientValid) { return; }
           this._navigateBackToAccountForm();
         },
-        // called by survey-search when user selects a saved survey
-        // reset both valid states and hide badges after a survey is loaded in
-        resetQuoteMode(data) {
+
+
+        _resetValidity() {
           this.talliesValid = false;
-          this.set('userSelectedArray', data);
-          this.set('clientValid',       false);
+          this.set('clientValid', false);
+        },
+
+        // called by survey-search when user selects a saved survey
+        resetQuoteMode(array) {
+          this._resetValidity();
+          this.set('userSelectedArray', array);
+        },
+
+        // called by survey-search when user selects a saved survey
+        resetBomMode(object) {
+          this._resetValidity();
+          this.set('bom', object);
         },
 
         // action to take in case any of the cards has no quantity entered

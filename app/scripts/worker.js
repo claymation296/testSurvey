@@ -133,7 +133,11 @@
 
 	// cache the job that is currently being processed between 'photoMetadata' and 'processPhoto' funcs
 	const waiting  = privateList();
-	// cache failed jobs with files removed
+	// Cache failed jobs with files removed.
+	// Used for garbage collection purposes.
+	// Allows promises to be resolved in main thread that are waiting.
+	// Does not need to be in localforage as a page refresh cleans up these 
+	// held up promises.
 	const dreading = privateList();
 
 
@@ -636,7 +640,9 @@
 
 
 	const surveySearch = job => {
-		Db.Cloud.run('search', job.query). 
+		const searchMode = job.mode === 'bom' ? 'bomSearch' : 'quoteSearch';
+
+		Db.Cloud.run(searchMode, job.query). 
       then(response => {
       	// must reassign all attributes keys
       	// since the object's 'get' method 

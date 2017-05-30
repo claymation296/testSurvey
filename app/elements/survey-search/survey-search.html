@@ -37,6 +37,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                      selected-item="{{selectedItem}}"
                      string="{{string}}"
                      computed-search-tab="{{computedSearchTab}}"
+                     mode="[[mode]]"
                      disabled="[[readOnly]]">
         </search-page>
 
@@ -95,7 +96,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             notify: true
           },
           // lighting mode: 'quote'/'bom'
-          mode: String,
+          mode: {
+            type: String,
+            observer: '_modeChanged'
+          },
           // control neon-animated-pages
           selected: {
             type: Number,
@@ -170,6 +174,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             window.Redaap.loadDialog.backdropElement.complete();
             this._dialogFullyClosed(event);
           }, false);
+        },
+
+
+        _modeChanged() {
+          this.response = undefined;
         },
 
         // wait for the repeater to fully stamp its dom before starting the entry animation
@@ -261,22 +270,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // called by search icon button in main-toolbar-buttons.html
         openSearch() {
-
-          if (this.mode === 'bom') {
-            this.warn('Bill of Materials Search still under development');
+          if (!this.mode) {
+            this.message('Please select the app mode first.');
             return;
           }
-
-
           // stamp dom which triggers the entry animation once it is done stamping
           this.set('showThisElement', true);
         },
 
-        // called from close icon button in top toolbar of both childeren elements
+        // called from close icon button in top toolbar of both child elements
         _close() {
           // lower this element below the rest of the app
           this.set('showThisElement', false);
-          this.style.zIndex = -1;
+          this.style.zIndex  = -1;
           this.style.display = 'none';
         },
 
@@ -319,22 +325,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _loadOldSurvey() {
           // get a clean copy so edits dont affect the search data
           const survey = Object.assign({}, this.survey);
-          const data = survey.survey;
+          const newClient = Object.assign({}, survey.client);
 
-          const unusedKeys = key => {
-            return (key !== 'survey' && key !== 'pdf' && key !== 'pricing' && key !== 'rep');
-          };
-          const clientKeys = Object.keys(survey).filter(unusedKeys);
-
-          const client = clientKeys.reduce((prev, curr) => {
-            prev[curr] = survey[curr];
-            return prev;
-          }, {});
-          // have lighting-main load a new userSelectedArray and 
-          // reset 'valid' and 'talliesValid' after fresh reload
-          window.Redaap.lightingMain.resetQuoteMode(data);
+          if (this.mode === 'bom') {
+            const newBom = Object.assign({}, survey.bom);
+            window.Redaap.lightingMain.resetBomMode(newBom);
+          } else {
+            const newUsa = Array.from(survey.survey);
+            // have lighting-main load a new userSelectedArray and 
+            // reset 'valid' and 'talliesValid' after fresh reload
+            window.Redaap.lightingMain.resetQuoteMode(newUsa);
+          }          
           // pass client object to account-form
-          window.Redaap.accountForm.reloadClientFromSavedSurvey(client);
+          window.Redaap.accountForm.reloadClientFromSavedSurvey(newClient);
           // wait for data to propogate throughout the app then close
           this.async(() => {
             window.requestAnimationFrame(this._animateClosed.bind(this, true));

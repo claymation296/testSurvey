@@ -249,8 +249,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // called by search-page
-        surveySearch(query) {
-          return this._startJob('search', {query});
+        surveySearch(mode, query) {
+          return this._startJob('search', {mode, query});
         },
 
         // called by invite-collaborator
