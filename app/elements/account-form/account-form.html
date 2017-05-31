@@ -379,7 +379,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         // any peterbations in the client account form requires a new validation check
-        _clientChanged() {
+        _clientChanged(obj) {
+          // ignore successful saves
+          if (obj && obj.path && obj.path === 'client.surveyVersion') { return; }
+
           this.set('clientValid', false);
         },
 
@@ -472,12 +475,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // called by survey-search.html anytime the user loads in an old survey
         reloadClientFromSavedSurvey(obj) {
           const reload = () => {
-            this.client = null;
             this.set('client', obj);
-
-            console.log('client reload: ', (typeof obj.phone), obj.phone);
-
-
           };
           
           this.schedule(reload);

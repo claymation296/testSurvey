@@ -137,35 +137,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         is: 'lighting-mode',
 
         behaviors: [ 
-          Polymer.NeonAnimationRunnerBehavior,
           window.Redaap.Behaviors.Utilities,
           window.Redaap.Behaviors.OnTapBehavior 
         ],
 
         properties: {
-
-          animationConfig: {
-            value() {
-              return {
-                'entry': [{
-                  name:   'slide-from-bottom-animation',
-                  node:   this,
-                  timing: {duration: 300, easing: 'ease-out'}
-                }, {
-                  name:            'transform-animation',
-                  node:            this,
-                  transformOrigin: '50% 50%',
-                  transformFrom:   'scale(0, 0)',
-                  transformTo:     'scale(1, 1)',
-                  timing:          {duration: 300, easing: 'ease-out'}
-                 }, {
-                  name:   'fade-in-animation',
-                  node:   this,
-                  timing: {duration: 200, delay: 100, easing: 'ease-out'}
-                }]
-              };
-            }
-          },
 
           quoteBtnActive: {
           	type: Boolean,
@@ -179,8 +155,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         enter() {
           const enter = () => {
             this.style.display = 'block';
-            this.cancelAnimation();
-            this.playAnimation('entry');
           };
           
           this.schedule(enter);
