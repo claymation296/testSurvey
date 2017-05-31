@@ -9,6 +9,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 
+<link rel="import" href="../redaap-behaviors/utilities.html">
+
 
 <dom-module id="pricing-table">
   <template>
@@ -252,6 +254,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       Polymer({
         is: 'pricing-table',
 
+        behaviors: [ window.Redaap.Behaviors.Utilities ],
+
         properties: {
           // from parent
           client: Object,
@@ -357,6 +361,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           const areaKeys = Object.keys(bom.areas);
 
           const array = areaKeys.map(areaKey => {
+            const words   = areaKey.trim().split('_');
+            const area    = words.map(this.capFirst).join(' ').trim();
             const fixKeys = Object.keys(bom.areas[areaKey].fixtures);
 
             const fixtures = fixKeys.map(fixKey => {
@@ -368,7 +374,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             });
 
 
-            return {area: areaKey, rows: fixtures};
+            return {area, rows: fixtures};
           });
 
           return array;

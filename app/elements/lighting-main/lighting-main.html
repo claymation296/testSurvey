@@ -256,16 +256,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         _modeChanged(mode, oldMode) {
           if (mode) { 
-            // from app-state
-            if (!oldMode) {
-              this.$.mode.hide();
-              return;
-            }
-            // direct user input
             this.$.mode.hide();
             return; 
           }
-          // initial and after clear survey
+          // user clears the app
+          if (oldMode) {
+            // wait for redirect animation to 
+            // home or client page
+            this.async(() => {
+              this.$.mode.enter();
+            }, 500);
+            return;
+          }
+          // initial
           this.$.mode.enter();
         },
 

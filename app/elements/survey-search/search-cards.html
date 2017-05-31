@@ -9,6 +9,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 
+<link rel="import" href="../redaap-behaviors/utilities.html">
 <link rel="import" href="../redaap-behaviors/on-tap-behavior.html">
 <link rel="import" href="../redaap-behaviors/expand-collapse-classes-behavior.html">
 
@@ -159,6 +160,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         behaviors: [
         	Polymer.NeonAnimationRunnerBehavior,
+          window.Redaap.Behaviors.Utilities, 
           window.Redaap.Behaviors.OnTapBehavior, 
           window.Redaap.Behaviors.ExpandCollapseClassesBehavior
         ],
@@ -206,28 +208,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // include the version number in the card heading if not the original version
         _computeCardHeading: (title, version) => version ? `${title} v${version}` : title,
 
-
-        _capFirst(str) {
-          const letters = str.split('');
-          const first   = letters[0].toUpperCase();
-          const rest    = letters.slice(1).join('');
-
-          return `${first}${rest}`;
-        },
-
         // capitalize first letter in each word of a string
         _computeCapitalize(str) {
           if (!str) { return ''; }
           const words = str.trim().split(' ');
 
-          return words.map(this._capFirst).join(' ');
+          return words.map(this.capFirst).join(' ');
         },
 
 
         _computeFirstName(str) {
           if (!str) { return ''; }
 
-          return this._capFirst(str);
+          return this.capFirst(str);
         },
 
         // display the first letter of the Rep's last name

@@ -110,7 +110,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // databound from search-page
           // needed to track state of search
           // only want to call search once upon first opening of the page
-          // all other page opens load the last response
+          // all other page opens load the cached last response
           response: Object,
           // cached state value for search-page reopens
           userSurveys: {
@@ -176,9 +176,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }, false);
         },
 
-
+        // reset cached items when mode changes
         _modeChanged() {
-          this.response = undefined;
+          this.selected             = 0;
+          this.userSurveys          = true;
+          this.string               = '';
+          this.selectedItem         = undefined;
+          this.computedSearchTab    = undefined;
+          this.searchScrollerCache  = undefined;
+          this.previewScrollerCache = undefined;
+          this.response             = undefined;
         },
 
         // wait for the repeater to fully stamp its dom before starting the entry animation
